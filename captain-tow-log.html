@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ava Ray — Activity Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --ocean: #0a1628;
+    --deep: #061020;
+    --surface: #0f2040;
+    --panel: #132848;
+    --border: #1e3a5f;
+    --accent: #00c8ff;
+    --accent2: #00ff9d;
+    --warn: #ff6b35;
+    --text: #e8f4f8;
+    --muted: #6b8fa8;
+    --radius: 12px;
+    --font-head: 'Syne', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--deep);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    min-height: 100dvh;
+    padding-bottom: 60px;
+  }
+
+  .header {
+    background: var(--ocean);
+    border-bottom: 2px solid var(--accent);
+    padding: 14px 20px;
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-title { font-family: var(--font-head); font-weight: 800; font-size: 18px; color: var(--accent); letter-spacing: -0.5px; }
+  .header-trip { font-size: 11px; color: var(--muted); margin-top: 2px; letter-spacing: 0.5px; }
+  .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); transition: all 0.3s; }
+  .status-dot.connected { background: var(--accent2); box-shadow: 0 0 0 3px rgba(0,255,157,0.2); }
+  .status-dot.error { background: var(--warn); box-shadow: 0 0 0 3px rgba(255,107,53,0.2); }
+
+  .screen { display: none; padding: 20px; }
+  .screen.active { display: block; }
+
+  .section-label {
+    font-family: var(--font-head); font-weight: 600; font-size: 11px;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--accent);
+    margin-bottom: 14px; margin-top: 24px;
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
+  .field input, .field select, .field textarea {
+    width: 100%; background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 8px; color: var(--text); font-family: var(--font-mono);
+    font-size: 15px; padding: 13px 14px; outline: none; transition: border-color 0.2s;
+    -webkit-appearance: none; appearance: none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+  .field textarea { min-height: 80px; resize: vertical; }
+  .field select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b8fa8' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center; padding-right: 38px;
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* Activity picker */
+  .activity-picker { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .act-btn {
+    padding: 20px 8px; border-radius: var(--radius); border: 2px solid var(--border);
+    background: var(--surface); color: var(--muted); font-family: var(--font-head);
+    font-weight: 800; font-size: 13px; text-align: center; cursor: pointer;
+    transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  }
+  .act-btn .act-icon { font-size: 28px; }
+  .act-btn.sel-fishing  { border-color: var(--accent2); color: var(--accent2); background: rgba(0,255,157,0.07); }
+  .act-btn.sel-steaming { border-color: var(--accent);  color: var(--accent);  background: rgba(0,200,255,0.07); }
+  .act-btn.sel-wow      { border-color: var(--warn);    color: var(--warn);    background: rgba(255,107,53,0.07); }
+
+  /* GPS */
+  .gps-btn {
+    width: 100%; padding: 13px; background: rgba(0,200,255,0.07);
+    border: 1.5px dashed var(--accent); border-radius: 8px; color: var(--accent);
+    font-family: var(--font-mono); font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s;
+  }
+  .gps-btn:active { background: rgba(0,200,255,0.15); }
+  .gps-coords { margin-top: 7px; font-size: 12px; color: var(--accent2); text-align: center; min-height: 18px; }
+
+  /* Slider */
+  .slider-wrap { position: relative; padding-top: 28px; }
+  .slider-val { position: absolute; right: 0; top: 0; font-size: 22px; font-family: var(--font-head); font-weight: 800; color: var(--accent); }
+  input[type=range] { width: 100%; height: 6px; -webkit-appearance: none; appearance: none; background: var(--border); border-radius: 3px; outline: none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px rgba(0,200,255,0.4); cursor: pointer; }
+
+  /* Buttons */
+  .btn { width: 100%; padding: 17px; border-radius: var(--radius); border: none; font-family: var(--font-head); font-weight: 800; font-size: 16px; cursor: pointer; transition: all 0.15s; margin-top: 8px; display: block; }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.4; pointer-events: none; }
+  .btn-primary  { background: var(--accent);  color: var(--deep); }
+  .btn-secondary{ background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+  .btn-success  { background: var(--accent2); color: var(--deep); }
+  .btn-warn     { background: var(--warn);    color: white; }
+  .btn-add      { background: rgba(0,200,255,0.07); border: 1.5px dashed var(--border); color: var(--accent); font-size: 14px; padding: 13px; }
+  .btn-sm       { padding: 10px 16px; font-size: 13px; width: auto; display: inline-block; margin-top: 0; }
+
+  /* Toggle */
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+  .toggle-label { font-size: 12px; color: var(--muted); }
+  .toggle { position: relative; width: 48px; height: 26px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; inset: 0; background: var(--border); border-radius: 13px; cursor: pointer; transition: background 0.2s; }
+  .toggle-slider:before { content: ''; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px; background: var(--muted); border-radius: 50%; transition: all 0.2s; }
+  .toggle input:checked + .toggle-slider { background: rgba(0,255,157,0.2); border: 1px solid var(--accent2); }
+  .toggle input:checked + .toggle-slider:before { transform: translateX(22px); background: var(--accent2); }
+
+  /* Activity list items */
+  .activity-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .act-type { font-family: var(--font-head); font-weight: 800; font-size: 15px; text-transform: uppercase; }
+  .act-type.fishing  { color: var(--accent2); }
+  .act-type.steaming { color: var(--accent);  }
+  .act-type.wow      { color: var(--warn);    }
+  .act-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .act-badge { font-size: 11px; padding: 4px 10px; border-radius: 20px; background: rgba(0,255,157,0.1); color: var(--accent2); border: 1px solid rgba(0,255,157,0.3); white-space: nowrap; }
+  .act-badge.open { background: rgba(255,107,53,0.1); color: var(--warn); border-color: rgba(255,107,53,0.3); }
+
+  /* Active banner */
+  .active-banner { background: rgba(0,255,157,0.06); border: 1px solid rgba(0,255,157,0.25); border-radius: 10px; padding: 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+  .ab-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .ab-val { font-family: var(--font-head); font-weight: 800; font-size: 16px; margin-top: 2px; }
+  .ab-val.fishing  { color: var(--accent2); }
+  .ab-val.steaming { color: var(--accent);  }
+  .ab-val.wow      { color: var(--warn);    }
+
+  /* Tow items */
+  .tow-item { background: var(--ocean); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .tow-num  { font-family: var(--font-head); font-weight: 800; font-size: 20px; color: var(--accent); }
+  .tow-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* Bycatch */
+  .bycatch-item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; position: relative; }
+  .remove-btn { position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--warn); font-size: 20px; cursor: pointer; padding: 4px; line-height: 1; }
+  .size-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .size-cell label { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 5px; text-align: center; }
+  .size-cell input { text-align: center; padding: 10px 6px; font-size: 16px; }
+
+  /* Summary rows */
+  .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-key { color: var(--muted); }
+  .summary-val { font-weight: 700; }
+
+  .info-box { background: rgba(0,200,255,0.05); border: 1px solid rgba(0,200,255,0.2); border-radius: 8px; padding: 12px 14px; font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px 20px; font-size: 13px; z-index: 999; transition: transform 0.3s; white-space: nowrap; max-width: 90vw; text-align: center; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: var(--accent2); color: var(--accent2); }
+  .toast.error   { border-color: var(--warn);    color: var(--warn);    }
+
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(0,200,255,0.3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">AVA RAY</div>
+    <div class="header-trip" id="headerTrip">No trip selected</div>
+  </div>
+  <div class="status-dot" id="statusDot"></div>
+</div>
+
+<!-- ══════════ TRIP SELECT ══════════ -->
+<div class="screen active" id="screen-trip">
+  <div class="section-label">Select Trip</div>
+  <div class="info-box">Select your current voyage or create a new one. A trip covers your full time at sea at one site.</div>
+
+  <div class="field">
+    <label>Trip</label>
+    <select id="tripSelect" onchange="onTripSelect()">
+      <option value="">— Loading... —</option>
+    </select>
+  </div>
+
+  <div id="tripSummaryCard" style="display:none;" class="card">
+    <div id="tripSummaryContent"></div>
+    <button class="btn btn-primary" onclick="goTo('screen-main')" style="margin-top:14px;">Continue This Trip →</button>
+  </div>
+
+  <div id="newTripForm" style="display:none;" class="card">
+    <div class="section-label" style="margin-top:0;">New Trip</div>
+    <div class="field"><label>Trip Code</label><input type="text" id="newTripCode" placeholder="e.g. AVA-2025-001"></div>
+    <div class="field"><label>Captain</label><input type="text" id="newCaptain" placeholder="Name"></div>
+    <div class="field"><label>Departure Date</label><input type="date" id="newTripDate"></div>
+    <div class="field">
+      <label>Site</label>
+      <select id="siteSelect">
+        <option value="">— Select —</option>
+      </select>
+    </div>
+    <div class="field"><label>Departure Port</label><input type="text" id="newPort" placeholder="e.g. Tromsø"></div>
+    <button class="btn btn-primary" onclick="createTrip()">Create Trip</button>
+    <button class="btn btn-secondary" onclick="hideNewTripForm()">Cancel</button>
+  </div>
+
+  <button class="btn btn-secondary" onclick="showNewTripForm()" id="newTripBtn" style="margin-top:4px;">+ New Trip</button>
+</div>
+
+<!-- ══════════ MAIN (activity hub) ══════════ -->
+<div class="screen" id="screen-main">
+  <div id="activeActivityBanner"></div>
+
+  <div class="section-label">Log New Activity</div>
+  <div class="activity-picker">
+    <div class="act-btn" id="btn-fishing"  onclick="selectActivityType('fishing')"><span class="act-icon">🦪</span>Fishing</div>
+    <div class="act-btn" id="btn-steaming" onclick="selectActivityType('steaming')"><span class="act-icon">⚓</span>Steaming</div>
+    <div class="act-btn" id="btn-wow"      onclick="selectActivityType('wow')"><span class="act-icon">🌊</span>WOW</div>
+  </div>
+  <button class="btn btn-primary" id="startActivityBtn" disabled onclick="goToStartActivity()">Start Activity →</button>
+
+  <hr class="divider">
+
+  <div class="section-label">This Trip's Activities</div>
+  <div id="activityList"><div style="color:var(--muted);font-size:13px;">No activities logged yet.</div></div>
+
+  <button class="btn btn-secondary" onclick="goTo('screen-trip')" style="margin-top:20px;">← Change Trip</button>
+</div>
+
+<!-- ══════════ START ACTIVITY ══════════ -->
+<div class="screen" id="screen-start-activity">
+  <div class="section-label">Start <span id="startActTypeLabel" style="text-transform:capitalize;color:inherit;"></span></div>
+
+  <div class="card">
+    <div class="section-label" style="margin-top:0;">Fuel</div>
+    <div class="field"><label>Fuel at Start (litres)</label><input type="number" id="actFuelStart" placeholder="0" inputmode="decimal" step="0.1"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-label" style="margin-top:0;">Sea Conditions</div>
+    <div class="grid-2">
+      <div class="field"><label>Wave Height (m)</label><input type="number" id="actWaveHeight" placeholder="e.g. 1.5" inputmode="decimal" step="0.1"></div>
+      <div class="field"><label>Wind (knots)</label><input type="number" id="actWindSpeed" placeholder="e.g. 12" inputmode="numeric"></div>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label>Sea State</label>
+        <select id="actSeaState">
+          <option value="">— Select —</option>
+          <option value="calm">Calm</option>
+          <option value="slight">Slight</option>
+          <option value="moderate">Moderate</option>
+          <option value="rough">Rough</option>
+          <option value="very_rough">Very Rough</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Wind Direction</label>
+        <select id="actWindDir">
+          <option value="">—</option>
+          <option>N</option><option>NE</option><option>E</option><option>SE</option>
+          <option>S</option><option>SW</option><option>W</option><option>NW</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Visibility</label>
+      <select id="actVisibility">
+        <option value="">— Select —</option>
+        <option value="good">Good</option>
+        <option value="moderate">Moderate</option>
+        <option value="poor">Poor</option>
+        <option value="fog">Fog</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="actGpsSection" style="display:none;" class="card">
+    <div class="section-label" style="margin-top:0;">Start Position</div>
+    <button class="gps-btn" onclick="getGPS('actStart')">📍 Capture Start GPS</button>
+    <div class="gps-coords" id="gpsActStartDisplay"></div>
+    <input type="hidden" id="actLatStart"><input type="hidden" id="actLonStart">
+  </div>
+
+  <div class="field" style="margin-top:4px;"><label>Notes (optional)</label><textarea id="actNotes" placeholder="Any observations..."></textarea></div>
+
+  <button class="btn btn-primary" onclick="saveStartActivity()">Begin Activity ▶</button>
+  <button class="btn btn-secondary" onclick="goTo('screen-main')">Cancel</button>
+</div>
+
+<!-- ══════════ FISHING SCREEN ══════════ -->
+<div class="screen" id="screen-fishing">
+  <div class="active-banner" style="margin-bottom:16px;">
+    <div><div class="ab-label">Active Activity</div><div class="ab-val fishing">🦪 FISHING</div></div>
+    <button class="btn btn-warn btn-sm" onclick="endActivityPrompt()">End Activity</button>
+  </div>
+
+  <div id="towListSection">
+    <div class="section-label">Tows This Activity</div>
+    <div id="towList"><div style="color:var(--muted);font-size:13px;">No tows yet.</div></div>
+    <button class="btn btn-primary" onclick="showTowForm()" style="margin-top:12px;">+ Log New Tow</button>
+  </div>
+
+  <div id="towFormSection" style="display:none;">
+    <div class="section-label">Tow <span id="towNumLabel">–</span></div>
+    <div class="card">
+      <div class="section-label" style="margin-top:0;">Start</div>
+      <div class="field"><label>Start Time</label><input type="datetime-local" id="towTimeStart"></div>
+      <div class="field">
+        <label>Start GPS</label>
+        <button class="gps-btn" onclick="getGPS('towStart')">📍 Capture GPS</button>
+        <div class="gps-coords" id="gpsTowStartDisplay"></div>
+        <input type="hidden" id="towLatStart"><input type="hidden" id="towLonStart">
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-label" style="margin-top:0;">End</div>
+      <div class="field"><label>End Time</label><input type="datetime-local" id="towTimeEnd"></div>
+      <div class="field">
+        <label>End GPS</label>
+        <button class="gps-btn" onclick="getGPS('towEnd')">📍 Capture GPS</button>
+        <div class="gps-coords" id="gpsTowEndDisplay"></div>
+        <input type="hidden" id="towLatEnd"><input type="hidden" id="towLonEnd">
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-label" style="margin-top:0;">Harvest</div>
+      <div class="field">
+        <label>Harvester Fill</label>
+        <div class="slider-wrap">
+          <div class="slider-val"><span id="fillVal">0</span>%</div>
+          <input type="range" id="harvesterFill" min="0" max="100" value="0" oninput="document.getElementById('fillVal').textContent=this.value">
+        </div>
+      </div>
+      <div class="field" style="margin-top:16px;"><label>Depth (m)</label><input type="number" id="towDepth" placeholder="e.g. 25" inputmode="decimal" step="0.5"></div>
+      <div class="field"><label>Notes (optional)</label><textarea id="towNotes" placeholder="Seabed, visibility..."></textarea></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveTow()">Save Tow & Log Bycatch →</button>
+    <button class="btn btn-secondary" onclick="cancelTowForm()">Cancel</button>
+  </div>
+</div>
+
+<!-- ══════════ BYCATCH ══════════ -->
+<div class="screen" id="screen-bycatch">
+  <div class="section-label">Bycatch — Tow <span id="bycatchTowLabel">–</span></div>
+  <div class="info-box">Record counts per size class (S/M/L). Leave empty if none caught.</div>
+  <div id="bycatchList"></div>
+  <button class="btn btn-add" onclick="addBycatchItem()">+ Add Species</button>
+  <button class="btn btn-success" onclick="saveBycatch()" style="margin-top:16px;">Save & Done ✓</button>
+  <button class="btn btn-secondary" onclick="skipBycatch()" style="margin-top:8px;">No Bycatch — Skip</button>
+</div>
+
+<!-- ══════════ END ACTIVITY ══════════ -->
+<div class="screen" id="screen-end-activity">
+  <div class="section-label">End Activity</div>
+  <div class="card">
+    <div class="field"><label>Fuel at End (litres)</label><input type="number" id="endFuel" placeholder="0" inputmode="decimal" step="0.1"></div>
+  </div>
+  <div id="endGpsSection" style="display:none;" class="card">
+    <div class="section-label" style="margin-top:0;">End Position</div>
+    <button class="gps-btn" onclick="getGPS('actEnd')">📍 Capture End GPS</button>
+    <div class="gps-coords" id="gpsActEndDisplay"></div>
+    <input type="hidden" id="actLatEnd"><input type="hidden" id="actLonEnd">
+  </div>
+  <button class="btn btn-warn" onclick="confirmEndActivity()">Confirm End Activity</button>
+  <button class="btn btn-secondary" id="backFromEndBtn" onclick="goTo('screen-fishing')">← Back</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://hpfxkamqbsbaohrwbppa.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwZnhrYW1xYnNiYW9ocndicHBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NjQyOTEsImV4cCI6MjA4ODA0MDI5MX0.coiX7bWx0CiiUmuU_pRMK8pSqe38-luT30lgatJBTz8';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentTrip = null;
+let currentActivityType = null;
+let currentActivityId = null;
+let currentTowId = null;
+let currentTowNum = 0;
+let towsThisActivity = [];
+let activitiesThisTrip = [];
+let bycatchItems = [];
+
+async function init() {
+  try {
+    const { error } = await sb.from('trip_registry').select('id').limit(1);
+    setStatus(error ? 'error' : 'connected');
+  } catch(e) { setStatus('error'); }
+  await loadTrips();
+  await loadSites();
+}
+
+function setStatus(s) {
+  document.getElementById('statusDot').className = 'status-dot ' + s;
+}
+
+// ── Trips ────────────────────────────────────────────────
+async function loadTrips() {
+  const { data } = await sb.from('trip_registry').select('*').order('trip_date', { ascending: false }).limit(30);
+  const sel = document.getElementById('tripSelect');
+  sel.innerHTML = '<option value="">— Select trip —</option>';
+  (data || []).forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.id;
+    o.textContent = `${t.trip_code} · ${t.trip_date}`;
+    sel.appendChild(o);
+  });
+  sel.innerHTML += '<option value="NEW">+ New trip</option>';
+}
+
+async function loadSites() {
+  const { data } = await sb.from('site_registry').select('*').order('site_name');
+  const sel = document.getElementById('siteSelect');
+  sel.innerHTML = '<option value="">— Select —</option>';
+  (data || []).forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.id;
+    o.textContent = s.site_name || s.site_code;
+    sel.appendChild(o);
+  });
+}
+
+function onTripSelect() {
+  const val = document.getElementById('tripSelect').value;
+  document.getElementById('tripSummaryCard').style.display = 'none';
+  document.getElementById('newTripForm').style.display = 'none';
+  document.getElementById('newTripBtn').style.display = 'block';
+  if (val === 'NEW') showNewTripForm();
+  else if (val) loadTripSummary(val);
+}
+
+async function loadTripSummary(id) {
+  const { data } = await sb.from('trip_registry').select('*, site_registry(site_name,site_code)').eq('id', id).single();
+  if (!data) return;
+  currentTrip = data;
+  document.getElementById('tripSummaryContent').innerHTML = `
+    <div class="summary-row"><span class="summary-key">Trip</span><span class="summary-val">${data.trip_code}</span></div>
+    <div class="summary-row"><span class="summary-key">Site</span><span class="summary-val">${data.site_registry?.site_name || '—'}</span></div>
+    <div class="summary-row"><span class="summary-key">Captain</span><span class="summary-val">${data.captain_name || '—'}</span></div>
+    <div class="summary-row"><span class="summary-key">Departure</span><span class="summary-val">${data.trip_date}</span></div>
+  `;
+  document.getElementById('tripSummaryCard').style.display = 'block';
+}
+
+function showNewTripForm() {
+  document.getElementById('newTripForm').style.display = 'block';
+  document.getElementById('newTripBtn').style.display = 'none';
+  document.getElementById('newTripDate').value = new Date().toISOString().split('T')[0];
+  const d = new Date();
+  document.getElementById('newTripCode').value = `AVA-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+}
+function hideNewTripForm() {
+  document.getElementById('newTripForm').style.display = 'none';
+  document.getElementById('newTripBtn').style.display = 'block';
+}
+
+async function createTrip() {
+  const code    = document.getElementById('newTripCode').value.trim();
+  const captain = document.getElementById('newCaptain').value.trim();
+  const date    = document.getElementById('newTripDate').value;
+  const site    = document.getElementById('siteSelect').value;
+  const port    = document.getElementById('newPort').value.trim();
+  if (!code || !date) { showToast('Trip code and date required', 'error'); return; }
+  const { data, error } = await sb.from('trip_registry').insert({
+    trip_code: code, captain_name: captain, trip_date: date,
+    site_id: site || null, departure_port: port, vessel_name: 'Ava Ray'
+  }).select().single();
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  showToast('Trip created!', 'success');
+  currentTrip = data;
+  await loadTrips();
+  document.getElementById('tripSelect').value = data.id;
+  await loadTripSummary(data.id);
+  hideNewTripForm();
+}
+
+// ── Main screen ──────────────────────────────────────────
+async function enterMainScreen() {
+  await loadActivities();
+  goTo('screen-main');
+}
+
+async function loadActivities() {
+  const { data } = await sb.from('activity_log').select('*')
+    .eq('trip_id', currentTrip.id).order('created_at', { ascending: false });
+  activitiesThisTrip = data || [];
+  renderActivityList();
+  document.getElementById('headerTrip').textContent =
+    `${currentTrip.trip_code} · ${currentTrip.site_registry?.site_name || ''}`;
+
+  const open = activitiesThisTrip.find(a => !a.time_end);
+  if (open) {
+    currentActivityId = open.id;
+    currentActivityType = open.activity_type;
+    const icon  = open.activity_type === 'fishing' ? '🦪' : open.activity_type === 'steaming' ? '⚓' : '🌊';
+    const start = open.time_start
+      ? new Date(open.time_start).toLocaleTimeString('no-NO', { hour:'2-digit', minute:'2-digit' }) : '—';
+    const resumeBtn = open.activity_type === 'fishing'
+      ? `<button class="btn btn-primary btn-sm" onclick="resumeFishing()">Open →</button>`
+      : `<button class="btn btn-warn btn-sm" onclick="endActivityPrompt()">End →</button>`;
+    document.getElementById('activeActivityBanner').innerHTML = `
+      <div class="active-banner">
+        <div><div class="ab-label">In progress since ${start}</div>
+        <div class="ab-val ${open.activity_type}">${icon} ${open.activity_type.toUpperCase()}</div></div>
+        ${resumeBtn}
+      </div>`;
+  } else {
+    document.getElementById('activeActivityBanner').innerHTML = '';
+    currentActivityId = null;
+    currentActivityType = null;
+  }
+}
+
+function renderActivityList() {
+  const el = document.getElementById('activityList');
+  if (!activitiesThisTrip.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px;">No activities logged yet.</div>';
+    return;
+  }
+  el.innerHTML = activitiesThisTrip.map(a => {
+    const icon  = a.activity_type === 'fishing' ? '🦪' : a.activity_type === 'steaming' ? '⚓' : '🌊';
+    const start = a.time_start
+      ? new Date(a.time_start).toLocaleString('no-NO', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })
+      : '—';
+    const fuelUsed = (a.fuel_start_litres != null && a.fuel_end_litres != null)
+      ? ` · ${(a.fuel_end_litres - a.fuel_start_litres).toFixed(0)}L` : '';
+    const badge = a.time_end
+      ? `<div class="act-badge">Done ✓</div>`
+      : `<div class="act-badge open">● Open</div>`;
+    return `<div class="activity-item">
+      <div>
+        <div class="act-type ${a.activity_type}">${icon} ${a.activity_type.toUpperCase()}</div>
+        <div class="act-meta">${start}${fuelUsed}</div>
+      </div>
+      ${badge}
+    </div>`;
+  }).join('');
+}
+
+// ── Activity type ────────────────────────────────────────
+function selectActivityType(type) {
+  currentActivityType = type;
+  ['fishing','steaming','wow'].forEach(t => {
+    document.getElementById('btn-' + t).className = 'act-btn' + (t === type ? ' sel-' + t : '');
+  });
+  document.getElementById('startActivityBtn').disabled = false;
+}
+
+function goToStartActivity() {
+  if (!currentActivityType) return;
+  const label = document.getElementById('startActTypeLabel');
+  label.textContent = currentActivityType;
+  label.style.color = currentActivityType === 'fishing' ? 'var(--accent2)'
+    : currentActivityType === 'steaming' ? 'var(--accent)' : 'var(--warn)';
+  document.getElementById('actGpsSection').style.display = currentActivityType === 'fishing' ? 'block' : 'none';
+  ['actFuelStart','actWaveHeight','actWindSpeed','actNotes'].forEach(id => document.getElementById(id).value = '');
+  ['actSeaState','actWindDir','actVisibility'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('gpsActStartDisplay').textContent = '';
+  document.getElementById('actLatStart').value = '';
+  document.getElementById('actLonStart').value = '';
+  goTo('screen-start-activity');
+}
+
+async function saveStartActivity() {
+  if (!currentTrip) return;
+  const payload = {
+    trip_id: currentTrip.id,
+    activity_type: currentActivityType,
+    time_start: new Date().toISOString(),
+    fuel_start_litres: parseFloat(document.getElementById('actFuelStart').value)    || null,
+    wave_height_m:     parseFloat(document.getElementById('actWaveHeight').value)   || null,
+    wind_speed_knots:  parseFloat(document.getElementById('actWindSpeed').value)    || null,
+    sea_state:         document.getElementById('actSeaState').value                 || null,
+    wind_direction:    document.getElementById('actWindDir').value                  || null,
+    visibility:        document.getElementById('actVisibility').value               || null,
+    notes:             document.getElementById('actNotes').value                    || null,
+    lat_start: parseFloat(document.getElementById('actLatStart').value) || null,
+    lon_start: parseFloat(document.getElementById('actLonStart').value) || null,
+  };
+  const { data, error } = await sb.from('activity_log').insert(payload).select().single();
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  currentActivityId = data.id;
+  showToast(`${currentActivityType.toUpperCase()} started!`, 'success');
+  if (currentActivityType === 'fishing') {
+    towsThisActivity = [];
+    renderTowList();
+    goTo('screen-fishing');
+  } else {
+    await loadActivities();
+    goTo('screen-main');
+  }
+}
+
+// ── Fishing / Tows ───────────────────────────────────────
+async function resumeFishing() {
+  await loadTowsForActivity(currentActivityId);
+  goTo('screen-fishing');
+}
+
+async function loadTowsForActivity(actId) {
+  const { data } = await sb.from('tow_log').select('*').eq('activity_id', actId).order('tow_number');
+  towsThisActivity = data || [];
+  renderTowList();
+}
+
+function renderTowList() {
+  const el = document.getElementById('towList');
+  if (!towsThisActivity.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px;">No tows yet.</div>';
+    return;
+  }
+  el.innerHTML = towsThisActivity.map(t => {
+    const ts = t.time_start ? new Date(t.time_start).toLocaleTimeString('no-NO', { hour:'2-digit', minute:'2-digit' }) : '—';
+    const te = t.time_end   ? new Date(t.time_end).toLocaleTimeString('no-NO',   { hour:'2-digit', minute:'2-digit' }) : '—';
+    return `<div class="tow-item">
+      <div>
+        <div class="tow-num">#${t.tow_number}</div>
+        <div class="tow-meta">${ts} → ${te} · Fill: ${t.harvester_fill_pct ?? '—'}%</div>
+      </div>
+      <div class="act-badge">✓</div>
+    </div>`;
+  }).join('');
+}
+
+function showTowForm() {
+  currentTowNum = towsThisActivity.length > 0
+    ? Math.max(...towsThisActivity.map(t => t.tow_number)) + 1 : 1;
+  document.getElementById('towNumLabel').textContent = currentTowNum;
+  ['towLatStart','towLonStart','towLatEnd','towLonEnd','towDepth','towNotes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('gpsTowStartDisplay').textContent = '';
+  document.getElementById('gpsTowEndDisplay').textContent   = '';
+  document.getElementById('harvesterFill').value = 0;
+  document.getElementById('fillVal').textContent = '0';
+  const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16);
+  document.getElementById('towTimeStart').value = now;
+  document.getElementById('towTimeEnd').value   = now;
+  document.getElementById('towListSection').style.display = 'none';
+  document.getElementById('towFormSection').style.display = 'block';
+}
+
+function cancelTowForm() {
+  document.getElementById('towFormSection').style.display = 'none';
+  document.getElementById('towListSection').style.display = 'block';
+}
+
+async function saveTow() {
+  if (!currentActivityId) return;
+  const payload = {
+    activity_id: currentActivityId,
+    trip_id: currentTrip.id,
+    tow_number: currentTowNum,
+    time_start:        document.getElementById('towTimeStart').value || null,
+    time_end:          document.getElementById('towTimeEnd').value   || null,
+    lat_start: parseFloat(document.getElementById('towLatStart').value) || null,
+    lon_start: parseFloat(document.getElementById('towLonStart').value) || null,
+    lat_end:   parseFloat(document.getElementById('towLatEnd').value)   || null,
+    lon_end:   parseFloat(document.getElementById('towLonEnd').value)   || null,
+    harvester_fill_pct: parseInt(document.getElementById('harvesterFill').value),
+    depth_m:   parseFloat(document.getElementById('towDepth').value) || null,
+    notes:     document.getElementById('towNotes').value             || null,
+  };
+  const { data, error } = await sb.from('tow_log').insert(payload).select().single();
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  currentTowId = data.id;
+  towsThisActivity.push(data);
+  showToast(`Tow #${currentTowNum} saved!`, 'success');
+  bycatchItems = [];
+  document.getElementById('bycatchList').innerHTML = '';
+  document.getElementById('bycatchTowLabel').textContent = currentTowNum;
+  goTo('screen-bycatch');
+}
+
+// ── Bycatch ──────────────────────────────────────────────
+function addBycatchItem() {
+  const id = Date.now();
+  bycatchItems.push(id);
+  const div = document.createElement('div');
+  div.className = 'bycatch-item';
+  div.id = 'by-' + id;
+  div.innerHTML = `
+    <button class="remove-btn" onclick="removeBycatch(${id})">×</button>
+    <div class="grid-2">
+      <div class="field"><label>Common Name</label><input type="text" id="byCommon-${id}" placeholder="e.g. Cod"></div>
+      <div class="field">
+        <label>Category</label>
+        <select id="byCategory-${id}">
+          <option value="fish">Fish</option>
+          <option value="invertebrate">Invertebrate</option>
+          <option value="crustacean">Crustacean</option>
+          <option value="marine_mammal">Marine Mammal</option>
+          <option value="seabird">Seabird</option>
+          <option value="debris">Debris</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>Scientific Name (optional)</label><input type="text" id="bySci-${id}" placeholder="Genus species"></div>
+    <div class="field">
+      <label>Count by Size</label>
+      <div class="size-grid">
+        <div class="size-cell"><label>Small</label><input type="number" id="byS-${id}" placeholder="0" inputmode="numeric" min="0"></div>
+        <div class="size-cell"><label>Medium</label><input type="number" id="byM-${id}" placeholder="0" inputmode="numeric" min="0"></div>
+        <div class="size-cell"><label>Large</label><input type="number" id="byL-${id}" placeholder="0" inputmode="numeric" min="0"></div>
+      </div>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">Returned to sea?</span>
+      <label class="toggle"><input type="checkbox" id="byReturn-${id}" checked><span class="toggle-slider"></span></label>
+    </div>
+  `;
+  document.getElementById('bycatchList').appendChild(div);
+}
+
+function removeBycatch(id) {
+  document.getElementById('by-' + id)?.remove();
+  bycatchItems = bycatchItems.filter(i => i !== id);
+}
+
+async function saveBycatch() {
+  const rows = bycatchItems.map(id => ({
+    tow_id:            currentTowId,
+    trip_id:           currentTrip.id,
+    species_common:    document.getElementById('byCommon-'+id)?.value   || null,
+    species_scientific:document.getElementById('bySci-'+id)?.value      || null,
+    category:          document.getElementById('byCategory-'+id)?.value || null,
+    count_small:       parseInt(document.getElementById('byS-'+id)?.value)  || 0,
+    count_medium:      parseInt(document.getElementById('byM-'+id)?.value)  || 0,
+    count_large:       parseInt(document.getElementById('byL-'+id)?.value)  || 0,
+    returned_to_sea:   document.getElementById('byReturn-'+id)?.checked ?? true,
+  })).filter(r => r.species_common || (r.count_small + r.count_medium + r.count_large) > 0);
+
+  if (rows.length > 0) {
+    const { error } = await sb.from('bycatch_report').insert(rows);
+    if (error) { showToast('Bycatch error: ' + error.message, 'error'); return; }
+  }
+  showToast(`Tow #${currentTowNum} complete!`, 'success');
+  renderTowList();
+  document.getElementById('towFormSection').style.display = 'none';
+  document.getElementById('towListSection').style.display = 'block';
+  goTo('screen-fishing');
+}
+
+function skipBycatch() {
+  showToast(`Tow #${currentTowNum} — no bycatch`, 'success');
+  renderTowList();
+  document.getElementById('towFormSection').style.display = 'none';
+  document.getElementById('towListSection').style.display = 'block';
+  goTo('screen-fishing');
+}
+
+// ── End Activity ─────────────────────────────────────────
+function endActivityPrompt() {
+  document.getElementById('endFuel').value = '';
+  document.getElementById('gpsActEndDisplay').textContent = '';
+  document.getElementById('actLatEnd').value = '';
+  document.getElementById('actLonEnd').value = '';
+  document.getElementById('endGpsSection').style.display = currentActivityType === 'fishing' ? 'block' : 'none';
+  // Back button goes to right place
+  document.getElementById('backFromEndBtn').onclick = currentActivityType === 'fishing'
+    ? () => goTo('screen-fishing')
+    : () => goTo('screen-main');
+  goTo('screen-end-activity');
+}
+
+async function confirmEndActivity() {
+  const { error } = await sb.from('activity_log').update({
+    time_end:         new Date().toISOString(),
+    fuel_end_litres:  parseFloat(document.getElementById('endFuel').value)    || null,
+    lat_end: parseFloat(document.getElementById('actLatEnd').value) || null,
+    lon_end: parseFloat(document.getElementById('actLonEnd').value) || null,
+  }).eq('id', currentActivityId);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  showToast('Activity ended ✓', 'success');
+  currentActivityId   = null;
+  currentActivityType = null;
+  await loadActivities();
+  goTo('screen-main');
+}
+
+// ── GPS ──────────────────────────────────────────────────
+function getGPS(which) {
+  if (!navigator.geolocation) { showToast('GPS not available', 'error'); return; }
+  const btn = event.target.closest('.gps-btn');
+  btn.innerHTML = '<span class="spinner"></span> Getting position...';
+  navigator.geolocation.getCurrentPosition(pos => {
+    const lat = pos.coords.latitude.toFixed(6);
+    const lon = pos.coords.longitude.toFixed(6);
+    const map = {
+      actStart: ['actLatStart','actLonStart','gpsActStartDisplay'],
+      actEnd:   ['actLatEnd',  'actLonEnd',  'gpsActEndDisplay'],
+      towStart: ['towLatStart','towLonStart','gpsTowStartDisplay'],
+      towEnd:   ['towLatEnd',  'towLonEnd',  'gpsTowEndDisplay'],
+    };
+    const [latId, lonId, dispId] = map[which];
+    document.getElementById(latId).value = lat;
+    document.getElementById(lonId).value = lon;
+    document.getElementById(dispId).textContent = `${lat}, ${lon}`;
+    btn.innerHTML = `✓ ${lat}, ${lon}`;
+  }, err => {
+    btn.innerHTML = '📍 Capture GPS';
+    showToast('GPS error: ' + err.message, 'error');
+  }, { enableHighAccuracy: true, timeout: 15000 });
+}
+
+// ── Nav ──────────────────────────────────────────────────
+function goTo(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// Override trip "Continue" button to also load activities
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelector('#tripSummaryCard .btn-primary').addEventListener('click', enterMainScreen);
+});
+
+// ── Toast ────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+init();
+</script>
+</body>
+</html>
