@@ -9,39 +9,15 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
-    --ocean: #0a1628;
-    --deep: #061020;
-    --surface: #0f2040;
-    --panel: #132848;
-    --border: #1e3a5f;
-    --accent: #00c8ff;
-    --accent2: #00ff9d;
-    --warn: #ff6b35;
-    --text: #e8f4f8;
-    --muted: #6b8fa8;
-    --radius: 12px;
-    --font-head: 'Syne', sans-serif;
-    --font-mono: 'Space Mono', monospace;
+    --ocean: #0a1628; --deep: #061020; --surface: #0f2040; --panel: #132848;
+    --border: #1e3a5f; --accent: #00c8ff; --accent2: #00ff9d; --warn: #ff6b35;
+    --text: #e8f4f8; --muted: #6b8fa8; --radius: 12px;
+    --font-head: 'Syne', sans-serif; --font-mono: 'Space Mono', monospace;
   }
-
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--deep); color: var(--text); font-family: var(--font-mono); font-size: 14px; min-height: 100dvh; padding-bottom: 60px; }
 
-  body {
-    background: var(--deep);
-    color: var(--text);
-    font-family: var(--font-mono);
-    font-size: 14px;
-    min-height: 100dvh;
-    padding-bottom: 60px;
-  }
-
-  .header {
-    background: var(--ocean);
-    border-bottom: 2px solid var(--accent);
-    padding: 14px 20px;
-    position: sticky; top: 0; z-index: 100;
-    display: flex; align-items: center; justify-content: space-between;
-  }
+  .header { background: var(--ocean); border-bottom: 2px solid var(--accent); padding: 14px 20px; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; }
   .header-title { font-family: var(--font-head); font-weight: 800; font-size: 18px; color: var(--accent); letter-spacing: -0.5px; }
   .header-trip { font-size: 11px; color: var(--muted); margin-top: 2px; letter-spacing: 0.5px; }
   .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); transition: all 0.3s; }
@@ -51,11 +27,7 @@
   .screen { display: none; padding: 20px; }
   .screen.active { display: block; }
 
-  .section-label {
-    font-family: var(--font-head); font-weight: 600; font-size: 11px;
-    letter-spacing: 2px; text-transform: uppercase; color: var(--accent);
-    margin-bottom: 14px; margin-top: 24px;
-  }
+  .section-label { font-family: var(--font-head); font-weight: 600; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; margin-top: 24px; }
   .section-label:first-child { margin-top: 0; }
 
   .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
@@ -77,47 +49,32 @@
   }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-  /* Activity picker */
   .activity-picker { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-  .act-btn {
-    padding: 20px 8px; border-radius: var(--radius); border: 2px solid var(--border);
-    background: var(--surface); color: var(--muted); font-family: var(--font-head);
-    font-weight: 800; font-size: 13px; text-align: center; cursor: pointer;
-    transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 8px;
-  }
+  .act-btn { padding: 20px 8px; border-radius: var(--radius); border: 2px solid var(--border); background: var(--surface); color: var(--muted); font-family: var(--font-head); font-weight: 800; font-size: 13px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .act-btn .act-icon { font-size: 28px; }
   .act-btn.sel-fishing  { border-color: var(--accent2); color: var(--accent2); background: rgba(0,255,157,0.07); }
   .act-btn.sel-steaming { border-color: var(--accent);  color: var(--accent);  background: rgba(0,200,255,0.07); }
   .act-btn.sel-wow      { border-color: var(--warn);    color: var(--warn);    background: rgba(255,107,53,0.07); }
 
-  /* GPS */
-  .gps-btn {
-    width: 100%; padding: 13px; background: rgba(0,200,255,0.07);
-    border: 1.5px dashed var(--accent); border-radius: 8px; color: var(--accent);
-    font-family: var(--font-mono); font-size: 13px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s;
-  }
+  .gps-btn { width: 100%; padding: 13px; background: rgba(0,200,255,0.07); border: 1.5px dashed var(--accent); border-radius: 8px; color: var(--accent); font-family: var(--font-mono); font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
   .gps-btn:active { background: rgba(0,200,255,0.15); }
   .gps-coords { margin-top: 7px; font-size: 12px; color: var(--accent2); text-align: center; min-height: 18px; }
 
-  /* Slider */
   .slider-wrap { position: relative; padding-top: 28px; }
   .slider-val { position: absolute; right: 0; top: 0; font-size: 22px; font-family: var(--font-head); font-weight: 800; color: var(--accent); }
   input[type=range] { width: 100%; height: 6px; -webkit-appearance: none; appearance: none; background: var(--border); border-radius: 3px; outline: none; }
   input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px rgba(0,200,255,0.4); cursor: pointer; }
 
-  /* Buttons */
   .btn { width: 100%; padding: 17px; border-radius: var(--radius); border: none; font-family: var(--font-head); font-weight: 800; font-size: 16px; cursor: pointer; transition: all 0.15s; margin-top: 8px; display: block; }
   .btn:active { transform: scale(0.98); }
   .btn:disabled { opacity: 0.4; pointer-events: none; }
-  .btn-primary  { background: var(--accent);  color: var(--deep); }
-  .btn-secondary{ background: transparent; border: 1.5px solid var(--border); color: var(--text); }
-  .btn-success  { background: var(--accent2); color: var(--deep); }
-  .btn-warn     { background: var(--warn);    color: white; }
-  .btn-add      { background: rgba(0,200,255,0.07); border: 1.5px dashed var(--border); color: var(--accent); font-size: 14px; padding: 13px; }
-  .btn-sm       { padding: 10px 16px; font-size: 13px; width: auto; display: inline-block; margin-top: 0; }
+  .btn-primary   { background: var(--accent);  color: var(--deep); }
+  .btn-secondary { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+  .btn-success   { background: var(--accent2); color: var(--deep); }
+  .btn-warn      { background: var(--warn);    color: white; }
+  .btn-add       { background: rgba(0,200,255,0.07); border: 1.5px dashed var(--border); color: var(--accent); font-size: 14px; padding: 13px; }
+  .btn-sm        { padding: 10px 16px; font-size: 13px; width: auto; display: inline-block; margin-top: 0; }
 
-  /* Toggle */
   .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
   .toggle-label { font-size: 12px; color: var(--muted); }
   .toggle { position: relative; width: 48px; height: 26px; }
@@ -127,7 +84,6 @@
   .toggle input:checked + .toggle-slider { background: rgba(0,255,157,0.2); border: 1px solid var(--accent2); }
   .toggle input:checked + .toggle-slider:before { transform: translateX(22px); background: var(--accent2); }
 
-  /* Activity list items */
   .activity-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
   .act-type { font-family: var(--font-head); font-weight: 800; font-size: 15px; text-transform: uppercase; }
   .act-type.fishing  { color: var(--accent2); }
@@ -137,7 +93,6 @@
   .act-badge { font-size: 11px; padding: 4px 10px; border-radius: 20px; background: rgba(0,255,157,0.1); color: var(--accent2); border: 1px solid rgba(0,255,157,0.3); white-space: nowrap; }
   .act-badge.open { background: rgba(255,107,53,0.1); color: var(--warn); border-color: rgba(255,107,53,0.3); }
 
-  /* Active banner */
   .active-banner { background: rgba(0,255,157,0.06); border: 1px solid rgba(0,255,157,0.25); border-radius: 10px; padding: 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
   .ab-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
   .ab-val { font-family: var(--font-head); font-weight: 800; font-size: 16px; margin-top: 2px; }
@@ -145,19 +100,16 @@
   .ab-val.steaming { color: var(--accent);  }
   .ab-val.wow      { color: var(--warn);    }
 
-  /* Tow items */
   .tow-item { background: var(--ocean); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
   .tow-num  { font-family: var(--font-head); font-weight: 800; font-size: 20px; color: var(--accent); }
   .tow-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-  /* Bycatch */
   .bycatch-item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; position: relative; }
   .remove-btn { position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--warn); font-size: 20px; cursor: pointer; padding: 4px; line-height: 1; }
   .size-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
   .size-cell label { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 5px; text-align: center; }
   .size-cell input { text-align: center; padding: 10px 6px; font-size: 16px; }
 
-  /* Summary rows */
   .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
   .summary-row:last-child { border-bottom: none; }
   .summary-key { color: var(--muted); }
@@ -165,9 +117,15 @@
 
   .info-box { background: rgba(0,200,255,0.05); border: 1px solid rgba(0,200,255,0.2); border-radius: 8px; padding: 12px 14px; font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
 
+  /* Metric card for trip closure summary */
+  .metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 10px; }
+  .metric-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .metric-val { font-family: var(--font-head); font-weight: 800; font-size: 26px; color: var(--accent2); line-height: 1; }
+  .metric-unit { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+
   .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
 
-  /* Toast */
   .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px 20px; font-size: 13px; z-index: 999; transition: transform 0.3s; white-space: nowrap; max-width: 90vw; text-align: center; }
   .toast.show { transform: translateX(-50%) translateY(0); }
   .toast.success { border-color: var(--accent2); color: var(--accent2); }
@@ -190,20 +148,17 @@
 <!-- ══════════ TRIP SELECT ══════════ -->
 <div class="screen active" id="screen-trip">
   <div class="section-label">Select Trip</div>
-  <div class="info-box">Select your current voyage or create a new one. A trip covers your full time at sea at one site.</div>
-
+  <div class="info-box">Select your current voyage or create a new one.</div>
   <div class="field">
     <label>Trip</label>
     <select id="tripSelect" onchange="onTripSelect()">
       <option value="">— Loading... —</option>
     </select>
   </div>
-
   <div id="tripSummaryCard" style="display:none;" class="card">
     <div id="tripSummaryContent"></div>
-    <button class="btn btn-primary" onclick="goTo('screen-main')" style="margin-top:14px;">Continue This Trip →</button>
+    <button class="btn btn-primary" id="continueBtn" style="margin-top:14px;">Continue This Trip →</button>
   </div>
-
   <div id="newTripForm" style="display:none;" class="card">
     <div class="section-label" style="margin-top:0;">New Trip</div>
     <div class="field"><label>Trip Code</label><input type="text" id="newTripCode" placeholder="e.g. AVA-2025-001"></div>
@@ -219,14 +174,12 @@
     <button class="btn btn-primary" onclick="createTrip()">Create Trip</button>
     <button class="btn btn-secondary" onclick="hideNewTripForm()">Cancel</button>
   </div>
-
   <button class="btn btn-secondary" onclick="showNewTripForm()" id="newTripBtn" style="margin-top:4px;">+ New Trip</button>
 </div>
 
-<!-- ══════════ MAIN (activity hub) ══════════ -->
+<!-- ══════════ MAIN HUB ══════════ -->
 <div class="screen" id="screen-main">
   <div id="activeActivityBanner"></div>
-
   <div class="section-label">Log New Activity</div>
   <div class="activity-picker">
     <div class="act-btn" id="btn-fishing"  onclick="selectActivityType('fishing')"><span class="act-icon">🦪</span>Fishing</div>
@@ -234,24 +187,21 @@
     <div class="act-btn" id="btn-wow"      onclick="selectActivityType('wow')"><span class="act-icon">🌊</span>WOW</div>
   </div>
   <button class="btn btn-primary" id="startActivityBtn" disabled onclick="goToStartActivity()">Start Activity →</button>
-
   <hr class="divider">
-
   <div class="section-label">This Trip's Activities</div>
   <div id="activityList"><div style="color:var(--muted);font-size:13px;">No activities logged yet.</div></div>
-
-  <button class="btn btn-secondary" onclick="goTo('screen-trip')" style="margin-top:20px;">← Change Trip</button>
+  <hr class="divider">
+  <button class="btn btn-warn" onclick="goTo('screen-close-trip')" style="margin-top:4px;">🏁 Close Trip & Enter Catch Weight</button>
+  <button class="btn btn-secondary" onclick="goTo('screen-trip')" style="margin-top:8px;">← Change Trip</button>
 </div>
 
 <!-- ══════════ START ACTIVITY ══════════ -->
 <div class="screen" id="screen-start-activity">
-  <div class="section-label">Start <span id="startActTypeLabel" style="text-transform:capitalize;color:inherit;"></span></div>
-
+  <div class="section-label">Start <span id="startActTypeLabel"></span></div>
   <div class="card">
     <div class="section-label" style="margin-top:0;">Fuel</div>
     <div class="field"><label>Fuel at Start (litres)</label><input type="number" id="actFuelStart" placeholder="0" inputmode="decimal" step="0.1"></div>
   </div>
-
   <div class="card">
     <div class="section-label" style="margin-top:0;">Sea Conditions</div>
     <div class="grid-2">
@@ -263,12 +213,9 @@
         <label>Sea State</label>
         <select id="actSeaState">
           <option value="">— Select —</option>
-          <option value="calm">Calm</option>
-          <option value="slight">Slight</option>
-          <option value="moderate">Moderate</option>
-          <option value="rough">Rough</option>
-          <option value="very_rough">Very Rough</option>
-          <option value="high">High</option>
+          <option value="calm">Calm</option><option value="slight">Slight</option>
+          <option value="moderate">Moderate</option><option value="rough">Rough</option>
+          <option value="very_rough">Very Rough</option><option value="high">High</option>
         </select>
       </div>
       <div class="field">
@@ -284,23 +231,18 @@
       <label>Visibility</label>
       <select id="actVisibility">
         <option value="">— Select —</option>
-        <option value="good">Good</option>
-        <option value="moderate">Moderate</option>
-        <option value="poor">Poor</option>
-        <option value="fog">Fog</option>
+        <option value="good">Good</option><option value="moderate">Moderate</option>
+        <option value="poor">Poor</option><option value="fog">Fog</option>
       </select>
     </div>
   </div>
-
   <div id="actGpsSection" style="display:none;" class="card">
     <div class="section-label" style="margin-top:0;">Start Position</div>
     <button class="gps-btn" onclick="getGPS('actStart')">📍 Capture Start GPS</button>
     <div class="gps-coords" id="gpsActStartDisplay"></div>
     <input type="hidden" id="actLatStart"><input type="hidden" id="actLonStart">
   </div>
-
   <div class="field" style="margin-top:4px;"><label>Notes (optional)</label><textarea id="actNotes" placeholder="Any observations..."></textarea></div>
-
   <button class="btn btn-primary" onclick="saveStartActivity()">Begin Activity ▶</button>
   <button class="btn btn-secondary" onclick="goTo('screen-main')">Cancel</button>
 </div>
@@ -311,13 +253,11 @@
     <div><div class="ab-label">Active Activity</div><div class="ab-val fishing">🦪 FISHING</div></div>
     <button class="btn btn-warn btn-sm" onclick="endActivityPrompt()">End Activity</button>
   </div>
-
   <div id="towListSection">
     <div class="section-label">Tows This Activity</div>
     <div id="towList"><div style="color:var(--muted);font-size:13px;">No tows yet.</div></div>
     <button class="btn btn-primary" onclick="showTowForm()" style="margin-top:12px;">+ Log New Tow</button>
   </div>
-
   <div id="towFormSection" style="display:none;">
     <div class="section-label">Tow <span id="towNumLabel">–</span></div>
     <div class="card">
@@ -360,7 +300,7 @@
 <!-- ══════════ BYCATCH ══════════ -->
 <div class="screen" id="screen-bycatch">
   <div class="section-label">Bycatch — Tow <span id="bycatchTowLabel">–</span></div>
-  <div class="info-box">Record counts per size class (S/M/L). Leave empty if none caught.</div>
+  <div class="info-box">Record counts per size class (S/M/L). Leave empty if none.</div>
   <div id="bycatchList"></div>
   <button class="btn btn-add" onclick="addBycatchItem()">+ Add Species</button>
   <button class="btn btn-success" onclick="saveBycatch()" style="margin-top:16px;">Save & Done ✓</button>
@@ -383,6 +323,34 @@
   <button class="btn btn-secondary" id="backFromEndBtn" onclick="goTo('screen-fishing')">← Back</button>
 </div>
 
+<!-- ══════════ CLOSE TRIP ══════════ -->
+<div class="screen" id="screen-close-trip">
+  <div class="section-label">Close Trip</div>
+  <div class="info-box">
+    Enter the <strong style="color:var(--accent);">total processed meat weight</strong> from the factory for this voyage. This unlocks CPUE and emissions calculations.
+  </div>
+
+  <div class="card">
+    <div class="field"><label>Return Date</label><input type="date" id="closeReturnDate"></div>
+    <div class="field">
+      <label>Processed Meat Weight (kg)</label>
+      <input type="number" id="closeMeatKg" placeholder="e.g. 12500" inputmode="decimal" step="0.1">
+    </div>
+    <div class="field"><label>Trip Notes (optional)</label><textarea id="closeTripNotes" placeholder="Any observations for the record..."></textarea></div>
+  </div>
+
+  <button class="btn btn-success" onclick="closeTrip()">Calculate & Close Trip ✓</button>
+  <button class="btn btn-secondary" onclick="goTo('screen-main')" style="margin-top:8px;">← Back</button>
+
+  <!-- Results appear here after calculation -->
+  <div id="closureResults" style="display:none;">
+    <hr class="divider">
+    <div class="section-label">Trip Metrics</div>
+    <div class="metrics-grid" id="metricsGrid"></div>
+    <div class="info-box" id="metricsNote" style="margin-top:8px;"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -390,14 +358,14 @@ const SUPABASE_URL = 'https://hpfxkamqbsbaohrwbppa.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwZnhrYW1xYnNiYW9ocndicHBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NjQyOTEsImV4cCI6MjA4ODA0MDI5MX0.coiX7bWx0CiiUmuU_pRMK8pSqe38-luT30lgatJBTz8';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let currentTrip = null;
-let currentActivityType = null;
-let currentActivityId = null;
-let currentTowId = null;
-let currentTowNum = 0;
-let towsThisActivity = [];
-let activitiesThisTrip = [];
-let bycatchItems = [];
+// Constants
+const HARVESTER_WIDTH_M  = 12;
+const BASKET_VOLUME_M3   = 28;
+const HFO_EMISSION_FACTOR = 3.114; // kg CO₂ per litre
+
+let currentTrip = null, currentActivityType = null, currentActivityId = null;
+let currentTowId = null, currentTowNum = 0;
+let towsThisActivity = [], activitiesThisTrip = [], bycatchItems = [];
 
 async function init() {
   try {
@@ -408,9 +376,7 @@ async function init() {
   await loadSites();
 }
 
-function setStatus(s) {
-  document.getElementById('statusDot').className = 'status-dot ' + s;
-}
+function setStatus(s) { document.getElementById('statusDot').className = 'status-dot ' + s; }
 
 // ── Trips ────────────────────────────────────────────────
 async function loadTrips() {
@@ -420,7 +386,7 @@ async function loadTrips() {
   (data || []).forEach(t => {
     const o = document.createElement('option');
     o.value = t.id;
-    o.textContent = `${t.trip_code} · ${t.trip_date}`;
+    o.textContent = `${t.trip_code} · ${t.trip_date}${t.trip_closed ? ' ✓' : ''}`;
     sel.appendChild(o);
   });
   sel.innerHTML += '<option value="NEW">+ New trip</option>';
@@ -451,13 +417,18 @@ async function loadTripSummary(id) {
   const { data } = await sb.from('trip_registry').select('*, site_registry(site_name,site_code)').eq('id', id).single();
   if (!data) return;
   currentTrip = data;
+  const closed = data.trip_closed
+    ? `<div class="summary-row"><span class="summary-key">Status</span><span class="summary-val" style="color:var(--accent2);">✓ Closed</span></div>`
+    : `<div class="summary-row"><span class="summary-key">Status</span><span class="summary-val" style="color:var(--warn);">● Open</span></div>`;
   document.getElementById('tripSummaryContent').innerHTML = `
     <div class="summary-row"><span class="summary-key">Trip</span><span class="summary-val">${data.trip_code}</span></div>
     <div class="summary-row"><span class="summary-key">Site</span><span class="summary-val">${data.site_registry?.site_name || '—'}</span></div>
     <div class="summary-row"><span class="summary-key">Captain</span><span class="summary-val">${data.captain_name || '—'}</span></div>
     <div class="summary-row"><span class="summary-key">Departure</span><span class="summary-val">${data.trip_date}</span></div>
+    ${closed}
   `;
   document.getElementById('tripSummaryCard').style.display = 'block';
+  document.getElementById('continueBtn').onclick = enterMainScreen;
 }
 
 function showNewTripForm() {
@@ -473,15 +444,16 @@ function hideNewTripForm() {
 }
 
 async function createTrip() {
-  const code    = document.getElementById('newTripCode').value.trim();
-  const captain = document.getElementById('newCaptain').value.trim();
-  const date    = document.getElementById('newTripDate').value;
-  const site    = document.getElementById('siteSelect').value;
-  const port    = document.getElementById('newPort').value.trim();
+  const code = document.getElementById('newTripCode').value.trim();
+  const date = document.getElementById('newTripDate').value;
   if (!code || !date) { showToast('Trip code and date required', 'error'); return; }
   const { data, error } = await sb.from('trip_registry').insert({
-    trip_code: code, captain_name: captain, trip_date: date,
-    site_id: site || null, departure_port: port, vessel_name: 'Ava Ray'
+    trip_code: code,
+    captain_name: document.getElementById('newCaptain').value.trim(),
+    trip_date: date,
+    site_id: document.getElementById('siteSelect').value || null,
+    departure_port: document.getElementById('newPort').value.trim(),
+    vessel_name: 'Ava Ray'
   }).select().single();
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
   showToast('Trip created!', 'success');
@@ -499,20 +471,16 @@ async function enterMainScreen() {
 }
 
 async function loadActivities() {
-  const { data } = await sb.from('activity_log').select('*')
-    .eq('trip_id', currentTrip.id).order('created_at', { ascending: false });
+  const { data } = await sb.from('activity_log').select('*').eq('trip_id', currentTrip.id).order('created_at', { ascending: false });
   activitiesThisTrip = data || [];
   renderActivityList();
-  document.getElementById('headerTrip').textContent =
-    `${currentTrip.trip_code} · ${currentTrip.site_registry?.site_name || ''}`;
-
+  document.getElementById('headerTrip').textContent = `${currentTrip.trip_code} · ${currentTrip.site_registry?.site_name || ''}`;
   const open = activitiesThisTrip.find(a => !a.time_end);
   if (open) {
     currentActivityId = open.id;
     currentActivityType = open.activity_type;
-    const icon  = open.activity_type === 'fishing' ? '🦪' : open.activity_type === 'steaming' ? '⚓' : '🌊';
-    const start = open.time_start
-      ? new Date(open.time_start).toLocaleTimeString('no-NO', { hour:'2-digit', minute:'2-digit' }) : '—';
+    const icon = open.activity_type === 'fishing' ? '🦪' : open.activity_type === 'steaming' ? '⚓' : '🌊';
+    const start = open.time_start ? new Date(open.time_start).toLocaleTimeString('no-NO', { hour:'2-digit', minute:'2-digit' }) : '—';
     const resumeBtn = open.activity_type === 'fishing'
       ? `<button class="btn btn-primary btn-sm" onclick="resumeFishing()">Open →</button>`
       : `<button class="btn btn-warn btn-sm" onclick="endActivityPrompt()">End →</button>`;
@@ -524,34 +492,20 @@ async function loadActivities() {
       </div>`;
   } else {
     document.getElementById('activeActivityBanner').innerHTML = '';
-    currentActivityId = null;
-    currentActivityType = null;
+    currentActivityId = null; currentActivityType = null;
   }
 }
 
 function renderActivityList() {
   const el = document.getElementById('activityList');
-  if (!activitiesThisTrip.length) {
-    el.innerHTML = '<div style="color:var(--muted);font-size:13px;">No activities logged yet.</div>';
-    return;
-  }
+  if (!activitiesThisTrip.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px;">No activities logged yet.</div>'; return; }
   el.innerHTML = activitiesThisTrip.map(a => {
     const icon  = a.activity_type === 'fishing' ? '🦪' : a.activity_type === 'steaming' ? '⚓' : '🌊';
-    const start = a.time_start
-      ? new Date(a.time_start).toLocaleString('no-NO', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })
-      : '—';
+    const start = a.time_start ? new Date(a.time_start).toLocaleString('no-NO', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
     const fuelUsed = (a.fuel_start_litres != null && a.fuel_end_litres != null)
       ? ` · ${(a.fuel_end_litres - a.fuel_start_litres).toFixed(0)}L` : '';
-    const badge = a.time_end
-      ? `<div class="act-badge">Done ✓</div>`
-      : `<div class="act-badge open">● Open</div>`;
-    return `<div class="activity-item">
-      <div>
-        <div class="act-type ${a.activity_type}">${icon} ${a.activity_type.toUpperCase()}</div>
-        <div class="act-meta">${start}${fuelUsed}</div>
-      </div>
-      ${badge}
-    </div>`;
+    const badge = a.time_end ? `<div class="act-badge">Done ✓</div>` : `<div class="act-badge open">● Open</div>`;
+    return `<div class="activity-item"><div><div class="act-type ${a.activity_type}">${icon} ${a.activity_type.toUpperCase()}</div><div class="act-meta">${start}${fuelUsed}</div></div>${badge}</div>`;
   }).join('');
 }
 
@@ -568,30 +522,26 @@ function goToStartActivity() {
   if (!currentActivityType) return;
   const label = document.getElementById('startActTypeLabel');
   label.textContent = currentActivityType;
-  label.style.color = currentActivityType === 'fishing' ? 'var(--accent2)'
-    : currentActivityType === 'steaming' ? 'var(--accent)' : 'var(--warn)';
+  label.style.color = currentActivityType === 'fishing' ? 'var(--accent2)' : currentActivityType === 'steaming' ? 'var(--accent)' : 'var(--warn)';
   document.getElementById('actGpsSection').style.display = currentActivityType === 'fishing' ? 'block' : 'none';
   ['actFuelStart','actWaveHeight','actWindSpeed','actNotes'].forEach(id => document.getElementById(id).value = '');
   ['actSeaState','actWindDir','actVisibility'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('gpsActStartDisplay').textContent = '';
-  document.getElementById('actLatStart').value = '';
-  document.getElementById('actLonStart').value = '';
+  document.getElementById('actLatStart').value = ''; document.getElementById('actLonStart').value = '';
   goTo('screen-start-activity');
 }
 
 async function saveStartActivity() {
   if (!currentTrip) return;
   const payload = {
-    trip_id: currentTrip.id,
-    activity_type: currentActivityType,
-    time_start: new Date().toISOString(),
-    fuel_start_litres: parseFloat(document.getElementById('actFuelStart').value)    || null,
-    wave_height_m:     parseFloat(document.getElementById('actWaveHeight').value)   || null,
-    wind_speed_knots:  parseFloat(document.getElementById('actWindSpeed').value)    || null,
-    sea_state:         document.getElementById('actSeaState').value                 || null,
-    wind_direction:    document.getElementById('actWindDir').value                  || null,
-    visibility:        document.getElementById('actVisibility').value               || null,
-    notes:             document.getElementById('actNotes').value                    || null,
+    trip_id: currentTrip.id, activity_type: currentActivityType, time_start: new Date().toISOString(),
+    fuel_start_litres: parseFloat(document.getElementById('actFuelStart').value) || null,
+    wave_height_m:     parseFloat(document.getElementById('actWaveHeight').value) || null,
+    wind_speed_knots:  parseFloat(document.getElementById('actWindSpeed').value) || null,
+    sea_state:     document.getElementById('actSeaState').value || null,
+    wind_direction:document.getElementById('actWindDir').value  || null,
+    visibility:    document.getElementById('actVisibility').value || null,
+    notes:         document.getElementById('actNotes').value || null,
     lat_start: parseFloat(document.getElementById('actLatStart').value) || null,
     lon_start: parseFloat(document.getElementById('actLonStart').value) || null,
   };
@@ -599,14 +549,8 @@ async function saveStartActivity() {
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
   currentActivityId = data.id;
   showToast(`${currentActivityType.toUpperCase()} started!`, 'success');
-  if (currentActivityType === 'fishing') {
-    towsThisActivity = [];
-    renderTowList();
-    goTo('screen-fishing');
-  } else {
-    await loadActivities();
-    goTo('screen-main');
-  }
+  if (currentActivityType === 'fishing') { towsThisActivity = []; renderTowList(); goTo('screen-fishing'); }
+  else { await loadActivities(); goTo('screen-main'); }
 }
 
 // ── Fishing / Tows ───────────────────────────────────────
@@ -623,26 +567,16 @@ async function loadTowsForActivity(actId) {
 
 function renderTowList() {
   const el = document.getElementById('towList');
-  if (!towsThisActivity.length) {
-    el.innerHTML = '<div style="color:var(--muted);font-size:13px;">No tows yet.</div>';
-    return;
-  }
+  if (!towsThisActivity.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px;">No tows yet.</div>'; return; }
   el.innerHTML = towsThisActivity.map(t => {
     const ts = t.time_start ? new Date(t.time_start).toLocaleTimeString('no-NO', { hour:'2-digit', minute:'2-digit' }) : '—';
-    const te = t.time_end   ? new Date(t.time_end).toLocaleTimeString('no-NO',   { hour:'2-digit', minute:'2-digit' }) : '—';
-    return `<div class="tow-item">
-      <div>
-        <div class="tow-num">#${t.tow_number}</div>
-        <div class="tow-meta">${ts} → ${te} · Fill: ${t.harvester_fill_pct ?? '—'}%</div>
-      </div>
-      <div class="act-badge">✓</div>
-    </div>`;
+    const te = t.time_end   ? new Date(t.time_end).toLocaleTimeString(  'no-NO', { hour:'2-digit', minute:'2-digit' }) : '—';
+    return `<div class="tow-item"><div><div class="tow-num">#${t.tow_number}</div><div class="tow-meta">${ts} → ${te} · Fill: ${t.harvester_fill_pct ?? '—'}%</div></div><div class="act-badge">✓</div></div>`;
   }).join('');
 }
 
 function showTowForm() {
-  currentTowNum = towsThisActivity.length > 0
-    ? Math.max(...towsThisActivity.map(t => t.tow_number)) + 1 : 1;
+  currentTowNum = towsThisActivity.length > 0 ? Math.max(...towsThisActivity.map(t => t.tow_number)) + 1 : 1;
   document.getElementById('towNumLabel').textContent = currentTowNum;
   ['towLatStart','towLonStart','towLatEnd','towLonEnd','towDepth','towNotes'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('gpsTowStartDisplay').textContent = '';
@@ -664,18 +598,16 @@ function cancelTowForm() {
 async function saveTow() {
   if (!currentActivityId) return;
   const payload = {
-    activity_id: currentActivityId,
-    trip_id: currentTrip.id,
-    tow_number: currentTowNum,
-    time_start:        document.getElementById('towTimeStart').value || null,
-    time_end:          document.getElementById('towTimeEnd').value   || null,
+    activity_id: currentActivityId, trip_id: currentTrip.id, tow_number: currentTowNum,
+    time_start: document.getElementById('towTimeStart').value || null,
+    time_end:   document.getElementById('towTimeEnd').value   || null,
     lat_start: parseFloat(document.getElementById('towLatStart').value) || null,
     lon_start: parseFloat(document.getElementById('towLonStart').value) || null,
     lat_end:   parseFloat(document.getElementById('towLatEnd').value)   || null,
     lon_end:   parseFloat(document.getElementById('towLonEnd').value)   || null,
     harvester_fill_pct: parseInt(document.getElementById('harvesterFill').value),
-    depth_m:   parseFloat(document.getElementById('towDepth').value) || null,
-    notes:     document.getElementById('towNotes').value             || null,
+    depth_m: parseFloat(document.getElementById('towDepth').value) || null,
+    notes:   document.getElementById('towNotes').value || null,
   };
   const { data, error } = await sb.from('tow_log').insert(payload).select().single();
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
@@ -693,28 +625,21 @@ function addBycatchItem() {
   const id = Date.now();
   bycatchItems.push(id);
   const div = document.createElement('div');
-  div.className = 'bycatch-item';
-  div.id = 'by-' + id;
+  div.className = 'bycatch-item'; div.id = 'by-' + id;
   div.innerHTML = `
     <button class="remove-btn" onclick="removeBycatch(${id})">×</button>
     <div class="grid-2">
       <div class="field"><label>Common Name</label><input type="text" id="byCommon-${id}" placeholder="e.g. Cod"></div>
-      <div class="field">
-        <label>Category</label>
+      <div class="field"><label>Category</label>
         <select id="byCategory-${id}">
-          <option value="fish">Fish</option>
-          <option value="invertebrate">Invertebrate</option>
-          <option value="crustacean">Crustacean</option>
-          <option value="marine_mammal">Marine Mammal</option>
-          <option value="seabird">Seabird</option>
-          <option value="debris">Debris</option>
-          <option value="other">Other</option>
+          <option value="fish">Fish</option><option value="invertebrate">Invertebrate</option>
+          <option value="crustacean">Crustacean</option><option value="marine_mammal">Marine Mammal</option>
+          <option value="seabird">Seabird</option><option value="debris">Debris</option><option value="other">Other</option>
         </select>
       </div>
     </div>
     <div class="field"><label>Scientific Name (optional)</label><input type="text" id="bySci-${id}" placeholder="Genus species"></div>
-    <div class="field">
-      <label>Count by Size</label>
+    <div class="field"><label>Count by Size</label>
       <div class="size-grid">
         <div class="size-cell"><label>Small</label><input type="number" id="byS-${id}" placeholder="0" inputmode="numeric" min="0"></div>
         <div class="size-cell"><label>Medium</label><input type="number" id="byM-${id}" placeholder="0" inputmode="numeric" min="0"></div>
@@ -724,8 +649,7 @@ function addBycatchItem() {
     <div class="toggle-row">
       <span class="toggle-label">Returned to sea?</span>
       <label class="toggle"><input type="checkbox" id="byReturn-${id}" checked><span class="toggle-slider"></span></label>
-    </div>
-  `;
+    </div>`;
   document.getElementById('bycatchList').appendChild(div);
 }
 
@@ -736,17 +660,15 @@ function removeBycatch(id) {
 
 async function saveBycatch() {
   const rows = bycatchItems.map(id => ({
-    tow_id:            currentTowId,
-    trip_id:           currentTrip.id,
-    species_common:    document.getElementById('byCommon-'+id)?.value   || null,
-    species_scientific:document.getElementById('bySci-'+id)?.value      || null,
-    category:          document.getElementById('byCategory-'+id)?.value || null,
-    count_small:       parseInt(document.getElementById('byS-'+id)?.value)  || 0,
-    count_medium:      parseInt(document.getElementById('byM-'+id)?.value)  || 0,
-    count_large:       parseInt(document.getElementById('byL-'+id)?.value)  || 0,
-    returned_to_sea:   document.getElementById('byReturn-'+id)?.checked ?? true,
+    tow_id: currentTowId, trip_id: currentTrip.id,
+    species_common:     document.getElementById('byCommon-'+id)?.value   || null,
+    species_scientific: document.getElementById('bySci-'+id)?.value      || null,
+    category:           document.getElementById('byCategory-'+id)?.value || null,
+    count_small:  parseInt(document.getElementById('byS-'+id)?.value)  || 0,
+    count_medium: parseInt(document.getElementById('byM-'+id)?.value)  || 0,
+    count_large:  parseInt(document.getElementById('byL-'+id)?.value)  || 0,
+    returned_to_sea: document.getElementById('byReturn-'+id)?.checked ?? true,
   })).filter(r => r.species_common || (r.count_small + r.count_medium + r.count_large) > 0);
-
   if (rows.length > 0) {
     const { error } = await sb.from('bycatch_report').insert(rows);
     if (error) { showToast('Bycatch error: ' + error.message, 'error'); return; }
@@ -770,29 +692,114 @@ function skipBycatch() {
 function endActivityPrompt() {
   document.getElementById('endFuel').value = '';
   document.getElementById('gpsActEndDisplay').textContent = '';
-  document.getElementById('actLatEnd').value = '';
-  document.getElementById('actLonEnd').value = '';
+  document.getElementById('actLatEnd').value = ''; document.getElementById('actLonEnd').value = '';
   document.getElementById('endGpsSection').style.display = currentActivityType === 'fishing' ? 'block' : 'none';
-  // Back button goes to right place
   document.getElementById('backFromEndBtn').onclick = currentActivityType === 'fishing'
-    ? () => goTo('screen-fishing')
-    : () => goTo('screen-main');
+    ? () => goTo('screen-fishing') : () => goTo('screen-main');
   goTo('screen-end-activity');
 }
 
 async function confirmEndActivity() {
   const { error } = await sb.from('activity_log').update({
-    time_end:         new Date().toISOString(),
-    fuel_end_litres:  parseFloat(document.getElementById('endFuel').value)    || null,
+    time_end: new Date().toISOString(),
+    fuel_end_litres: parseFloat(document.getElementById('endFuel').value) || null,
     lat_end: parseFloat(document.getElementById('actLatEnd').value) || null,
     lon_end: parseFloat(document.getElementById('actLonEnd').value) || null,
   }).eq('id', currentActivityId);
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
   showToast('Activity ended ✓', 'success');
-  currentActivityId   = null;
-  currentActivityType = null;
+  currentActivityId = null; currentActivityType = null;
   await loadActivities();
   goTo('screen-main');
+}
+
+// ── Trip Closure & CPUE Calculations ─────────────────────
+function haversineM(lat1, lon1, lat2, lon2) {
+  const R = 6371000; // Earth radius in metres
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+async function closeTrip() {
+  const meatKg  = parseFloat(document.getElementById('closeMeatKg').value);
+  const retDate = document.getElementById('closeReturnDate').value;
+  const notes   = document.getElementById('closeTripNotes').value;
+
+  if (!meatKg || meatKg <= 0) { showToast('Please enter processed meat weight', 'error'); return; }
+  if (!retDate) { showToast('Please enter return date', 'error'); return; }
+
+  // Fetch all tows for this trip
+  const { data: tows } = await sb.from('tow_log').select('*').eq('trip_id', currentTrip.id);
+  // Fetch all activities for this trip
+  const { data: acts } = await sb.from('activity_log').select('*').eq('trip_id', currentTrip.id);
+
+  const towList = tows || [];
+  const actList = acts || [];
+
+  // ── Tow-level CPUE calculations ──
+  let totalAreaM2 = 0, totalCatchVolumeM3 = 0, towsWithGPS = 0;
+  towList.forEach(t => {
+    const fillVol = (t.harvester_fill_pct / 100) * BASKET_VOLUME_M3; // m³
+    totalCatchVolumeM3 += fillVol;
+    if (t.lat_start && t.lon_start && t.lat_end && t.lon_end) {
+      const trackM  = haversineM(t.lat_start, t.lon_start, t.lat_end, t.lon_end);
+      const areaM2  = trackM * HARVESTER_WIDTH_M;
+      totalAreaM2  += areaM2;
+      towsWithGPS++;
+    }
+  });
+
+  const cpueVolumePerArea = totalAreaM2 > 0
+    ? (totalCatchVolumeM3 / totalAreaM2).toFixed(6) : null; // m³/m²
+
+  // ── Fuel & emissions ──
+  let totalFuelL = 0;
+  actList.forEach(a => {
+    if (a.fuel_start_litres != null && a.fuel_end_litres != null) {
+      totalFuelL += Math.max(0, a.fuel_end_litres - a.fuel_start_litres);
+    }
+  });
+  const totalCO2kg     = totalFuelL * HFO_EMISSION_FACTOR;
+  const emissionsPerKg = meatKg > 0 ? (totalCO2kg / meatKg).toFixed(3) : null;
+
+  // ── Trip-level catch rate ──
+  const catchRatePerTow = towList.length > 0 ? (meatKg / towList.length).toFixed(1) : null;
+
+  // Save to Supabase
+  const { error } = await sb.from('trip_registry').update({
+    processed_meat_kg: meatKg,
+    return_date: retDate,
+    trip_notes: notes || null,
+    trip_closed: true,
+  }).eq('id', currentTrip.id);
+
+  if (error) { showToast('Save error: ' + error.message, 'error'); return; }
+  showToast('Trip closed & metrics calculated ✓', 'success');
+
+  // Show results
+  document.getElementById('closureResults').style.display = 'block';
+  document.getElementById('metricsGrid').innerHTML = [
+    { label: 'Total Tows', val: towList.length, unit: 'tows logged' },
+    { label: 'Processed Catch', val: meatKg.toLocaleString(), unit: 'kg meat' },
+    { label: 'Catch per Tow', val: catchRatePerTow ?? '—', unit: 'kg per tow' },
+    { label: 'Total Fuel Used', val: totalFuelL.toFixed(0), unit: 'litres HFO' },
+    { label: 'Total CO₂', val: (totalCO2kg / 1000).toFixed(2), unit: 'tonnes CO₂' },
+    { label: 'Emissions per kg', val: emissionsPerKg ?? '—', unit: 'kg CO₂ / kg catch' },
+    { label: 'Area Swept', val: totalAreaM2 > 0 ? (totalAreaM2 / 10000).toFixed(2) : '—', unit: 'hectares' },
+    { label: 'CPUE (volume/area)', val: cpueVolumePerArea ?? '—', unit: 'm³ per m²' },
+  ].map(m => `
+    <div class="metric-card">
+      <div class="metric-label">${m.label}</div>
+      <div class="metric-val">${m.val}</div>
+      <div class="metric-unit">${m.unit}</div>
+    </div>`).join('');
+
+  const gpsNote = towsWithGPS < towList.length
+    ? `⚠️ ${towList.length - towsWithGPS} tow(s) missing GPS — area swept and CPUE calculated from ${towsWithGPS} tows with full GPS data.` : '';
+  document.getElementById('metricsNote').textContent = gpsNote || '✓ All tows had GPS data. CPUE is calculated across full trip.';
 }
 
 // ── GPS ──────────────────────────────────────────────────
@@ -827,19 +834,13 @@ function goTo(screenId) {
   window.scrollTo(0, 0);
 }
 
-// Override trip "Continue" button to also load activities
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelector('#tripSummaryCard .btn-primary').addEventListener('click', enterMainScreen);
-});
-
 // ── Toast ────────────────────────────────────────────────
 let toastTimer;
 function showToast(msg, type = '') {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show ' + type;
+  t.textContent = msg; t.className = 'toast show ' + type;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
 }
 
 init();
