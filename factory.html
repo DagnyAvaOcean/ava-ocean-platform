@@ -205,7 +205,7 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
       <div class="grid-2">
         <div class="field">
           <label id="lblKgMuskel">Kg muskel</label>
-          <input type="number" id="kgMuskel" inputmode="decimal" step="0.001" placeholder="0.000">
+          <input type="number" id="kgMuskel" oninput="calculate()" onchange="calculate()" onblur="calculate()" inputmode="decimal" step="0.001" placeholder="0.000">
         </div>
         <div class="field">
           <label id="lblReststoff">Restråstoff <span class="auto-badge">auto</span></label>
@@ -229,7 +229,7 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
       <div class="section-label" style="margin-top:0;" id="lblCountBlock">Antall og størrelse</div>
       <div class="field">
         <label id="lblAntallMuskel">Antall muskel</label>
-        <input type="number" id="antallMuskel" inputmode="numeric" placeholder="0">
+        <input type="number" id="antallMuskel" oninput="calculate()" onchange="calculate()" onblur="calculate()" inputmode="numeric" placeholder="0">
       </div>
       <div class="grid-2">
         <div class="field">
@@ -253,11 +253,11 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
       <div class="grid-2">
         <div class="field">
           <label id="lblHo">Antall ho (hunn)</label>
-          <input type="number" id="antallHo" inputmode="numeric" placeholder="0">
+          <input type="number" id="antallHo" oninput="calculate()" onchange="calculate()" onblur="calculate()" inputmode="numeric" placeholder="0">
         </div>
         <div class="field">
           <label id="lblHan">Antall han</label>
-          <input type="number" id="antallHan" inputmode="numeric" placeholder="0">
+          <input type="number" id="antallHan" oninput="calculate()" onchange="calculate()" onblur="calculate()" inputmode="numeric" placeholder="0">
         </div>
       </div>
       <div class="grid-2">
@@ -270,6 +270,7 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
           <input type="text" id="pctHan" class="auto" readonly placeholder="—">
         </div>
       </div>
+      <div id="popWarning" style="display:none;margin-top:10px;background:rgba(255,140,105,0.08);border:1px solid rgba(255,140,105,0.3);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--warn);font-family:var(--font-head);line-height:1.5;"></div>
     </div>
 
     <!-- Block 4: Damage -->
@@ -278,7 +279,7 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
       <div class="grid-2">
         <div class="field">
           <label id="lblSkadet">Antall med skade</label>
-          <input type="number" id="antallSkadet" inputmode="numeric" placeholder="0">
+          <input type="number" id="antallSkadet" oninput="calculate()" onchange="calculate()" onblur="calculate()" inputmode="numeric" placeholder="0">
         </div>
         <div class="field">
           <label id="lblAndelSkadet">Andel skadet % <span class="auto-badge">auto</span></label>
@@ -507,24 +508,56 @@ function calculate() {
   const skadet = num('antallSkadet');
 
   // Block 1: Yield
-  const rest = kg > 0 ? (SAMPLE_KG - kg) : null;
-  setAuto('reststoff',   rest !== null ? rest.toFixed(3) + ' kg' : '—');
-  setAuto('andelMuskel', kg > 0 ? ((kg / SAMPLE_KG) * 100).toFixed(1) + ' %' : '—');
-  setAuto('andelRest',   rest !== null && rest >= 0 ? ((rest / SAMPLE_KG) * 100).toFixed(1) + ' %' : '—');
+  if (kg > 0) {
+    const rest = SAMPLE_KG - kg;
+    document.getElementById('reststoff').value = rest.toFixed(3) + ' kg';
+    document.getElementById('andelMuskel').value = ((kg / SAMPLE_KG) * 100).toFixed(1) + ' %';
+    document.getElementById('andelRest').value = ((rest / SAMPLE_KG) * 100).toFixed(1) + ' %';
+  } else {
+    document.getElementById('reststoff').value = '';
+    document.getElementById('andelMuskel').value = '';
+    document.getElementById('andelRest').value = '';
+  }
 
   // Block 2: Count & size
-  const perKg = kg > 0 && count > 0 ? count / kg : null;
-  setAuto('muskelPerKg',   perKg !== null ? perKg.toFixed(1) : '—');
-  setAuto('gramPerMuskel', perKg !== null ? (1000 / perKg).toFixed(1) + ' g' : '—');
-  setAuto('contPound',     perKg !== null ? (perKg / 2.2).toFixed(1) : '—');
+  if (kg > 0 && count > 0) {
+    const perKg = count / kg;
+    document.getElementById('muskelPerKg').value = perKg.toFixed(1);
+    document.getElementById('gramPerMuskel').value = (1000 / perKg).toFixed(1) + ' g';
+    document.getElementById('contPound').value = (perKg / 2.2).toFixed(1);
+  } else {
+    document.getElementById('muskelPerKg').value = '';
+    document.getElementById('gramPerMuskel').value = '';
+    document.getElementById('contPound').value = '';
+  }
 
-  // Block 3: Population split
-  const total = ho + han;
-  setAuto('pctHo',  total > 0 ? ((ho / total) * 100).toFixed(1) + ' %' : '—');
-  setAuto('pctHan', total > 0 ? ((han / total) * 100).toFixed(1) + ' %' : '—');
+  // Block 3: Population split + validation
+  const sexTotal = ho + han;
+  const warningEl = document.getElementById('popWarning');
+  if (sexTotal > 0) {
+    document.getElementById('pctHo').value = ((ho / sexTotal) * 100).toFixed(1) + ' %';
+    document.getElementById('pctHan').value = ((han / sexTotal) * 100).toFixed(1) + ' %';
+    // Show warning if ho+han doesn't match total meat count
+    if (count > 0 && sexTotal !== count) {
+      warningEl.style.display = 'block';
+      warningEl.textContent = currentLang === 'no'
+        ? '⚠️ Sjekk antall: hunn (' + ho + ') + hann (' + han + ') = ' + sexTotal + ', men totalt muskelantall er ' + count + '.'
+        : '⚠️ Check counts: female (' + ho + ') + male (' + han + ') = ' + sexTotal + ', but total meat count is ' + count + '.';
+    } else {
+      warningEl.style.display = 'none';
+    }
+  } else {
+    document.getElementById('pctHo').value = '';
+    document.getElementById('pctHan').value = '';
+    warningEl.style.display = 'none';
+  }
 
   // Block 4: Damage
-  setAuto('andelSkadet', count > 0 && skadet > 0 ? ((skadet / count) * 100).toFixed(1) + ' %' : '—');
+  if (count > 0 && skadet > 0) {
+    document.getElementById('andelSkadet').value = ((skadet / count) * 100).toFixed(1) + ' %';
+  } else {
+    document.getElementById('andelSkadet').value = '';
+  }
 }
 
 // Attach calculate to all relevant inputs
@@ -644,9 +677,6 @@ function showToast(msg, type='') {
 }
 
 init();
-document.addEventListener('DOMContentLoaded', attachListeners);
-// Also attach after a short delay in case DOM is ready before DOMContentLoaded fires
-setTimeout(attachListeners, 500);
 </script>
 </body>
 </html>
