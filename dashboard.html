@@ -147,6 +147,7 @@ tr:hover td{background:rgba(217,255,172,0.02);}
       <div class="nav-item" id="nav-tows" onclick="showSection('tows',this)"><span class="nav-icon">🦪</span> <span id="navTows">Høstlogg</span></div>
       <div class="nav-item" id="nav-bycatch" onclick="showSection('bycatch',this)"><span class="nav-icon">🐟</span> <span id="navBycatch">Bifangst</span></div>
       <div class="nav-item" id="nav-map" onclick="showSection('map',this)"><span class="nav-icon">🗺️</span> <span id="navMap">Høstkart</span></div>
+      <div class="nav-item" id="nav-factory" onclick="showSection('factory',this)"><span class="nav-icon">⚖️</span> <span id="navFactory">Fabrikk</span></div>
     </nav>
     <div class="trip-selector">
       <label id="filterLabel">Filtrer etter tur</label>
@@ -284,7 +285,7 @@ const SUPABASE_URL='https://hpfxkamqbsbaohrwbppa.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwZnhrYW1xYnNiYW9ocndicHBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NjQyOTEsImV4cCI6MjA4ODA0MDI5MX0.coiX7bWx0CiiUmuU_pRMK8pSqe38-luT30lgatJBTz8';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const HARVESTER_WIDTH_M=12,BASKET_VOLUME_M3=28,HFO_EMISSION_FACTOR=3.114;
-let allTrips=[],allActivities=[],allTows=[],allBycatch=[],charts={},map=null,currentTripFilter='all',currentLang='no';
+let allTrips=[],allActivities=[],allTows=[],allBycatch=[],allFactory=[],charts={},map=null,currentTripFilter='all',currentLang='no';
 
 OCTYPE html>
 <html lang="no">
@@ -572,12 +573,12 @@ const SUPABASE_URL='https://hpfxkamqbsbaohrwbppa.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwZnhrYW1xYnNiYW9ocndicHBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NjQyOTEsImV4cCI6MjA4ODA0MDI5MX0.coiX7bWx0CiiUmuU_pRMK8pSqe38-luT30lgatJBTz8';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const HARVESTER_WIDTH_M=12,BASKET_VOLUME_M3=28,HFO_EMISSION_FACTOR=3.114;
-let allTrips=[],allActivities=[],allTows=[],allBycatch=[],charts={},map=null,currentTripFilter='all',currentLang='no';
+let allTrips=[],allActivities=[],allTows=[],allBycatch=[],allFactory=[],charts={},map=null,currentTripFilter='all',currentLang='no';
 
 const T = {
   no: {
     overview:'Oversikt', cpue:'CPUE & Utslipp', activities:'Aktiviteter', tows:'Høstlogg',
-    bycatch:'Bifangst', map:'Høstkart', allTrips:'Alle turer', connecting:'Kobler til...',
+    bycatch:'Bifangst', map:'Høstkart', factory:'Fabrikk', allTrips:'Alle turer', connecting:'Kobler til...',
     connected:'Tilkoblet', error:'Feil', filterTrip:'Filtrer etter tur',
     totalTrips:'Totale turer', totalTows:'Totale høstere', avgFill:'Snitt fylling',
     totalBycatch:'Total bifangst', voyages:'tokt', towsLogged:'høstere logget',
@@ -606,7 +607,7 @@ const T = {
   },
   en: {
     overview:'Overview', cpue:'CPUE & Emissions', activities:'Activities', tows:'Tow Log',
-    bycatch:'Bycatch', map:'Tow Map', allTrips:'All Trips', connecting:'Connecting...',
+    bycatch:'Bycatch', map:'Tow Map', factory:'Factory', allTrips:'All Trips', connecting:'Connecting...',
     connected:'Connected', error:'Error', filterTrip:'Filter by Trip',
     totalTrips:'Total Trips', totalTows:'Total Tows', avgFill:'Avg Fill',
     totalBycatch:'Total Bycatch', voyages:'voyages', towsLogged:'tows logged',
@@ -658,6 +659,29 @@ function setLang(lang) {
   document.getElementById('navTows').textContent=t.tows;
   document.getElementById('navBycatch').textContent=t.bycatch;
   document.getElementById('navMap').textContent=t.map;
+  if(document.getElementById('navFactory')) document.getElementById('navFactory').textContent=t.factory;
+  // Factory section labels
+  const fno = currentLang==='no';
+  const fel = (id,no,en) => { const e=document.getElementById(id); if(e) e.textContent=fno?no:en; };
+  fel('titleFactory','Fabrikk','Factory');
+  fel('subFactory','Prøvedata fra fabrikk — per måned og felt','Factory sample data — by month and site');
+  fel('fLblAvgGram','Snitt gram per muskel','Avg gram per meat');
+  fel('fLblAvgAndel','Snitt muskelutbytte','Avg meat yield');
+  fel('fLblAvgCont','Snitt cont/pound','Avg count/pound');
+  fel('fLblAvgDamage','Snitt skade','Avg damage');
+  fel('fChartYieldTitle','Muskelutbytte per måned — gram per muskel & andel muskel %','Meat yield by month — gram per meat & meat share %');
+  fel('fChartPopTitle','Populasjonsfordeling per måned — % hunn vs % hann','Population split by month — % female vs % male');
+  fel('fChartDamageTitle','Skaderate per måned — % skadet per prøve','Damage rate by month — % damaged per sample');
+  fel('fLblSiteTable','Feltsammenligning','Site Comparison');
+  fel('fThSite',fno?'Felt':'Site','Site');
+  fel('fThSamples','Prøver','Samples');
+  fel('fThGram','Snitt g/muskel','Avg g/meat');
+  fel('fThAndel','Snitt muskel %','Avg meat %');
+  fel('fThCont','Snitt cont/lb','Avg cont/lb');
+  fel('fThDamage','Snitt skade %','Avg damage %');
+  fel('fThFemale','Snitt % hunn','Avg % female');
+  fel('fThMale','Snitt % hann','Avg % male');
+  if(allFactory && allFactory.length) renderFactory();
   document.getElementById('filterLabel').textContent=t.filterTrip;
   document.getElementById('statusText').textContent=currentLang==='no'?(document.getElementById('statusDot').classList.contains('connected')?'Tilkoblet':document.getElementById('statusDot').classList.contains('error')?'Feil':'Kobler til...'):(document.getElementById('statusDot').classList.contains('connected')?'Connected':document.getElementById('statusDot').classList.contains('error')?'Error':'Connecting...');
   document.getElementById('signoutBtn').textContent=t.signout;
@@ -750,13 +774,14 @@ function setStatus(s){
 }
 async function loadAll(){
   try{
-    const[trips,activities,tows,bycatch]=await Promise.all([
+    const[trips,activities,tows,bycatch,factory]=await Promise.all([
       sb.from('trip_registry').select('*,site_registry(site_name)').order('trip_date',{ascending:false}),
       sb.from('activity_log').select('*,trip_registry(trip_code)').order('time_start',{ascending:false}),
       sb.from('tow_log').select('*,trip_registry(trip_code)').order('created_at',{ascending:false}),
       sb.from('bycatch_report').select('*,trip_registry(trip_code),tow_log(tow_number)').order('created_at',{ascending:false}),
+      sb.from('factory_sample_log').select('*,trip_registry(trip_code)').order('sample_date',{ascending:true}),
     ]);
-    allTrips=trips.data||[];allActivities=activities.data||[];allTows=tows.data||[];allBycatch=bycatch.data||[];
+    allTrips=trips.data||[];allActivities=activities.data||[];allTows=tows.data||[];allBycatch=bycatch.data||[];allFactory=factory.data||[];
     populateTripFilter();renderAll();setStatus('connected');
   }catch(e){setStatus('error');}
 }
@@ -770,7 +795,7 @@ function populateTripFilter(){
   sel.innerHTML=`<option value="all">${t.allTrips}</option>`;
   allTrips.forEach(t2=>{const o=document.createElement('option');o.value=t2.id;o.textContent=t2.trip_code+(t2.trip_closed?' ✓':'');sel.appendChild(o);});
 }
-function renderAll(){const f=getFiltered();renderOverview(f);renderCPUE(f);renderActivitiesTable(f.activities);renderTowsTable(f.tows);renderBycatchTable(f.bycatch);renderCharts(f);if(document.getElementById('section-map').classList.contains('active'))renderMap();}
+function renderAll(){const f=getFiltered();renderOverview(f);renderCPUE(f);renderActivitiesTable(f.activities);renderTowsTable(f.tows);renderBycatchTable(f.bycatch);renderCharts(f);renderFactory();if(document.getElementById('section-map').classList.contains('active'))renderMap();}
 function haversineM(lat1,lon1,lat2,lon2){const R=6371000,r=d=>d*Math.PI/180,dLat=r(lat2-lat1),dLon=r(lon2-lon1);const a=Math.sin(dLat/2)**2+Math.cos(r(lat1))*Math.cos(r(lat2))*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
 function renderOverview(f){
   const t=T[currentLang];
@@ -860,6 +885,153 @@ function exportCSV(type){
   const csv=[headers,...rows].map(r=>r.map(v=>v==null?'':`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`ava-ocean-${type}-${new Date().toISOString().split('T')[0]}.csv`;a.click();
 }
+
+function renderFactory() {
+  const no = currentLang === 'no';
+  const samples = allFactory;
+  if (!samples.length) return;
+
+  // Filter by trip if needed
+  const filtered = currentTripFilter === 'all' ? samples : samples.filter(s => s.trip_id === currentTripFilter);
+
+  // Summary cards
+  const avg = (arr, key) => { const v = arr.filter(s => s[key] != null).map(s => s[key]); return v.length ? (v.reduce((a,b)=>a+b,0)/v.length).toFixed(1) : '—'; };
+  document.getElementById('fStatGram').textContent   = avg(filtered, 'gram_per_muskel');
+  document.getElementById('fStatAndel').textContent  = avg(filtered, 'andel_muskel_pct');
+  document.getElementById('fStatCont').textContent   = avg(filtered, 'gj_snitt_cont_per_pound');
+  document.getElementById('fStatDamage').textContent = avg(filtered, 'andel_skadet_pct');
+
+  // Group by month
+  const byMonth = {};
+  filtered.forEach(s => {
+    if (!s.sample_date) return;
+    const m = s.sample_date.slice(0, 7); // YYYY-MM
+    if (!byMonth[m]) byMonth[m] = [];
+    byMonth[m].push(s);
+  });
+  const months = Object.keys(byMonth).sort();
+  const monthLabels = months.map(m => {
+    const [y, mo] = m.split('-');
+    const d = new Date(parseInt(y), parseInt(mo)-1, 1);
+    return d.toLocaleString(no ? 'nb-NO' : 'en-GB', { month: 'short', year: '2-digit' });
+  });
+
+  const avgBy = (arr, key) => { const v = arr.filter(s => s[key] != null).map(s => s[key]); return v.length ? parseFloat((v.reduce((a,b)=>a+b,0)/v.length).toFixed(1)) : null; };
+
+  // Unique sites + colour palette
+  const sites = [...new Set(filtered.filter(s=>s.site_name).map(s=>s.site_name))];
+  const siteColors = ['#D9FFAC','#E6D2C5','#FF8C69','#c2f090','#d4bfb3'];
+
+  // --- Chart 1: Yield (gram per muskel + andel muskel %) ---
+  const gramBySite = sites.map((site, si) => ({
+    label: (no ? 'g/muskel' : 'g/meat') + ' — ' + site,
+    data: months.map(m => avgBy(byMonth[m].filter(s=>s.site_name===site), 'gram_per_muskel')),
+    borderColor: siteColors[si % siteColors.length],
+    backgroundColor: 'transparent',
+    tension: 0.3, pointRadius: 5, yAxisID: 'y',
+  }));
+  const andelBySite = sites.map((site, si) => ({
+    label: (no ? 'Muskel %' : 'Meat %') + ' — ' + site,
+    data: months.map(m => avgBy(byMonth[m].filter(s=>s.site_name===site), 'andel_muskel_pct')),
+    borderColor: siteColors[si % siteColors.length],
+    backgroundColor: 'transparent',
+    borderDash: [5,4], tension: 0.3, pointRadius: 4, yAxisID: 'y2',
+  }));
+
+  if (charts.fYield) charts.fYield.destroy();
+  const ctx1 = document.getElementById('fYieldChart')?.getContext('2d');
+  if (ctx1) charts.fYield = new Chart(ctx1, {
+    type: 'line',
+    data: { labels: monthLabels, datasets: [...gramBySite, ...andelBySite] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color:'#a8959e', font:{ family:'ABCFavorit', size:11 } } } },
+      scales: {
+        x: { ticks:{ color:'#a8959e', font:{family:'ABCFavorit',size:10} }, grid:{color:'#5c5060'} },
+        y: { position:'left', title:{display:true, text: no?'g/muskel':'g/meat', color:'#a8959e', font:{size:10}}, ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}}, grid:{color:'#5c5060'} },
+        y2:{ position:'right', title:{display:true, text:'%', color:'#a8959e', font:{size:10}}, ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}}, grid:{drawOnChartArea:false} },
+      }
+    }
+  });
+
+  // --- Chart 2: Population split stacked bar ---
+  const femBySite = sites.map((site, si) => ({
+    label: (no ? '% hunn' : '% female') + ' — ' + site,
+    data: months.map(m => avgBy(byMonth[m].filter(s=>s.site_name===site), 'pct_ho')),
+    backgroundColor: siteColors[si % siteColors.length] + 'bb',
+    borderColor: siteColors[si % siteColors.length],
+    borderWidth: 1, borderRadius: 3,
+  }));
+  const malBySite = sites.map((site, si) => ({
+    label: (no ? '% hann' : '% male') + ' — ' + site,
+    data: months.map(m => avgBy(byMonth[m].filter(s=>s.site_name===site), 'pct_han')),
+    backgroundColor: siteColors[si % siteColors.length] + '55',
+    borderColor: siteColors[si % siteColors.length],
+    borderWidth: 1, borderRadius: 3, borderDash: [3,3],
+  }));
+
+  if (charts.fPop) charts.fPop.destroy();
+  const ctx2 = document.getElementById('fPopChart')?.getContext('2d');
+  if (ctx2) charts.fPop = new Chart(ctx2, {
+    type: 'bar',
+    data: { labels: monthLabels, datasets: [...femBySite, ...malBySite] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color:'#a8959e', font:{family:'ABCFavorit',size:11} } } },
+      scales: {
+        x: { ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}}, grid:{color:'#5c5060'} },
+        y: { min:0, max:100, ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}, callback: v=>v+'%'}, grid:{color:'#5c5060'} },
+      }
+    }
+  });
+
+  // --- Chart 3: Damage rate ---
+  const dmgBySite = sites.map((site, si) => ({
+    label: (no ? 'Skade %' : 'Damage %') + ' — ' + site,
+    data: months.map(m => avgBy(byMonth[m].filter(s=>s.site_name===site), 'andel_skadet_pct')),
+    backgroundColor: siteColors[si % siteColors.length] + 'bb',
+    borderColor: siteColors[si % siteColors.length],
+    borderWidth: 1, borderRadius: 4,
+  }));
+
+  if (charts.fDamage) charts.fDamage.destroy();
+  const ctx3 = document.getElementById('fDamageChart')?.getContext('2d');
+  if (ctx3) charts.fDamage = new Chart(ctx3, {
+    type: 'bar',
+    data: { labels: monthLabels, datasets: dmgBySite },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color:'#a8959e', font:{family:'ABCFavorit',size:11} } } },
+      scales: {
+        x: { ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}}, grid:{color:'#5c5060'} },
+        y: { min:0, ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}, callback: v=>v+'%'}, grid:{color:'#5c5060'} },
+      }
+    }
+  });
+
+  // --- Site comparison table ---
+  const tbody = document.getElementById('fSiteTableBody');
+  const allSites = [...new Set(filtered.filter(s=>s.site_name).map(s=>s.site_name))].sort();
+  if (!allSites.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="empty">${no ? 'Ingen data ennå.' : 'No data yet.'}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = allSites.map(site => {
+    const ss = filtered.filter(s => s.site_name === site);
+    const a = key => avgBy(ss, key);
+    return `<tr>
+      <td><strong>${site}</strong></td>
+      <td>${ss.length}</td>
+      <td><strong style="color:var(--accent)">${a('gram_per_muskel') ?? '—'} g</strong></td>
+      <td>${a('andel_muskel_pct') ?? '—'}%</td>
+      <td>${a('gj_snitt_cont_per_pound') ?? '—'}</td>
+      <td style="color:var(--warn)">${a('andel_skadet_pct') ?? '—'}%</td>
+      <td>${a('pct_ho') ?? '—'}%</td>
+      <td>${a('pct_han') ?? '—'}%</td>
+    </tr>`;
+  }).join('');
+}
+
 function showSection(name,el){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
