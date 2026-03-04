@@ -199,7 +199,7 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
       <div class="grid-2">
         <div class="field">
           <label data-no="Kg muskel" data-en="Kg muscle">Kg muskel</label>
-          <input type="number" id="kgMuskel" inputmode="decimal" step="0.001" placeholder="0.000" oninput="calculate()">
+          <input type="number" id="kgMuskel" inputmode="decimal" step="0.001" placeholder="0.000" oninput="calculate()" onchange="calculate()" onblur="calculate()">
         </div>
         <div class="field">
           <label><span data-no="Andel muskel i blokk" data-en="Muscle share in block">Andel muskel i blokk</span> <span class="calc-badge" data-no="auto" data-en="auto">auto</span></label>
@@ -212,7 +212,7 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
       <div class="section-label" style="margin-top:0;" data-no="Antall og størrelse" data-en="Count & Size">Antall og størrelse</div>
       <div class="field">
         <label data-no="Antall muskel" data-en="Muscle count">Antall muskel</label>
-        <input type="number" id="antallMuskel" inputmode="numeric" placeholder="0" oninput="calculate()">
+        <input type="number" id="antallMuskel" inputmode="numeric" placeholder="0" oninput="calculate()" onchange="calculate()" onblur="calculate()">
       </div>
       <div class="grid-2">
         <div class="field">
@@ -235,11 +235,11 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
       <div class="grid-2">
         <div class="field">
           <label data-no="Antall rogn" data-en="Roe count">Antall rogn</label>
-          <input type="number" id="antallRogn" inputmode="numeric" placeholder="0" oninput="calculate()">
+          <input type="number" id="antallRogn" inputmode="numeric" placeholder="0" oninput="calculate()" onchange="calculate()" onblur="calculate()">
         </div>
         <div class="field">
           <label data-no="Vekt rogn (g)" data-en="Roe weight (g)">Vekt rogn (g)</label>
-          <input type="number" id="vektRogn" inputmode="decimal" step="0.1" placeholder="0.0" oninput="calculate()">
+          <input type="number" id="vektRogn" inputmode="decimal" step="0.1" placeholder="0.0" oninput="calculate()" onchange="calculate()" onblur="calculate()">
         </div>
       </div>
       <div class="grid-2">
@@ -259,11 +259,11 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
       <div class="grid-2">
         <div class="field">
           <label data-no="Antall isel" data-en="Milt count">Antall isel</label>
-          <input type="number" id="antallIsel" inputmode="numeric" placeholder="0" oninput="calculate()">
+          <input type="number" id="antallIsel" inputmode="numeric" placeholder="0" oninput="calculate()" onchange="calculate()" onblur="calculate()">
         </div>
         <div class="field">
           <label data-no="Vekt isel (g)" data-en="Milt weight (g)">Vekt isel (g)</label>
-          <input type="number" id="vektIsel" inputmode="decimal" step="0.1" placeholder="0.0" oninput="calculate()">
+          <input type="number" id="vektIsel" inputmode="decimal" step="0.1" placeholder="0.0" oninput="calculate()" onchange="calculate()" onblur="calculate()">
         </div>
       </div>
       <div class="grid-2">
@@ -283,7 +283,7 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
       <div class="grid-2">
         <div class="field">
           <label data-no="Kg restråstoff" data-en="Kg waste">Kg restråstoff</label>
-          <input type="number" id="kgReststoff" inputmode="decimal" step="0.001" placeholder="0.000" oninput="calculate()">
+          <input type="number" id="kgReststoff" inputmode="decimal" step="0.001" placeholder="0.000" oninput="calculate()" onchange="calculate()" onblur="calculate()">
         </div>
         <div class="field">
           <label><span data-no="Andel restråstoff %" data-en="Waste share %">Andel restråstoff %</span> <span class="calc-badge">auto</span></label>
@@ -293,7 +293,7 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
       <div class="grid-2">
         <div class="field">
           <label data-no="Antall med skade" data-en="Damaged count">Antall med skade</label>
-          <input type="number" id="antallSkadet" inputmode="numeric" placeholder="0" oninput="calculate()">
+          <input type="number" id="antallSkadet" inputmode="numeric" placeholder="0" oninput="calculate()" onchange="calculate()" onblur="calculate()">
         </div>
         <div class="field">
           <label><span data-no="Andel skadet %" data-en="Damaged share %">Andel skadet %</span> <span class="calc-badge">auto</span></label>
@@ -530,6 +530,15 @@ function switchTab(screen,tabId){ goTo('screen-'+screen); document.querySelector
 let toastTimer;
 function showToast(msg,type=''){ const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+type;clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3500); }
 init();
+
+// Re-run calculate on any input change as fallback
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('input[type=number]').forEach(function(el) {
+    el.addEventListener('change', calculate);
+    el.addEventListener('blur', calculate);
+  });
+});
+
 </script>
 </body>
 </html>
