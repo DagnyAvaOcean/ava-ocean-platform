@@ -122,7 +122,7 @@ tr:hover td{background:rgba(217,255,172,0.02);}
 
 @media(max-width:768px){
   /* Hide desktop sidebar */
-  .sidebar{display:none !important;}
+  .sidebar{display:none !important;width:0 !important;}
 
   /* Show mobile header */
   .mobile-header{
@@ -945,6 +945,17 @@ function syncMobileTripSelect(){
   mob.innerHTML=desk.innerHTML;
   mob.value=desk.value;
 }
+
+// Fix mobile layout on load and resize
+function applyMobileLayout(){
+  const isMobile = window.innerWidth <= 768;
+  const main = document.querySelector('.main');
+  if(main){
+    main.style.marginLeft = isMobile ? '0' : '';
+  }
+}
+window.addEventListener('resize', applyMobileLayout);
+applyMobileLayout();
 
 async function init(){initLang();const{data:{session}}=await sb.auth.getSession();if(session)showApp(session.user);sb.auth.onAuthStateChange((e,s)=>{if(s)showApp(s.user);else showLogin();});}
 function showLogin(){document.getElementById('loginScreen').style.display='flex';document.getElementById('app').style.display='none';}
