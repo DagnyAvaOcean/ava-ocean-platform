@@ -66,7 +66,7 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
 .status-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0;}
 .status-dot.connected{background:var(--accent);box-shadow:0 0 0 2px rgba(217,255,172,0.2);}
 .status-dot.error{background:var(--warn);}
-.section{display:none;}.section.active{display:block;}
+.section{display:none;max-width:100%;overflow-x:hidden;}.section.active{display:block;max-width:100%;}
 .page-title{font-family:var(--font-head);font-weight:700;font-size:26px;margin-bottom:6px;letter-spacing:-0.3px;}
 .page-sub{color:var(--muted);font-size:12px;margin-bottom:28px;}
 .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;min-width:0;}
@@ -74,15 +74,15 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
 .stat-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;font-family:var(--font-head);font-weight:700;}
 .stat-val{font-family:var(--font-head);font-weight:700;font-size:32px;color:var(--accent);line-height:1;}
 .stat-unit{font-size:11px;color:var(--muted);margin-top:5px;}
-.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;}
-.chart-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;width:100%;}
+.chart-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;min-width:0;overflow:hidden;}
 .chart-card.full{grid-column:1/-1;}
 .chart-title{font-family:var(--font-head);font-weight:700;font-size:12px;color:var(--text);margin-bottom:16px;text-transform:uppercase;}
 .chart-wrap{position:relative;height:220px;}
-#towMap{height:500px;border-radius:10px;border:1px solid var(--border);}
+#towMap{height:500px;border-radius:10px;border:1px solid var(--border);width:100%;max-width:100%;}
 .map-legend{display:flex;gap:20px;margin-top:12px;font-size:11px;color:var(--muted);font-family:var(--font-head);}
 .legend-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle;}
-.table-wrap{overflow-x:auto;}
+.table-wrap{overflow-x:auto;max-width:100%;}
 table{width:100%;border-collapse:collapse;font-size:12px;}
 th{text-align:left;padding:10px 14px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);font-family:var(--font-head);font-weight:700;white-space:nowrap;}
 td{padding:11px 14px;border-bottom:1px solid rgba(92,80,96,0.4);vertical-align:middle;}
@@ -144,7 +144,7 @@ tr:hover td{background:rgba(217,255,172,0.02);}
       <div class="nav-item active" id="nav-overview" onclick="showSection('overview',this)"><span class="nav-icon">📊</span> <span id="navOverview">Oversikt</span></div>
       <div class="nav-item" id="nav-cpue" onclick="showSection('cpue',this)"><span class="nav-icon">📐</span> <span id="navCpue">CPUE & Utslipp</span></div>
       <div class="nav-item" id="nav-activities" onclick="showSection('activities',this)"><span class="nav-icon">📋</span> <span id="navActivities">Aktiviteter</span></div>
-      <div class="nav-item" id="nav-tows" onclick="showSection('tows',this)"><span class="nav-icon">🦪</span> <span id="navTows">Kurvlogg</span></div>
+      <div class="nav-item" id="nav-tows" onclick="showSection('tows',this)"><span class="nav-icon">🦪</span> <span id="navTows">Høsterlogg</span></div>
       <div class="nav-item" id="nav-bycatch" onclick="showSection('bycatch',this)"><span class="nav-icon">🐟</span> <span id="navBycatch">Bifangst</span></div>
       <div class="nav-item" id="nav-map" onclick="showSection('map',this)"><span class="nav-icon">🗺️</span> <span id="navMap">Høstkart</span></div>
       <div class="nav-item" id="nav-factory" onclick="showSection('factory',this)"><span class="nav-icon">⚖️</span> <span id="navFactory">Fabrikk</span></div>
@@ -173,12 +173,12 @@ tr:hover td{background:rgba(217,255,172,0.02);}
       <div class="page-sub" id="overviewSub">Laster...</div>
       <div class="stats-grid">
         <div class="stat-card"><div class="stat-label" id="labelTrips">Totale turer</div><div class="stat-val" id="statTrips">—</div><div class="stat-unit" id="unitTrips">tokt</div></div>
-        <div class="stat-card"><div class="stat-label" id="labelTows">Totale kurver</div><div class="stat-val" id="statTows">—</div><div class="stat-unit" id="unitTows">kurver logget</div></div>
-        <div class="stat-card"><div class="stat-label" id="labelFill">Snitt fylling</div><div class="stat-val" id="statFill">—</div><div class="stat-unit" id="unitFill">% per trål</div></div>
+        <div class="stat-card"><div class="stat-label" id="labelTows">Totale høster</div><div class="stat-val" id="statTows">—</div><div class="stat-unit" id="unitTows">høster logget</div></div>
+        <div class="stat-card"><div class="stat-label" id="labelFill">Snitt fylling</div><div class="stat-val" id="statFill">—</div><div class="stat-unit" id="unitFill">% per høster</div></div>
         <div class="stat-card"><div class="stat-label" id="labelBycatch">Total bifangst</div><div class="stat-val" id="statBycatch">—</div><div class="stat-unit" id="unitBycatch">individer</div></div>
       </div>
       <div class="charts-grid">
-        <div class="chart-card"><div class="chart-title" id="chartFillTitle">Høsterfylling % per trål</div><div class="chart-wrap"><canvas id="fillChart"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title" id="chartFillTitle">Høsterfylling % per høster</div><div class="chart-wrap"><canvas id="fillChart"></canvas></div></div>
         <div class="chart-card"><div class="chart-title" id="chartActTitle">Aktivitetsfordeling</div><div class="chart-wrap"><canvas id="activityChart"></canvas></div></div>
         <div class="chart-card full"><div class="chart-title" id="chartFuelTitle">Drivstoff per aktivitet</div><div class="chart-wrap"><canvas id="fuelChart"></canvas></div></div>
       </div>
@@ -188,13 +188,13 @@ tr:hover td{background:rgba(217,255,172,0.02);}
     <div class="section" id="section-cpue">
       <div class="page-title" id="titleCpue">CPUE & Utslipp</div>
       <div class="page-sub" id="subCpue">Beregnet per avsluttet tur</div>
-      <div class="info-pill" id="pillConstants"><strong>Konstanter:</strong> Høster 12m · Kurv 28m³ ved 100% · HFO 3,114 kg CO₂/liter</div>
+      <div class="info-pill" id="pillConstants"><strong id="pillConstantsLabel">Konstanter:</strong> <span id="pillConstantsText">Høster 12m · Kurv 28m³ ved 100% · HFO 3,114 kg CO₂/liter</span></div>
       <div id="cpueTripList"><div class="empty">Laster...</div></div>
       <hr class="divider">
       <div class="section-label" id="labelTowCpue" style="margin-bottom:16px;">Høst-nivå CPUE-detalj</div>
       <div class="card"><div class="table-wrap"><table>
         <thead><tr>
-          <th id="thTrip">Tur</th><th id="thTow">Kurv #</th><th id="thFill">Fylling %</th>
+          <th id="thTrip">Tur</th><th id="thTow">Høster #</th><th id="thFill">Fylling %</th>
           <th id="thVol">Fangstvolum (m³)</th><th id="thTrack">Spor (m)</th>
           <th id="thArea">Totalt område dekket (m²)</th><th id="thCpue">CPUE (m³/m²)</th><th id="thDepth">Dybde (m)</th>
         </tr></thead>
@@ -213,9 +213,9 @@ tr:hover td{background:rgba(217,255,172,0.02);}
             <th>Høstetid / 24t %</th>
             <th>Kg / høstetid</th>
             <th>Høstetid / driftstid %</th>
-            <th>Antall kurver</th>
-            <th>Kg / kurv</th>
-            <th>Min / kurv</th>
+            <th>Antall høster</th>
+            <th>Kg / høster</th>
+            <th>Min / høster</th>
             <th>Nedetid høster (t)</th>
             <th>Nedetid høster %</th>
             <th>WOW (t)</th>
@@ -241,8 +241,8 @@ tr:hover td{background:rgba(217,255,172,0.02);}
             <th>CO₂ (tonn)</th>
             <th>Kg CO₂ / kg fangst</th>
             <th>Snitt bølgehøyde (m)</th>
-            <th>Antall kurver</th>
-            <th>Kg / kurv</th>
+            <th>Antall høster</th>
+            <th>Kg / høster</th>
           </tr></thead>
           <tbody id="emissionsMonthBody"><tr><td colspan="9" class="empty">Laster...</td></tr></tbody>
         </table></div></div>
@@ -273,7 +273,7 @@ tr:hover td{background:rgba(217,255,172,0.02);}
     <!-- TOWS -->
     <div class="section" id="section-tows">
       <div class="section-header">
-        <div><div class="page-title" id="titleTows">Kurvlogg</div><div class="page-sub" id="subTows">Alle høstere med data</div></div>
+        <div><div class="page-title" id="titleTows">Høsterlogg</div><div class="page-sub" id="subTows">Alle høstere med data</div></div>
         <div style="display:flex;gap:10px;">
           <button class="refresh-btn" id="btnRefreshTow" onclick="loadAll()">↻ Oppdater</button>
           <button class="btn btn-outline" id="btnCsvTow" onclick="exportCSV('tows')">↓ CSV</button>
@@ -292,7 +292,7 @@ tr:hover td{background:rgba(217,255,172,0.02);}
     <!-- BYCATCH -->
     <div class="section" id="section-bycatch">
       <div class="section-header">
-        <div><div class="page-title" id="titleBycatch">Bifangst</div><div class="page-sub" id="subBycatch">Artstellinger per trål etter størrelsesklasse</div></div>
+        <div><div class="page-title" id="titleBycatch">Bifangst</div><div class="page-sub" id="subBycatch">Artstellinger per høster etter størrelsesklasse</div></div>
         <div style="display:flex;gap:10px;">
           <button class="refresh-btn" id="btnRefreshBy" onclick="loadAll()">↻ Oppdater</button>
           <button class="btn btn-outline" id="btnCsvBy" onclick="exportCSV('bycatch')">↓ CSV</button>
@@ -377,28 +377,28 @@ let allTrips=[],allActivities=[],allTows=[],allBycatch=[],allFactory=[],allDaily
 
 const T = {
   no: {
-    overview:'Oversikt', cpue:'CPUE & Utslipp', activities:'Aktiviteter', tows:'Kurvlogg',
+    overview:'Oversikt', cpue:'CPUE & Utslipp', activities:'Aktiviteter', tows:'Høsterlogg',
     bycatch:'Bifangst', map:'Høstkart', factory:'Fabrikk', allTrips:'Alle turer', connecting:'Kobler til...',
     connected:'Tilkoblet', error:'Feil', filterTrip:'Filtrer etter tur',
-    totalTrips:'Totale turer', totalTows:'Totale kurver', avgFill:'Snitt fylling',
-    totalBycatch:'Total bifangst', voyages:'tokt', towsLogged:'kurver logget',
-    perTow:'% per trål', individuals:'individer', fillPerTow:'Høsterfylling % per trål',
+    totalTrips:'Totale turer', totalTows:'Totale høster', avgFill:'Snitt fylling',
+    totalBycatch:'Total bifangst', voyages:'tokt', towsLogged:'høster logget',
+    perTow:'% per høster', individuals:'individer', fillPerTow:'Høsterfylling % per høster',
     actBreakdown:'Aktivitetsfordeling', fuelPerAct:'Drivstoff per aktivitet',
     constants:'Konstanter', noClosedTrips:'Ingen avsluttede turer ennå. Avslutt en tur i kapteinappen for å se metrikk her.',
     towLevelCpue:'Høst-nivå CPUE-detalj', noGPSTows:'Ingen høstere med full GPS-data ennå.',
-    trip:'Tur', towNum:'Kurv #', fill:'Fylling %', catchVol:'Fangstvolum (m³)',
+    trip:'Tur', towNum:'Høster #', fill:'Fylling %', catchVol:'Fangstvolum (m³)',
     track:'Spor (m)', area:'Areal (m²)', cpueCol:'CPUE (m³/m²)', depth:'Dybde (m)',
     type:'Type', start:'Start', end:'Slutt', duration:'Varighet', fuel:'Drivstoff (L)',
     wave:'Bølge (m)', seaState:'Sjøtilstand', wind:'Vind (kn)', vis:'Sikt',
-    noActivities:'Ingen aktiviteter.', noTows:'Ingen kurver.', noBycatch:'Ingen bifangst registrert.',
+    noActivities:'Ingen aktiviteter.', noTows:'Ingen høster.', noBycatch:'Ingen bifangst registrert.',
     species:'Art', category:'Kategori', small:'Liten', medium:'Medium', large:'Stor',
     total:'Totalt', returned:'Returnert', fishing:'Fiske', steaming:'Steaming', wow:'WOW',
     done:'Ferdig ✓', open:'● Åpen', refresh:'↻ Oppdater', exportCSV:'↓ CSV',
     updatedAt:'Oppdatert', activities_sub:'Alle steaming-, fiske- og WOW-aktiviteter',
-    tows_sub:'Alle kurver med høstdata', bycatch_sub:'Artstellinger per trål etter størrelsesklasse',
+    tows_sub:'Alle høster med høstdata', bycatch_sub:'Artstellinger per høster etter størrelsesklasse',
     map_sub:'GPS-spor — klikk markører for detaljer', overview_sub:'aktiviteter',
     markerStart:'Start', markerEnd:'Slutt', markerTrack:'Spor',
-    areaSwept:'Areal sweepet', catchPerTow:'Fangst per trål', emissionsPerKg:'Utslipp per kg',
+    areaSwept:'Areal dekket', catchPerTow:'Fangst per høster', emissionsPerKg:'Utslipp per kg',
     gpsNote:'GPS', signout:'Logg ut', researchPlatform:'Forskningsplattform',
     contactDagny:'Kontakt Dagny for tilgang.', backHome:'← Tilbake til plattformen',
     loginTitle:'Forskningsdashboard', loginDesc:'Ava Ocean intern plattform — kun autoriserte brukere',
@@ -406,20 +406,20 @@ const T = {
     enterCreds:'Fyll inn e-post og passord.',
   },
   en: {
-    overview:'Overview', cpue:'CPUE & Emissions', activities:'Activities', tows:'Basket Log',
+    overview:'Overview', cpue:'CPUE & Emissions', activities:'Activities', tows:'Harvester Log',
     bycatch:'Bycatch', map:'Tow Map', factory:'Factory', allTrips:'All Trips', connecting:'Connecting...',
     connected:'Connected', error:'Error', filterTrip:'Filter by Trip',
-    totalTrips:'Total Trips', totalTows:'Total Tows', avgFill:'Avg Fill',
-    totalBycatch:'Total Bycatch', voyages:'voyages', towsLogged:'baskets logged',
+    totalTrips:'Total Trips', totalTows:'Total Harvesters', avgFill:'Avg Fill',
+    totalBycatch:'Total Bycatch', voyages:'voyages', towsLogged:'harvesters logged',
     perTow:'% per tow', individuals:'individuals', fillPerTow:'Harvester Fill % per Tow',
     actBreakdown:'Activity Breakdown', fuelPerAct:'Fuel per Activity',
     constants:'Constants', noClosedTrips:"No closed trips yet. Close a trip on the captain's form to see metrics here.",
     towLevelCpue:'Tow-Level CPUE Detail', noGPSTows:'No tows with full GPS data yet.',
-    trip:'Trip', towNum:'Basket #', fill:'Fill %', catchVol:'Catch Vol (m³)',
+    trip:'Trip', towNum:'Harvester #', fill:'Fill %', catchVol:'Catch Vol (m³)',
     track:'Track (m)', area:'Area (m²)', cpueCol:'CPUE (m³/m²)', depth:'Depth (m)',
     type:'Type', start:'Start', end:'End', duration:'Duration', fuel:'Fuel (L)',
     wave:'Wave (m)', seaState:'Sea State', wind:'Wind (kts)', vis:'Visibility',
-    noActivities:'No activities.', noTows:'No baskets.', noBycatch:'No bycatch recorded.',
+    noActivities:'No activities.', noTows:'No harvesters.', noBycatch:'No bycatch recorded.',
     species:'Species', category:'Category', small:'Small', medium:'Medium', large:'Large',
     total:'Total', returned:'Returned', fishing:'Fishing', steaming:'Steaming', wow:'WOW',
     done:'Done ✓', open:'● Open', refresh:'↻ Refresh', exportCSV:'↓ CSV',
@@ -427,7 +427,7 @@ const T = {
     tows_sub:'All fishing tows with harvest data', bycatch_sub:'Species counts per tow by size class',
     map_sub:'GPS tracks — click markers for detail', overview_sub:'activities',
     markerStart:'Start', markerEnd:'End', markerTrack:'Track',
-    areaSwept:'Area Swept', catchPerTow:'Catch per Tow', emissionsPerKg:'Emissions per kg',
+    areaSwept:'Area Covered', catchPerTow:'Catch per Harvester', emissionsPerKg:'Emissions per kg',
     gpsNote:'GPS', signout:'Sign out', researchPlatform:'Research Platform',
     contactDagny:'Contact Dagny if you need access.', backHome:'← Back to platform home',
     loginTitle:'Research Dashboard', loginDesc:'Ava Ocean internal platform — authorised users only',
@@ -486,6 +486,12 @@ function setLang(lang) {
   document.getElementById('filterLabel').textContent=t.filterTrip;
   document.getElementById('statusText').textContent=currentLang==='no'?(document.getElementById('statusDot').classList.contains('connected')?'Tilkoblet':document.getElementById('statusDot').classList.contains('error')?'Feil':'Kobler til...'):(document.getElementById('statusDot').classList.contains('connected')?'Connected':document.getElementById('statusDot').classList.contains('error')?'Error':'Connecting...');
   document.getElementById('signoutBtn').textContent=t.signout;
+  const pillText=document.getElementById('pillConstantsText');
+  if(pillText) pillText.textContent=currentLang==='no'?'Høster 12m · Kurv 28m³ ved 100% · HFO 3,114 kg CO₂/liter':'Harvester 12m · Basket 28m³ at 100% · HFO 3.114 kg CO₂/litre';
+  const pillLabel=document.getElementById('pillConstantsLabel');
+  if(pillLabel) pillLabel.textContent=currentLang==='no'?'Konstanter:':'Constants:';
+  const subCpue=document.getElementById('subCpue');
+  if(subCpue) subCpue.textContent=currentLang==='no'?'Beregnet per avsluttet tur':'Calculated per closed trip';
   // Overview
   document.getElementById('titleOverview').textContent=t.overview;
   document.getElementById('labelTrips').textContent=t.totalTrips;
@@ -832,7 +838,7 @@ function renderCPUE(f){
     tripActs.forEach(a=>{if(a.fuel_start_litres!=null&&a.fuel_end_litres!=null)totalFuelL+=Math.max(0,a.fuel_end_litres-a.fuel_start_litres);});
     tripTows.forEach(tw=>{totalVolM3+=(tw.harvester_fill_pct/100)*BASKET_VOLUME_M3;if(tw.lat_start&&tw.lon_start&&tw.lat_end&&tw.lon_end){totalAreaM2+=haversineM(tw.lat_start,tw.lon_start,tw.lat_end,tw.lon_end)*HARVESTER_WIDTH_M;towsWithGPS++;}});
     const cpue=totalAreaM2>0?(totalVolM3/totalAreaM2).toFixed(5):'—',totalCO2kg=totalFuelL*HFO_EMISSION_FACTOR;
-    return `<div class="metrics-banner"><div class="metrics-banner-title">${trip.trip_code} — ${trip.site_registry?.site_name||''}<span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:12px;">${trip.trip_date}${trip.return_date?' → '+trip.return_date:''} · ${tripTows.length} ${t.towsLogged}</span></div><div class="metrics-row"><div class="metric-cell"><div class="metric-cell-label">CPUE</div><div class="metric-cell-val">${cpue}</div><div class="metric-cell-unit">m³/m²</div></div><div class="metric-cell blue"><div class="metric-cell-label">${t.areaSwept}</div><div class="metric-cell-val">${totalAreaM2>0?(totalAreaM2/10000).toFixed(2):'—'}</div><div class="metric-cell-unit">ha · ${towsWithGPS}/${tripTows.length} ${t.gpsNote}</div></div><div class="metric-cell plain"><div class="metric-cell-label">${t.catchPerTow}</div><div class="metric-cell-val">${tripTows.length>0?(trip.processed_meat_kg/tripTows.length).toFixed(0):'—'}</div><div class="metric-cell-unit">kg</div></div><div class="metric-cell warn"><div class="metric-cell-label">${t.emissionsPerKg}</div><div class="metric-cell-val">${trip.processed_meat_kg>0?(totalCO2kg/trip.processed_meat_kg).toFixed(3):'—'}</div><div class="metric-cell-unit">kg CO₂/kg · ${(totalCO2kg/1000).toFixed(1)}t</div></div></div></div>`;
+    return `<div class="metrics-banner"><div class="metrics-banner-title">${trip.trip_code} — ${trip.site_registry?.site_name||''}<span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:12px;">${trip.trip_date}${trip.return_date?' → '+trip.return_date:''} · ${tripTows.length} ${t.towsLogged}</span></div><div class="metrics-row"><div class="metric-cell"><div class="metric-cell-label">CPUE</div><div class="metric-cell-val">${cpue}</div><div class="metric-cell-unit">m³/m²</div></div><div class="metric-cell blue"><div class="metric-cell-label">${currentLang==='no'?'Areal dekket':'Area Covered'}</div><div class="metric-cell-val">${totalAreaM2>0?(totalAreaM2/10000).toFixed(2):'—'}</div><div class="metric-cell-unit">ha · ${towsWithGPS}/${tripTows.length} ${t.gpsNote}</div></div><div class="metric-cell plain"><div class="metric-cell-label">${currentLang==='no'?'Fangst per høster':'Catch per Harvester'}</div><div class="metric-cell-val">${tripTows.length>0?(trip.processed_meat_kg/tripTows.length).toFixed(0):'—'}</div><div class="metric-cell-unit">kg</div></div><div class="metric-cell warn"><div class="metric-cell-label">${t.emissionsPerKg}</div><div class="metric-cell-val">${trip.processed_meat_kg>0?(totalCO2kg/trip.processed_meat_kg).toFixed(3):'—'}</div><div class="metric-cell-unit">kg CO₂/kg · ${(totalCO2kg/1000).toFixed(1)}t</div></div></div></div>`;
   }).join('');}
   const t2=T[currentLang],towsGPS=f.tows.filter(tw=>tw.lat_start&&tw.lon_start&&tw.lat_end&&tw.lon_end);
   document.getElementById('cpueTowTbody').innerHTML=!towsGPS.length?`<tr><td colspan="8" class="empty">${t2.noGPSTows}</td></tr>`:towsGPS.map(tw=>{const trackM=haversineM(tw.lat_start,tw.lon_start,tw.lat_end,tw.lon_end),areaM2=trackM*HARVESTER_WIDTH_M,volM3=(tw.harvester_fill_pct||0)/100*BASKET_VOLUME_M3,cpue=areaM2>0?(volM3/areaM2).toFixed(5):'—';return `<tr><td>${tw.trip_registry?.trip_code||'—'}</td><td><strong style="color:var(--accent)">#${tw.tow_number}</strong></td><td><strong style="color:var(--accent)">${tw.harvester_fill_pct??'—'}%</strong></td><td>${volM3.toFixed(2)}</td><td>${trackM.toFixed(0)}</td><td>${areaM2.toFixed(0)}</td><td><strong style="color:var(--accent)">${cpue}</strong></td><td>${tw.depth_m??'—'}</td></tr>`;}).join('');
@@ -872,8 +878,18 @@ function renderCharts(f){
   makeChart('fillChart','line',{labels:sorted.map(tw=>`#${tw.tow_number}`),datasets:[{label:t.fill,data:sorted.map(tw=>tw.harvester_fill_pct),borderColor:'#D9FFAC',backgroundColor:'rgba(217,255,172,0.08)',tension:0.3,pointBackgroundColor:'#D9FFAC',pointRadius:4}]},{plugins:{legend:{display:false}},scales:{...cD.scales,y:{...cD.scales.y,min:0,max:100}}});
   const cnt={fishing:0,steaming:0,wow:0};f.activities.forEach(a=>{if(cnt[a.activity_type]!==undefined)cnt[a.activity_type]++;});
   makeChart('activityChart','doughnut',{labels:[t.fishing,t.steaming,t.wow],datasets:[{data:[cnt.fishing,cnt.steaming,cnt.wow],backgroundColor:['rgba(217,255,172,0.75)','rgba(230,210,197,0.75)','rgba(255,140,105,0.75)'],borderColor:['#D9FFAC','#E6D2C5','#FF8C69'],borderWidth:1}]},{plugins:{legend:{labels:{color:'#a8959e',font:{family:'ABCFavorit',size:11}}}},scales:{}});
-  const wf=f.activities.filter(a=>a.fuel_start_litres!=null&&a.fuel_end_litres!=null).slice(-20).reverse();
-  makeChart('fuelChart','bar',{labels:wf.map(a=>{const d=a.time_start?new Date(a.time_start).toLocaleDateString('no-NO',{month:'short',day:'numeric'}):'—';const actLabel=a.activity_type==='fishing'?t.fishing:a.activity_type==='steaming'?t.steaming:t.wow;return `${actLabel} ${d}`}),datasets:[{label:t.fuel,data:wf.map(a=>(a.fuel_end_litres-a.fuel_start_litres).toFixed(1)),backgroundColor:wf.map(a=>a.activity_type==='fishing'?'rgba(217,255,172,0.65)':a.activity_type==='steaming'?'rgba(230,210,197,0.65)':'rgba(255,140,105,0.65)'),borderRadius:4}]},{plugins:{legend:{display:false}}});
+  // Time per activity type bar chart (hours)
+  const actTypeColors={fishing:'rgba(217,255,172,0.65)',steaming:'rgba(230,210,197,0.65)',wow:'rgba(255,140,105,0.65)',downtime_harvester:'rgba(255,180,80,0.65)',downtime_factory:'rgba(180,130,255,0.65)'};
+  const actTypeLabels2={fishing:no?'Fiske':'Fishing',steaming:'Steaming',wow:'WOW',downtime_harvester:no?'Nedetid høster':'Harvester DT',downtime_factory:no?'Nedetid fabrikk':'Factory DT'};
+  makeChart('fuelChart','bar',{
+    labels:Object.values(actTypeLabels2),
+    datasets:[{
+      label:no?'Timer':'Hours',
+      data:Object.keys(actTypeLabels2).map(k=>parseFloat(dur[k].toFixed(1))),
+      backgroundColor:Object.keys(actTypeLabels2).map(k=>actTypeColors[k]),
+      borderRadius:4
+    }]
+  },{plugins:{legend:{display:false}}});
   const byS={};f.bycatch.forEach(b=>{const k=b.species_common||'Unknown';byS[k]=(byS[k]||0)+(b.count_small||0)+(b.count_medium||0)+(b.count_large||0);});
   const spK=Object.keys(byS).sort((a,b)=>byS[b]-byS[a]).slice(0,8);
   const cols=['#D9FFAC','#E6D2C5','#FF8C69','#c2f090','#d4bfb3','#e8927a','#b5e880','#c9a898'];
