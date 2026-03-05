@@ -206,6 +206,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;heigh
       <div class="act-btn" id="btn-fishing" onclick="selectActivityType('fishing')"><span class="act-icon">🦪</span><span data-no="Fiske" data-en="Fishing">Fiske</span></div>
       <div class="act-btn" id="btn-steaming" onclick="selectActivityType('steaming')"><span class="act-icon">⚓</span><span data-no="Steaming" data-en="Steaming">Steaming</span></div>
       <div class="act-btn" id="btn-wow" onclick="selectActivityType('wow')"><span class="act-icon">🌊</span><span data-no="WOW" data-en="WOW">WOW</span></div>
+      <div class="act-btn" id="btn-downtime_harvester" onclick="selectActivityType('downtime_harvester')"><span class="act-icon">⚙️</span><span data-no="Nedetid høster" data-en="Harvester downtime">Nedetid høster</span></div>
+      <div class="act-btn" id="btn-downtime_factory" onclick="selectActivityType('downtime_factory')"><span class="act-icon">🏭</span><span data-no="Nedetid fabrikk" data-en="Factory downtime">Nedetid fabrikk</span></div>
     </div>
     <button class="btn btn-primary" id="startActivityBtn" disabled onclick="goToStartActivity()" data-no="Start aktivitet →" data-en="Start Activity →">Start aktivitet →</button>
     <hr class="divider">
@@ -260,6 +262,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;heigh
       <button class="gps-btn" onclick="getGPS('actStart')" data-no="📍 Hent start-GPS" data-en="📍 Capture Start GPS">📍 Hent start-GPS</button>
       <div class="gps-coords" id="gpsActStartDisplay"></div>
       <input type="hidden" id="actLatStart"><input type="hidden" id="actLonStart">
+    </div>
+    <div id="reasonSection" style="display:none;" class="card">
+      <div class="section-label" style="margin-top:0;" data-no="Årsak til nedetid" data-en="Reason for downtime">Årsak til nedetid</div>
+      <div class="field"><label data-no="Årsak" data-en="Reason">Årsak</label><input type="text" id="actReason" placeholder="f.eks. Motorhavari, vedlikehold..."></div>
     </div>
     <div class="field" style="margin-top:4px;"><label data-no="Notater (valgfritt)" data-en="Notes (optional)">Notater (valgfritt)</label><textarea id="actNotes" placeholder="Observasjoner..."></textarea></div>
     <button class="btn btn-primary" onclick="saveStartActivity()" data-no="Start aktivitet ▶" data-en="Begin Activity ▶">Start aktivitet ▶</button>
@@ -394,10 +400,32 @@ function showNewTripForm(){document.getElementById('newTripForm').style.display=
 function hideNewTripForm(){document.getElementById('newTripForm').style.display='none';document.getElementById('newTripBtn').style.display='block';}
 async function createTrip(){const code=document.getElementById('newTripCode').value.trim(),date=document.getElementById('newTripDate').value;const no=currentLang==='no';if(!code||!date){showToast(no?'Turkode og dato er påkrevd':'Trip code and date required','error');return;}const{data,error}=await sb.from('trip_registry').insert({trip_code:code,captain_name:document.getElementById('newCaptain').value.trim(),trip_date:date,site_id:document.getElementById('siteSelect').value||null,departure_port:document.getElementById('newPort').value.trim(),vessel_name:'Ava Ray'}).select().single();if(error){showToast((no?'Feil: ':'Error: ')+error.message,'error');return;}showToast(no?'Tur opprettet!':'Trip created!','success');currentTrip=data;await loadTrips();document.getElementById('tripSelect').value=data.id;await loadTripSummary(data.id);hideNewTripForm();}
 async function enterMainScreen(){await loadActivities();goTo('screen-main');}
-async function loadActivities(){const{data}=await sb.from('activity_log').select('*').eq('trip_id',currentTrip.id).order('created_at',{ascending:false});activitiesThisTrip=data||[];renderActivityList();document.getElementById('headerTrip').textContent=currentTrip.trip_code;const open=activitiesThisTrip.find(a=>!a.time_end);const no=currentLang==='no';if(open){currentActivityId=open.id;currentActivityType=open.activity_type;const icon=open.activity_type==='fishing'?'🦪':open.activity_type==='steaming'?'⚓':'🌊';const start=open.time_start?new Date(open.time_start).toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'}):'—';const actLabel=open.activity_type==='fishing'?(no?'FISKE':'FISHING'):open.activity_type==='steaming'?'STEAMING':'WOW';const resumeBtn=open.activity_type==='fishing'?`<button class="btn btn-primary btn-sm" onclick="resumeFishing()">${no?'Åpne →':'Open →'}</button>`:`<button class="btn btn-warn btn-sm" onclick="endActivityPrompt()">${no?'Avslutt →':'End →'}</button>`;document.getElementById('activeActivityBanner').innerHTML=`<div class="active-banner"><div><div class="ab-label">${no?'Pågår siden':'In progress since'} ${start}</div><div class="ab-val ${open.activity_type}">${icon} ${actLabel}</div></div>${resumeBtn}</div>`;}else{document.getElementById('activeActivityBanner').innerHTML='';currentActivityId=null;currentActivityType=null;}}
-function renderActivityList(){const el=document.getElementById('activityList'),no=currentLang==='no';if(!activitiesThisTrip.length){el.innerHTML=`<div style="color:var(--muted);font-size:13px;">${no?'Ingen aktiviteter logget ennå.':'No activities logged yet.'}</div>`;return;}el.innerHTML=activitiesThisTrip.map(a=>{const icon=a.activity_type==='fishing'?'🦪':a.activity_type==='steaming'?'⚓':'🌊';const actLabel=a.activity_type==='fishing'?(no?'FISKE':'FISHING'):a.activity_type==='steaming'?'STEAMING':'WOW';const start=a.time_start?new Date(a.time_start).toLocaleString('no-NO',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'—';const fuel=(a.fuel_start_litres!=null&&a.fuel_end_litres!=null)?` · ${(a.fuel_end_litres-a.fuel_start_litres).toFixed(0)}L`:'';const badge=a.time_end?`<div class="act-badge">${no?'Ferdig ✓':'Done ✓'}</div>`:`<div class="act-badge open">● ${no?'Åpen':'Open'}</div>`;return `<div class="activity-item"><div><div class="act-type ${a.activity_type}">${icon} ${actLabel}</div><div class="act-meta">${start}${fuel}</div></div>${badge}</div>`;}).join('');}
+async function loadActivities(){const{data}=await sb.from('activity_log').select('*').eq('trip_id',currentTrip.id).order('created_at',{ascending:false});activitiesThisTrip=data||[];renderActivityList();document.getElementById('headerTrip').textContent=currentTrip.trip_code;const open=activitiesThisTrip.find(a=>!a.time_end);const no=currentLang==='no';if(open){currentActivityId=open.id;currentActivityType=open.activity_type;const icon=open.activity_type==='fishing'?'🦪':open.activity_type==='steaming'?'⚓':open.activity_type==='downtime_harvester'?'⚙️':open.activity_type==='downtime_factory'?'🏭':'🌊';const start=open.time_start?new Date(open.time_start).toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'}):'—';const actLabel=open.activity_type==='fishing'?(no?'FISKE':'FISHING'):open.activity_type==='steaming'?'STEAMING':open.activity_type==='downtime_harvester'?(no?'NEDETID HØSTER':'HARVESTER DOWNTIME'):open.activity_type==='downtime_factory'?(no?'NEDETID FABRIKK':'FACTORY DOWNTIME'):'WOW';const resumeBtn=open.activity_type==='fishing'?`<button class="btn btn-primary btn-sm" onclick="resumeFishing()">${no?'Åpne →':'Open →'}</button>`:`<button class="btn btn-warn btn-sm" onclick="endActivityPrompt()">${no?'Avslutt →':'End →'}</button>`;document.getElementById('activeActivityBanner').innerHTML=`<div class="active-banner"><div><div class="ab-label">${no?'Pågår siden':'In progress since'} ${start}</div><div class="ab-val ${open.activity_type}">${icon} ${actLabel}</div></div>${resumeBtn}</div>`;}else{document.getElementById('activeActivityBanner').innerHTML='';currentActivityId=null;currentActivityType=null;}}
+function renderActivityList(){const el=document.getElementById('activityList'),no=currentLang==='no';if(!activitiesThisTrip.length){el.innerHTML=`<div style="color:var(--muted);font-size:13px;">${no?'Ingen aktiviteter logget ennå.':'No activities logged yet.'}</div>`;return;}el.innerHTML=activitiesThisTrip.map(a=>{const icon=a.activity_type==='fishing'?'🦪':a.activity_type==='steaming'?'⚓':a.activity_type==='downtime_harvester'?'⚙️':a.activity_type==='downtime_factory'?'🏭':'🌊';const actLabel=a.activity_type==='fishing'?(no?'FISKE':'FISHING'):a.activity_type==='steaming'?'STEAMING':a.activity_type==='downtime_harvester'?(no?'NEDETID HØSTER':'HARVESTER DOWNTIME'):a.activity_type==='downtime_factory'?(no?'NEDETID FABRIKK':'FACTORY DOWNTIME'):'WOW';const start=a.time_start?new Date(a.time_start).toLocaleString('no-NO',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'—';const fuel=(a.fuel_start_litres!=null&&a.fuel_end_litres!=null)?` · ${(a.fuel_end_litres-a.fuel_start_litres).toFixed(0)}L`:'';const badge=a.time_end?`<div class="act-badge">${no?'Ferdig ✓':'Done ✓'}</div>`:`<div class="act-badge open">● ${no?'Åpen':'Open'}</div>`;return `<div class="activity-item"><div><div class="act-type ${a.activity_type}">${icon} ${actLabel}</div><div class="act-meta">${start}${fuel}</div></div>${badge}</div>`;}).join('');}
 function selectActivityType(type){currentActivityType=type;['fishing','steaming','wow'].forEach(t=>{document.getElementById('btn-'+t).className='act-btn'+(t===type?' sel-'+t:'');});document.getElementById('startActivityBtn').disabled=false;}
-function goToStartActivity(){const label=document.getElementById('startActTypeLabel');const no=currentLang==='no';label.textContent=currentActivityType==='fishing'?(no?'Fiske':'Fishing'):currentActivityType==='steaming'?'Steaming':'WOW';label.style.color=currentActivityType==='fishing'?'var(--accent)':currentActivityType==='steaming'?'var(--scallop)':'var(--warn)';document.getElementById('actGpsSection').style.display=currentActivityType==='fishing'?'block':'none';['actFuelStart','actWaveHeight','actWindSpeed','actNotes'].forEach(id=>document.getElementById(id).value='');['actSeaState','actWindDir','actVisibility'].forEach(id=>document.getElementById(id).value='');document.getElementById('gpsActStartDisplay').textContent='';document.getElementById('actLatStart').value='';document.getElementById('actLonStart').value='';goTo('screen-start-activity');}
+function goToStartActivity(){
+  const label=document.getElementById('startActTypeLabel');
+  const no=currentLang==='no';
+  const typeLabels={
+    fishing:no?'Fiske':'Fishing',
+    steaming:'Steaming',
+    wow:'WOW',
+    downtime_harvester:no?'Nedetid høster':'Harvester Downtime',
+    downtime_factory:no?'Nedetid fabrikk':'Factory Downtime'
+  };
+  const typeColors={fishing:'var(--accent)',steaming:'var(--scallop)',wow:'var(--warn)',downtime_harvester:'var(--warn)',downtime_factory:'var(--warn)'};
+  label.textContent=typeLabels[currentActivityType]||currentActivityType;
+  label.style.color=typeColors[currentActivityType]||'var(--muted)';
+  const isDowntime=currentActivityType==='downtime_harvester'||currentActivityType==='downtime_factory';
+  document.getElementById('actGpsSection').style.display=currentActivityType==='fishing'?'block':'none';
+  document.getElementById('reasonSection').style.display=isDowntime?'block':'none';
+  ['actFuelStart','actWaveHeight','actWindSpeed','actNotes','actReason'].forEach(id=>document.getElementById(id).value='');
+  ['actSeaState','actWindDir','actVisibility'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('gpsActStartDisplay').textContent='';
+  document.getElementById('actLatStart').value='';
+  document.getElementById('actLonStart').value='';
+  goTo('screen-start-activity');
+}
 async function saveStartActivity(){const{data,error}=await sb.from('activity_log').insert({trip_id:currentTrip.id,activity_type:currentActivityType,time_start:new Date().toISOString(),fuel_start_litres:parseFloat(document.getElementById('actFuelStart').value)||null,wave_height_m:parseFloat(document.getElementById('actWaveHeight').value)||null,wind_speed_knots:parseFloat(document.getElementById('actWindSpeed').value)||null,sea_state:document.getElementById('actSeaState').value||null,wind_direction:document.getElementById('actWindDir').value||null,visibility:document.getElementById('actVisibility').value||null,notes:document.getElementById('actNotes').value||null,lat_start:parseFloat(document.getElementById('actLatStart').value)||null,lon_start:parseFloat(document.getElementById('actLonStart').value)||null}).select().single();if(error){showToast((currentLang==='no'?'Feil: ':'Error: ')+error.message,'error');return;}currentActivityId=data.id;showToast((currentLang==='no'?'Aktivitet startet: ':'Started: ')+currentActivityType,'success');if(currentActivityType==='fishing'){towsThisActivity=[];renderTowList();goTo('screen-fishing');}else{await loadActivities();goTo('screen-main');}}
 async function resumeFishing(){await loadTowsForActivity(currentActivityId);goTo('screen-fishing');}
 async function loadTowsForActivity(actId){const{data}=await sb.from('tow_log').select('*').eq('activity_id',actId).order('tow_number');towsThisActivity=data||[];renderTowList();}
@@ -438,6 +466,43 @@ function getGPS(which){if(!navigator.geolocation){showToast(currentLang==='no'?'
 function goTo(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
 let toastTimer;
 function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+type;clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3500);}
+
+async function saveDailyLog() {
+  const no=currentLang==='no';
+  const date=document.getElementById('dailyDate').value;
+  const kg=parseFloat(document.getElementById('dailyKg').value);
+  if(!date){showToast(no?'Legg inn dato':'Please enter a date','error');return;}
+  if(!kg){showToast(no?'Legg inn kg landet':'Please enter kg landed','error');return;}
+  const {data:existing}=await sb.from('daily_log').select('id').eq('trip_id',currentTrip.id).eq('log_date',date).maybeSingle();
+  let error;
+  if(existing){
+    ({error}=await sb.from('daily_log').update({kg_landed:kg,notes:document.getElementById('dailyNotes').value||null}).eq('id',existing.id));
+  }else{
+    ({error}=await sb.from('daily_log').insert({trip_id:currentTrip.id,log_date:date,kg_landed:kg,notes:document.getElementById('dailyNotes').value||null}));
+  }
+  if(error){showToast('Error: '+error.message,'error');return;}
+  showToast(no?`Lagret — ${kg} kg for ${date}`:`Saved — ${kg} kg for ${date}`,'success');
+  document.getElementById('dailyKg').value='';
+  document.getElementById('dailyNotes').value='';
+  document.getElementById('dailyDate').value=new Date().toISOString().split('T')[0];
+  await loadDailyLog();
+}
+
+async function loadDailyLog() {
+  const {data}=await sb.from('daily_log').select('*').eq('trip_id',currentTrip.id).order('log_date',{ascending:false});
+  const el=document.getElementById('dailyLogList');
+  const no=currentLang==='no';
+  if(!data||!data.length){el.innerHTML=`<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px;">${no?'Ingen logger ennå.':'No entries yet.'}</div>`;return;}
+  el.innerHTML=data.map(d=>`
+    <div class="card" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-family:var(--font-head);font-weight:700;font-size:15px;color:var(--accent);">${d.log_date}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px;">${d.notes||''}</div>
+      </div>
+      <div style="font-family:var(--font-head);font-weight:700;font-size:22px;color:var(--text);">${d.kg_landed?.toLocaleString()} kg</div>
+    </div>`).join('');
+}
+
 init();
 </script>
 </body>
