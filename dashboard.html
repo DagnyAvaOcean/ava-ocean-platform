@@ -951,7 +951,22 @@ function applyMobileLayout(){
   const isMobile = window.innerWidth <= 768;
   const main = document.querySelector('.main');
   if(main){
-    main.style.marginLeft = isMobile ? '0' : '';
+    if(isMobile){
+      main.style.marginLeft = '0';
+      main.style.width = window.innerWidth + 'px';
+      main.style.maxWidth = window.innerWidth + 'px';
+      main.style.paddingTop = '68px';
+      main.style.paddingLeft = '12px';
+      main.style.paddingRight = '12px';
+      main.style.boxSizing = 'border-box';
+    } else {
+      main.style.marginLeft = '';
+      main.style.width = '';
+      main.style.maxWidth = '';
+      main.style.paddingTop = '';
+      main.style.paddingLeft = '';
+      main.style.paddingRight = '';
+    }
   }
 }
 window.addEventListener('resize', applyMobileLayout);
