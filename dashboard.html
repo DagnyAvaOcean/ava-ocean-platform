@@ -881,17 +881,33 @@ function renderCharts(f){
   const t=T[currentLang];
   const sorted=[...f.tows].sort((a,b)=>new Date(a.time_start)-new Date(b.time_start)).slice(-30);
   makeChart('fillChart','line',{labels:sorted.map(tw=>`#${tw.tow_number}`),datasets:[{label:t.fill,data:sorted.map(tw=>tw.harvester_fill_pct),borderColor:'#D9FFAC',backgroundColor:'rgba(217,255,172,0.08)',tension:0.3,pointBackgroundColor:'#D9FFAC',pointRadius:4}]},{plugins:{legend:{display:false}},scales:{...cD.scales,y:{...cD.scales.y,min:0,max:100}}});
-  const cnt={fishing:0,steaming:0,wow:0};f.activities.forEach(a=>{if(cnt[a.activity_type]!==undefined)cnt[a.activity_type]++;});
-  makeChart('activityChart','doughnut',{labels:[t.fishing,t.steaming,t.wow],datasets:[{data:[cnt.fishing,cnt.steaming,cnt.wow],backgroundColor:['rgba(217,255,172,0.75)','rgba(230,210,197,0.75)','rgba(255,140,105,0.75)'],borderColor:['#D9FFAC','#E6D2C5','#FF8C69'],borderWidth:1}]},{plugins:{legend:{labels:{color:'#a8959e',font:{family:'ABCFavorit',size:11}}}},scales:{}});
+  const no=currentLang==='no';
+  const cnt={fishing:0,steaming:0,wow:0,downtime_harvester:0,downtime_factory:0};
+  const dur={fishing:0,steaming:0,wow:0,downtime_harvester:0,downtime_factory:0};
+  f.activities.forEach(a=>{
+    if(cnt[a.activity_type]!==undefined) cnt[a.activity_type]++;
+    if(dur[a.activity_type]!==undefined&&a.time_start&&a.time_end)
+      dur[a.activity_type]+=(new Date(a.time_end)-new Date(a.time_start))/3600000;
+  });
+  const actLabels=[no?'Fiske':'Fishing','Steaming','WOW',no?'Nedetid høster':'Harvester DT',no?'Nedetid fabrikk':'Factory DT'];
+  const actColors=['rgba(217,255,172,0.75)','rgba(230,210,197,0.75)','rgba(255,140,105,0.75)','rgba(255,180,80,0.75)','rgba(180,130,255,0.75)'];
+  const actBorders=['#D9FFAC','#E6D2C5','#FF8C69','#FFB450','#B482FF'];
+  const actCounts=[cnt.fishing,cnt.steaming,cnt.wow,cnt.downtime_harvester,cnt.downtime_factory];
+  const chartActTitle=document.getElementById('chartActTitle');
+  if(chartActTitle) chartActTitle.textContent=no?'Aktivitetsfordeling — antall':'Activity Breakdown — count';
+  makeChart('activityChart','doughnut',{labels:actLabels,datasets:[{data:actCounts,backgroundColor:actColors,borderColor:actBorders,borderWidth:1}]},{plugins:{legend:{labels:{color:'#a8959e',font:{family:'ABCFavorit',size:11}}}},scales:{}});
   // Time per activity type bar chart (hours)
   const actTypeColors={fishing:'rgba(217,255,172,0.65)',steaming:'rgba(230,210,197,0.65)',wow:'rgba(255,140,105,0.65)',downtime_harvester:'rgba(255,180,80,0.65)',downtime_factory:'rgba(180,130,255,0.65)'};
-  const actTypeLabels2={fishing:no?'Fiske':'Fishing',steaming:'Steaming',wow:'WOW',downtime_harvester:no?'Nedetid høster':'Harvester DT',downtime_factory:no?'Nedetid fabrikk':'Factory DT'};
+  const actTypeKeys=['fishing','steaming','wow','downtime_harvester','downtime_factory'];
+  const actTypeLabels2=[no?'Fiske':'Fishing','Steaming','WOW',no?'Nedetid høster':'Harvester DT',no?'Nedetid fabrikk':'Factory DT'];
+  const chartFuelTitle=document.getElementById('chartFuelTitle');
+  if(chartFuelTitle) chartFuelTitle.textContent=no?'Tidsbruk per aktivitet (timer)':'Time per Activity (hours)';
   makeChart('fuelChart','bar',{
-    labels:Object.values(actTypeLabels2),
+    labels:actTypeLabels2,
     datasets:[{
       label:no?'Timer':'Hours',
-      data:Object.keys(actTypeLabels2).map(k=>parseFloat(dur[k].toFixed(1))),
-      backgroundColor:Object.keys(actTypeLabels2).map(k=>actTypeColors[k]),
+      data:actTypeKeys.map(k=>parseFloat(dur[k].toFixed(1))),
+      backgroundColor:actTypeKeys.map(k=>actTypeColors[k]),
       borderRadius:4
     }]
   },{plugins:{legend:{display:false}}});
