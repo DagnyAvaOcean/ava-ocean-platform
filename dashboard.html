@@ -40,9 +40,9 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
 .login-note{font-size:11px;color:var(--muted);text-align:center;margin-top:16px;}
 .login-back{font-size:11px;color:var(--muted);text-align:center;margin-top:10px;}
 .login-back a{color:var(--accent);text-decoration:none;font-family:var(--font-head);font-weight:700;}
-#app{display:none;}
-.sidebar{position:fixed;left:0;top:0;bottom:0;width:260px;background:var(--ocean);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;}
-.main{margin-left:260px;padding:32px;overflow-x:auto;}
+#app{display:flex;min-height:100vh;}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:260px;background:var(--ocean);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;overflow-y:auto;overflow-x:hidden;}
+.main{margin-left:260px;padding:32px;overflow-x:auto;width:calc(100% - 260px);min-width:0;box-sizing:border-box;}
 .logo-area{padding:22px 20px 18px;border-bottom:1px solid var(--border);}
 .logo-img{height:30px;display:block;}
 .logo-tagline{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:8px;font-family:var(--font-head);}
