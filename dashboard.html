@@ -696,6 +696,22 @@ function setLang(lang) {
   document.getElementById('subTows').textContent=t.tows_sub;
   document.getElementById('thTowFill').textContent=t.fill;
   document.getElementById('thTowDepth').textContent=t.depth;
+  const tno=currentLang==='no';
+  const tel=(id,no,en)=>{const e=document.getElementById(id);if(e)e.textContent=tno?no:en;};
+  tel('towLblAvgFill','Snitt fylling','Avg fill');
+  tel('towLblAvgDur','Snitt varighet','Avg duration');
+  tel('towLblAvgArea','Snitt areal dekket','Avg area covered');
+  tel('towLblTotalArea','Totalt areal dekket','Total area covered');
+  tel('towLblAvgSpeed','Snitt høstehastighet','Avg harvesting speed');
+  tel('towLblAvgDepth','Snitt dybde','Avg depth');
+  tel('towChartFillTime','Fylling % over tid','Fill % over time');
+  tel('towChartFillSite','Fylling % per felt','Fill % by site');
+  tel('towChartSpeedFill','Hastighet vs fylling %','Speed vs fill %');
+  tel('towChartDepthFill','Dybde vs fylling %','Depth vs fill %');
+  tel('towChartSeaFill','Bølgehøyde vs fylling %','Wave height vs fill %');
+  tel('towChartDurFill','Varighet vs fylling %','Duration vs fill %');
+  tel('thTowSpeed','Hastighet (kn)','Speed (kn)');
+  if(allTows&&allTows.length) renderTowCharts(allTows.filter(t=>currentTripFilter==='all'||t.trip_id===currentTripFilter));
   // Bycatch
   document.getElementById('titleBycatch').textContent=t.bycatch;
   document.getElementById('subBycatch').textContent=t.bycatch_sub;
