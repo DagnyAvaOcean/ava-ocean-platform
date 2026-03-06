@@ -1,15 +1,14 @@
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
   }
 
-  const origin = req.headers.origin || '';
-  const allowed = [
-    'https://ava-ocean-platform.vercel.app',
-    'http://localhost:3000'
-  ];
-  if (!allowed.includes(origin) && !origin.endsWith('.vercel.app')) {
-    return res.status(403).json({ error: 'Forbidden' });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
@@ -31,7 +30,6 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
-    res.setHeader('Access-Control-Allow-Origin', origin);
     return res.status(response.status).json(data);
 
   } catch (error) {
