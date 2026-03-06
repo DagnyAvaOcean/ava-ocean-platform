@@ -414,11 +414,36 @@ tr:hover td{background:rgba(217,255,172,0.02);}
           <button class="btn btn-outline" id="btnCsvTow" onclick="exportCSV('tows')">↓ CSV</button>
         </div>
       </div>
+
+      <!-- Tow summary cards -->
+      <div class="stats-grid" style="margin-bottom:24px;">
+        <div class="stat-card"><div class="stat-label" id="towLblAvgFill">Snitt fylling</div><div class="stat-val" id="towStatFill">—</div><div class="stat-unit">%</div></div>
+        <div class="stat-card"><div class="stat-label" id="towLblAvgDur">Snitt varighet</div><div class="stat-val" id="towStatDur">—</div><div class="stat-unit">min</div></div>
+        <div class="stat-card"><div class="stat-label" id="towLblAvgArea">Snitt areal dekket</div><div class="stat-val" id="towStatArea">—</div><div class="stat-unit">m²</div></div>
+        <div class="stat-card"><div class="stat-label" id="towLblTotalArea">Totalt areal dekket</div><div class="stat-val" id="towStatTotalArea">—</div><div class="stat-unit">m²</div></div>
+        <div class="stat-card"><div class="stat-label" id="towLblAvgSpeed">Snitt høstehastighet</div><div class="stat-val" id="towStatSpeed">—</div><div class="stat-unit">knop</div></div>
+        <div class="stat-card"><div class="stat-label" id="towLblAvgDepth">Snitt dybde</div><div class="stat-val" id="towStatDepth">—</div><div class="stat-unit">m</div></div>
+      </div>
+
+      <!-- Tow charts -->
+      <div class="charts-grid" style="margin-bottom:20px;">
+        <div class="chart-card"><div class="chart-title" id="towChartFillTime">Fylling % over tid</div><div class="chart-wrap"><canvas id="towFillTimeChart"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title" id="towChartFillSite">Fylling % per felt</div><div class="chart-wrap"><canvas id="towFillSiteChart"></canvas></div></div>
+      </div>
+      <div class="charts-grid" style="margin-bottom:20px;">
+        <div class="chart-card"><div class="chart-title" id="towChartSpeedFill">Hastighet vs fylling %</div><div class="chart-wrap"><canvas id="towSpeedFillChart"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title" id="towChartDepthFill">Dybde vs fylling %</div><div class="chart-wrap"><canvas id="towDepthFillChart"></canvas></div></div>
+      </div>
+      <div class="charts-grid" style="margin-bottom:24px;">
+        <div class="chart-card"><div class="chart-title" id="towChartSeaFill">Sjøtilstand vs fylling %</div><div class="chart-wrap"><canvas id="towSeaFillChart"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title" id="towChartDurFill">Varighet vs fylling %</div><div class="chart-wrap"><canvas id="towDurFillChart"></canvas></div></div>
+      </div>
+
       <div class="card"><div class="table-wrap"><table>
         <thead><tr>
           <th id="thTowTrip">Tur</th><th id="thTowNum">Høst #</th><th id="thTowStart">Start</th>
           <th id="thTowEnd">Slutt</th><th id="thTowMin">Min</th><th id="thTowFill">Fylling %</th>
-          <th id="thTowDepth">Dybde (m)</th><th>Lat Start</th><th>Lon Start</th><th>Lat Slutt</th><th>Lon Slutt</th>
+          <th id="thTowDepth">Dybde (m)</th><th id="thTowSpeed">Hastighet (kn)</th><th>Lat Start</th><th>Lon Start</th><th>Lat Slutt</th><th>Lon Slutt</th>
         </tr></thead>
         <tbody id="towsTbody"><tr><td colspan="11" class="empty">Laster...</td></tr></tbody>
       </table></div></div>
@@ -700,6 +725,114 @@ function setLang(lang) {
 }
 function initLang(){const s=localStorage.getItem('ava_lang')||'no';if(s!=='no')setLang(s);}
 
+
+function renderTowCharts(tows) {
+  if (!tows || !tows.length) return;
+  const no = currentLang === 'no';
+
+  // ── Helper ───────────────────────────────────────────────
+  function haversine(lat1,lon1,lat2,lon2){
+    const R=6371000,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
+    const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+  }
+
+  // Enrich tows with derived fields
+  const enriched = tows.filter(tw=>tw.harvester_fill_pct!=null).map(tw=>{
+    const dur = tw.time_start&&tw.time_end?(new Date(tw.time_end)-new Date(tw.time_start))/60000:null;
+    const dist = tw.lat_start&&tw.lon_start&&tw.lat_end&&tw.lon_end?haversine(tw.lat_start,tw.lon_start,tw.lat_end,tw.lon_end):null;
+    const area = dist?Math.round(dist*12):null;
+    return {...tw, dur, dist, area};
+  });
+
+  // ── Summary cards ─────────────────────────────────────────
+  const avg = key => { const v=enriched.filter(t=>t[key]!=null).map(t=>t[key]); return v.length?(v.reduce((a,b)=>a+b,0)/v.length):null; };
+  const sum = key => enriched.filter(t=>t[key]!=null).reduce((s,t)=>s+t[key],0);
+  const fmt = (v,dp=1) => v!=null?v.toFixed(dp):'—';
+
+  document.getElementById('towStatFill').textContent   = fmt(avg('harvester_fill_pct'));
+  document.getElementById('towStatDur').textContent    = fmt(avg('dur'));
+  document.getElementById('towStatArea').textContent   = fmt(avg('area'),0);
+  document.getElementById('towStatTotalArea').textContent = Math.round(sum('area')).toLocaleString();
+  document.getElementById('towStatSpeed').textContent  = fmt(avg('speed_knots'));
+  document.getElementById('towStatDepth').textContent  = fmt(avg('depth_m'));
+
+  // Chart defaults
+  const cOpts = (xLabel,yLabel) => ({
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{title:{display:true,text:xLabel,color:'#a8959e',font:{size:10}},ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}},grid:{color:'#5c5060'}},
+      y:{title:{display:true,text:yLabel,color:'#a8959e',font:{size:10}},ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}},grid:{color:'#5c5060'}}
+    }
+  });
+
+  // ── 1. Fill % over time (line) ────────────────────────────
+  const sorted = [...enriched].sort((a,b)=>new Date(a.time_start)-new Date(b.time_start));
+  if(charts.towFillTime) charts.towFillTime.destroy();
+  const c1 = document.getElementById('towFillTimeChart')?.getContext('2d');
+  if(c1) charts.towFillTime = new Chart(c1,{
+    type:'line',
+    data:{
+      labels:sorted.map(t=>t.time_start?new Date(t.time_start).toLocaleDateString(no?'nb-NO':'en-GB',{month:'short',day:'numeric'}):''),
+      datasets:[{data:sorted.map(t=>t.harvester_fill_pct),borderColor:'#D9FFAC',backgroundColor:'rgba(217,255,172,0.1)',tension:0.3,pointRadius:4,pointBackgroundColor:'#D9FFAC'}]
+    },
+    options:cOpts(no?'Dato':'Date','%')
+  });
+
+  // ── 2. Fill % by site (bar) ───────────────────────────────
+  const sites = [...new Set(enriched.filter(t=>t.trip_registry?.site_registry?.site_name).map(t=>t.trip_registry.site_registry.site_name))];
+  const siteAvg = sites.map(s=>{const v=enriched.filter(t=>t.trip_registry?.site_registry?.site_name===s).map(t=>t.harvester_fill_pct);return v.length?(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1):0;});
+  const siteColors=['rgba(217,255,172,0.7)','rgba(230,210,197,0.7)','rgba(255,140,105,0.7)'];
+  if(charts.towFillSite) charts.towFillSite.destroy();
+  const c2 = document.getElementById('towFillSiteChart')?.getContext('2d');
+  if(c2) charts.towFillSite = new Chart(c2,{
+    type:'bar',
+    data:{labels:sites.length?sites:[no?'Ingen data':'No data'],datasets:[{data:siteAvg,backgroundColor:siteColors,borderRadius:4}]},
+    options:{...cOpts(no?'Felt':'Site','%'),plugins:{legend:{display:false}},scales:{...cOpts().scales,y:{...cOpts().scales.y,min:0,max:100}}}
+  });
+
+  // ── 3. Speed vs fill % (scatter) ─────────────────────────
+  const speedData = enriched.filter(t=>t.speed_knots!=null).map(t=>({x:t.speed_knots,y:t.harvester_fill_pct}));
+  if(charts.towSpeedFill) charts.towSpeedFill.destroy();
+  const c3 = document.getElementById('towSpeedFillChart')?.getContext('2d');
+  if(c3) charts.towSpeedFill = new Chart(c3,{
+    type:'scatter',
+    data:{datasets:[{data:speedData,backgroundColor:'rgba(217,255,172,0.6)',pointRadius:6,pointHoverRadius:8}]},
+    options:cOpts(no?'Hastighet (knop)':'Speed (knots)','%')
+  });
+
+  // ── 4. Depth vs fill % (scatter) ─────────────────────────
+  const depthData = enriched.filter(t=>t.depth_m!=null).map(t=>({x:t.depth_m,y:t.harvester_fill_pct}));
+  if(charts.towDepthFill) charts.towDepthFill.destroy();
+  const c4 = document.getElementById('towDepthFillChart')?.getContext('2d');
+  if(c4) charts.towDepthFill = new Chart(c4,{
+    type:'scatter',
+    data:{datasets:[{data:depthData,backgroundColor:'rgba(230,210,197,0.6)',pointRadius:6,pointHoverRadius:8}]},
+    options:cOpts(no?'Dybde (m)':'Depth (m)','%')
+  });
+
+  // ── 5. Sea state vs fill % (bar - avg fill per sea state) ─
+  const seaStates = [...new Set(enriched.filter(t=>t.wave_height_m!=null).map(t=>Math.round(t.wave_height_m*2)/2))].sort((a,b)=>a-b);
+  const seaAvg = seaStates.map(s=>{const v=enriched.filter(t=>t.wave_height_m!=null&&Math.round(t.wave_height_m*2)/2===s).map(t=>t.harvester_fill_pct);return v.length?(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1):0;});
+  if(charts.towSeaFill) charts.towSeaFill.destroy();
+  const c5 = document.getElementById('towSeaFillChart')?.getContext('2d');
+  if(c5) charts.towSeaFill = new Chart(c5,{
+    type:'bar',
+    data:{labels:seaStates.map(s=>s+'m'),datasets:[{data:seaAvg,backgroundColor:'rgba(255,140,105,0.7)',borderRadius:4}]},
+    options:cOpts(no?'Bølgehøyde (m)':'Wave height (m)','%')
+  });
+
+  // ── 6. Duration vs fill % (scatter) ──────────────────────
+  const durData = enriched.filter(t=>t.dur!=null).map(t=>({x:parseFloat(t.dur.toFixed(1)),y:t.harvester_fill_pct}));
+  if(charts.towDurFill) charts.towDurFill.destroy();
+  const c6 = document.getElementById('towDurFillChart')?.getContext('2d');
+  if(c6) charts.towDurFill = new Chart(c6,{
+    type:'scatter',
+    data:{datasets:[{data:durData,backgroundColor:'rgba(180,130,255,0.6)',pointRadius:6,pointHoverRadius:8}]},
+    options:cOpts(no?'Varighet (min)':'Duration (min)','%')
+  });
+}
 
 function renderFactory() {
   const no = currentLang === 'no';
@@ -994,7 +1127,7 @@ async function loadAll(){
     const[trips,activities,tows,bycatch,factory,dailyLogs]=await Promise.all([
       sb.from('trip_registry').select('*,site_registry(site_name)').order('trip_date',{ascending:false}),
       sb.from('activity_log').select('*,trip_registry(trip_code)').order('time_start',{ascending:false}),
-      sb.from('tow_log').select('*,trip_registry(trip_code)').order('created_at',{ascending:false}),
+      sb.from('tow_log').select('*,trip_registry(trip_code,site_registry(site_name))').order('created_at',{ascending:false}),
       sb.from('bycatch_report').select('*,trip_registry(trip_code),tow_log(tow_number)').order('created_at',{ascending:false}),
       sb.from('factory_sample_log').select('*,trip_registry(trip_code)').order('sample_date',{ascending:true}),
       sb.from('daily_log').select('*,trip_registry(trip_code)').order('log_date',{ascending:true}),
@@ -1013,7 +1146,7 @@ function populateTripFilter(){
   sel.innerHTML=`<option value="all">${t.allTrips}</option>`;
   allTrips.forEach(t2=>{const o=document.createElement('option');o.value=t2.id;o.textContent=t2.trip_code+(t2.trip_closed?' ✓':'');sel.appendChild(o);});
 }
-function renderAll(){const f=getFiltered();renderOverview(f);renderCPUE(f);renderActivitiesTable(f.activities);renderTowsTable(f.tows);renderBycatchTable(f.bycatch);renderCharts(f);renderFactory();renderDailySummary();renderEmissionsMonth();renderFactory();if(document.getElementById('section-map').classList.contains('active'))renderMap();}
+function renderAll(){const f=getFiltered();renderOverview(f);renderCPUE(f);renderActivitiesTable(f.activities);renderTowsTable(f.tows);renderTowCharts(f.tows);renderBycatchTable(f.bycatch);renderCharts(f);renderFactory();renderDailySummary();renderEmissionsMonth();renderFactory();if(document.getElementById('section-map').classList.contains('active'))renderMap();}
 function haversineM(lat1,lon1,lat2,lon2){const R=6371000,r=d=>d*Math.PI/180,dLat=r(lat2-lat1),dLon=r(lon2-lon1);const a=Math.sin(dLat/2)**2+Math.cos(r(lat1))*Math.cos(r(lat2))*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
 function renderOverview(f){
   const t=T[currentLang];
@@ -1052,7 +1185,7 @@ function renderActivitiesTable(activities){
 }
 function renderTowsTable(tows){
   const t=T[currentLang];
-  document.getElementById('towsTbody').innerHTML=!tows.length?`<tr><td colspan="11" class="empty">${t.noTows}</td></tr>`:tows.map(tw=>{
+  document.getElementById('towsTbody').innerHTML=!tows.length?`<tr><td colspan="12" class="empty">${t.noTows}</td></tr>`:tows.map(tw=>{
     const dur=(tw.time_start&&tw.time_end)?Math.round((new Date(tw.time_end)-new Date(tw.time_start))/60000):'—';
     const ts=tw.time_start?new Date(tw.time_start).toLocaleString('no-NO',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
     const te=tw.time_end?new Date(tw.time_end).toLocaleString('no-NO',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
@@ -1128,6 +1261,114 @@ function exportCSV(type){
   else if(type==='bycatch'){headers=['trip_code','tow_number','species_common','species_scientific','category','count_small','count_medium','count_large','total','returned_to_sea'];rows=f.bycatch.map(b=>[b.trip_registry?.trip_code,b.tow_log?.tow_number,b.species_common,b.species_scientific,b.category,b.count_small,b.count_medium,b.count_large,(b.count_small||0)+(b.count_medium||0)+(b.count_large||0),b.returned_to_sea]);}
   const csv=[headers,...rows].map(r=>r.map(v=>v==null?'':`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`ava-ocean-${type}-${new Date().toISOString().split('T')[0]}.csv`;a.click();
+}
+
+function renderTowCharts(tows) {
+  if (!tows || !tows.length) return;
+  const no = currentLang === 'no';
+
+  // ── Helper ───────────────────────────────────────────────
+  function haversine(lat1,lon1,lat2,lon2){
+    const R=6371000,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
+    const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+  }
+
+  // Enrich tows with derived fields
+  const enriched = tows.filter(tw=>tw.harvester_fill_pct!=null).map(tw=>{
+    const dur = tw.time_start&&tw.time_end?(new Date(tw.time_end)-new Date(tw.time_start))/60000:null;
+    const dist = tw.lat_start&&tw.lon_start&&tw.lat_end&&tw.lon_end?haversine(tw.lat_start,tw.lon_start,tw.lat_end,tw.lon_end):null;
+    const area = dist?Math.round(dist*12):null;
+    return {...tw, dur, dist, area};
+  });
+
+  // ── Summary cards ─────────────────────────────────────────
+  const avg = key => { const v=enriched.filter(t=>t[key]!=null).map(t=>t[key]); return v.length?(v.reduce((a,b)=>a+b,0)/v.length):null; };
+  const sum = key => enriched.filter(t=>t[key]!=null).reduce((s,t)=>s+t[key],0);
+  const fmt = (v,dp=1) => v!=null?v.toFixed(dp):'—';
+
+  document.getElementById('towStatFill').textContent   = fmt(avg('harvester_fill_pct'));
+  document.getElementById('towStatDur').textContent    = fmt(avg('dur'));
+  document.getElementById('towStatArea').textContent   = fmt(avg('area'),0);
+  document.getElementById('towStatTotalArea').textContent = Math.round(sum('area')).toLocaleString();
+  document.getElementById('towStatSpeed').textContent  = fmt(avg('speed_knots'));
+  document.getElementById('towStatDepth').textContent  = fmt(avg('depth_m'));
+
+  // Chart defaults
+  const cOpts = (xLabel,yLabel) => ({
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{title:{display:true,text:xLabel,color:'#a8959e',font:{size:10}},ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}},grid:{color:'#5c5060'}},
+      y:{title:{display:true,text:yLabel,color:'#a8959e',font:{size:10}},ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}},grid:{color:'#5c5060'}}
+    }
+  });
+
+  // ── 1. Fill % over time (line) ────────────────────────────
+  const sorted = [...enriched].sort((a,b)=>new Date(a.time_start)-new Date(b.time_start));
+  if(charts.towFillTime) charts.towFillTime.destroy();
+  const c1 = document.getElementById('towFillTimeChart')?.getContext('2d');
+  if(c1) charts.towFillTime = new Chart(c1,{
+    type:'line',
+    data:{
+      labels:sorted.map(t=>t.time_start?new Date(t.time_start).toLocaleDateString(no?'nb-NO':'en-GB',{month:'short',day:'numeric'}):''),
+      datasets:[{data:sorted.map(t=>t.harvester_fill_pct),borderColor:'#D9FFAC',backgroundColor:'rgba(217,255,172,0.1)',tension:0.3,pointRadius:4,pointBackgroundColor:'#D9FFAC'}]
+    },
+    options:cOpts(no?'Dato':'Date','%')
+  });
+
+  // ── 2. Fill % by site (bar) ───────────────────────────────
+  const sites = [...new Set(enriched.filter(t=>t.trip_registry?.site_registry?.site_name).map(t=>t.trip_registry.site_registry.site_name))];
+  const siteAvg = sites.map(s=>{const v=enriched.filter(t=>t.trip_registry?.site_registry?.site_name===s).map(t=>t.harvester_fill_pct);return v.length?(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1):0;});
+  const siteColors=['rgba(217,255,172,0.7)','rgba(230,210,197,0.7)','rgba(255,140,105,0.7)'];
+  if(charts.towFillSite) charts.towFillSite.destroy();
+  const c2 = document.getElementById('towFillSiteChart')?.getContext('2d');
+  if(c2) charts.towFillSite = new Chart(c2,{
+    type:'bar',
+    data:{labels:sites.length?sites:[no?'Ingen data':'No data'],datasets:[{data:siteAvg,backgroundColor:siteColors,borderRadius:4}]},
+    options:{...cOpts(no?'Felt':'Site','%'),plugins:{legend:{display:false}},scales:{...cOpts().scales,y:{...cOpts().scales.y,min:0,max:100}}}
+  });
+
+  // ── 3. Speed vs fill % (scatter) ─────────────────────────
+  const speedData = enriched.filter(t=>t.speed_knots!=null).map(t=>({x:t.speed_knots,y:t.harvester_fill_pct}));
+  if(charts.towSpeedFill) charts.towSpeedFill.destroy();
+  const c3 = document.getElementById('towSpeedFillChart')?.getContext('2d');
+  if(c3) charts.towSpeedFill = new Chart(c3,{
+    type:'scatter',
+    data:{datasets:[{data:speedData,backgroundColor:'rgba(217,255,172,0.6)',pointRadius:6,pointHoverRadius:8}]},
+    options:cOpts(no?'Hastighet (knop)':'Speed (knots)','%')
+  });
+
+  // ── 4. Depth vs fill % (scatter) ─────────────────────────
+  const depthData = enriched.filter(t=>t.depth_m!=null).map(t=>({x:t.depth_m,y:t.harvester_fill_pct}));
+  if(charts.towDepthFill) charts.towDepthFill.destroy();
+  const c4 = document.getElementById('towDepthFillChart')?.getContext('2d');
+  if(c4) charts.towDepthFill = new Chart(c4,{
+    type:'scatter',
+    data:{datasets:[{data:depthData,backgroundColor:'rgba(230,210,197,0.6)',pointRadius:6,pointHoverRadius:8}]},
+    options:cOpts(no?'Dybde (m)':'Depth (m)','%')
+  });
+
+  // ── 5. Sea state vs fill % (bar - avg fill per sea state) ─
+  const seaStates = [...new Set(enriched.filter(t=>t.wave_height_m!=null).map(t=>Math.round(t.wave_height_m*2)/2))].sort((a,b)=>a-b);
+  const seaAvg = seaStates.map(s=>{const v=enriched.filter(t=>t.wave_height_m!=null&&Math.round(t.wave_height_m*2)/2===s).map(t=>t.harvester_fill_pct);return v.length?(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1):0;});
+  if(charts.towSeaFill) charts.towSeaFill.destroy();
+  const c5 = document.getElementById('towSeaFillChart')?.getContext('2d');
+  if(c5) charts.towSeaFill = new Chart(c5,{
+    type:'bar',
+    data:{labels:seaStates.map(s=>s+'m'),datasets:[{data:seaAvg,backgroundColor:'rgba(255,140,105,0.7)',borderRadius:4}]},
+    options:cOpts(no?'Bølgehøyde (m)':'Wave height (m)','%')
+  });
+
+  // ── 6. Duration vs fill % (scatter) ──────────────────────
+  const durData = enriched.filter(t=>t.dur!=null).map(t=>({x:parseFloat(t.dur.toFixed(1)),y:t.harvester_fill_pct}));
+  if(charts.towDurFill) charts.towDurFill.destroy();
+  const c6 = document.getElementById('towDurFillChart')?.getContext('2d');
+  if(c6) charts.towDurFill = new Chart(c6,{
+    type:'scatter',
+    data:{datasets:[{data:durData,backgroundColor:'rgba(180,130,255,0.6)',pointRadius:6,pointHoverRadius:8}]},
+    options:cOpts(no?'Varighet (min)':'Duration (min)','%')
+  });
 }
 
 function renderFactory() {
@@ -1280,7 +1521,7 @@ function showSection(name,el){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('section-'+name).classList.add('active');el.classList.add('active');
-  if(name==='map')renderMap();else if(name==='factory')renderFactory();
+  if(name==='map')renderMap();else if(name==='factory')renderFactory();else if(name==='tows')renderTowCharts(allTows.filter(t=>currentTripFilter==='all'||t.trip_id===currentTripFilter));
 }
 init();
 </script>
