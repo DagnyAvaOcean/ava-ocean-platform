@@ -392,7 +392,7 @@ function setLang(lang) {
   });
   document.querySelectorAll('[data-no]').forEach(el=>{
     const val=el.getAttribute('data-'+lang);
-    if(val){ if(el.tagName==='INPUT'||el.tagName==='BUTTON')el.value=val; else el.textContent=val; }
+    if(val){ if(el.tagName==='INPUT')el.value=val; else el.textContent=val; }
   });
   document.querySelectorAll('select option[data-no]').forEach(opt=>{
     const val=opt.getAttribute('data-'+lang); if(val)opt.textContent=val;
