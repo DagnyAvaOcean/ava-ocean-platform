@@ -130,7 +130,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;heigh
 </head>
 <body>
 <div id="loginScreen">
-<img class="login-logo" src="ava-ocean-logo-mark-lime-purple-master.png">
+  <img class="login-logo" src="ava-ocean-logo-mark-lime-purple-master.png">
   <div class="lang-toggle">
     <button class="lang-btn active" onclick="setLang('no')">NO</button>
     <button class="lang-btn" onclick="setLang('en')">EN</button>
@@ -200,7 +200,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;heigh
     <div class="section-label" data-no="Logg ny aktivitet" data-en="Log New Activity">Logg ny aktivitet</div>
     <div class="activity-picker">
       <div class="act-btn" id="btn-fishing" onclick="selectActivityType('fishing')"><span class="act-icon">🦪</span><span data-no="Fiske" data-en="Fishing">Fiske</span></div>
-      <div class="act-btn" id="btn-steaming" onclick="selectActivityType('steaming')"><span class="act-icon">⚓</span><span data-no="Steaming" data-en="Steaming">Steaming</span></div>
+      <div class="act-btn" id="btn-steaming" onclick="selectActivityType('steaming')"><span class="act-icon">⚓</span><span data-no="Transitt" data-en="Steaming">Transitt</span></div>
       <div class="act-btn" id="btn-wow" onclick="selectActivityType('wow')"><span class="act-icon">🌊</span><span data-no="WOW" data-en="WOW">WOW</span></div>
       <div class="act-btn" id="btn-downtime_harvester" onclick="selectActivityType('downtime_harvester')"><span class="act-icon">⚙️</span><span data-no="Nedetid høster" data-en="Harvester downtime">Nedetid høster</span></div>
       <div class="act-btn" id="btn-downtime_factory" onclick="selectActivityType('downtime_factory')"><span class="act-icon">🏭</span><span data-no="Nedetid fabrikk" data-en="Factory downtime">Nedetid fabrikk</span></div>
@@ -260,7 +260,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;heigh
       <input type="hidden" id="actLatStart"><input type="hidden" id="actLonStart">
     </div>
     <div id="reasonSection" style="display:none;" class="card">
-      <div class="section-label" style="margin-top:0;" data-no="Årsak til nedetid" data-en="Reason for downtime">Årsak til nedetid</div>
+      <div class="section-label" style="margin-top:0;" data-no="Årsak til nedetid" data-en="Reason for Downtime">Årsak til nedetid</div>
       <div class="field"><label data-no="Årsak" data-en="Reason">Årsak</label><input type="text" id="actReason" placeholder="f.eks. Motorhavari, vedlikehold..."></div>
     </div>
     <div class="field" style="margin-top:4px;"><label data-no="Notater (valgfritt)" data-en="Notes (optional)">Notater (valgfritt)</label><textarea id="actNotes" placeholder="Observasjoner..."></textarea></div>
@@ -275,12 +275,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;heigh
       <button class="btn btn-warn btn-sm" onclick="endActivityPrompt()" data-no="Avslutt" data-en="End Activity">Avslutt</button>
     </div>
     <div id="towListSection">
-      <div class="section-label" data-no="Høster denne aktiviteten" data-en="Tows This Activity">Høster denne aktiviteten</div>
-      <div id="towList"><div style="color:var(--muted);font-size:13px;" data-no="Ingen høstere ennå." data-en="No tows yet.">Ingen høstere ennå.</div></div>
-      <button class="btn btn-primary" onclick="showTowForm()" style="margin-top:12px;" data-no="+ Logg ny høst" data-en="+ Log New Tow">+ Logg ny høst</button>
+      <div class="section-label" data-no="Høstinger denne aktiviteten" data-en="Tows This Activity">Høstinger denne aktiviteten</div>
+      <div id="towList"><div style="color:var(--muted);font-size:13px;" data-no="Ingen høstinger ennå." data-en="No tows yet.">Ingen høstinger ennå.</div></div>
+      <button class="btn btn-primary" onclick="showTowForm()" style="margin-top:12px;" data-no="+ Logg ny høsting" data-en="+ Log New Tow">+ Logg ny høsting</button>
     </div>
     <div id="towFormSection" style="display:none;">
-      <div class="section-label"><span data-no="Høst" data-en="Tow">Høst</span> <span id="towNumLabel">–</span></div>
+      <div class="section-label"><span data-no="Høsting" data-en="Tow">Høsting</span> <span id="towNumLabel">–</span></div>
       <div class="card">
         <div class="section-label" style="margin-top:0;" data-no="Start" data-en="Start">Start</div>
         <div class="field"><label data-no="Starttid" data-en="Start Time">Starttid</label><input type="datetime-local" id="towTimeStart"></div>
@@ -300,21 +300,21 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;heigh
         </div>
       </div>
       <div class="card">
-        <div class="section-label" style="margin-top:0;" data-no="Høst" data-en="Harvest">Høst</div>
+        <div class="section-label" style="margin-top:0;" data-no="Høsting" data-en="Harvest">Høsting</div>
         <div class="field"><label data-no="Høsterfylling" data-en="Harvester Fill">Høsterfylling</label>
           <div class="slider-wrap"><div class="slider-val"><span id="fillVal">0</span>%</div><input type="range" id="harvesterFill" min="0" max="100" value="0" oninput="document.getElementById('fillVal').textContent=this.value"></div>
         </div>
         <div class="field" style="margin-top:16px;"><label data-no="Dybde (m)" data-en="Depth (m)">Dybde (m)</label><input type="number" id="towDepth" placeholder="25" inputmode="decimal" step="0.5"></div>
         <div class="field"><label data-no="Notater (valgfritt)" data-en="Notes (optional)">Notater (valgfritt)</label><textarea id="towNotes" placeholder="Havbunn, forhold..."></textarea></div>
       </div>
-      <button class="btn btn-primary" onclick="saveTow()" data-no="Lagre høst og logg bifangst →" data-en="Save Tow & Log Bycatch →">Lagre høst og logg bifangst →</button>
+      <button class="btn btn-primary" onclick="saveTow()" data-no="Lagre høsting og logg bifangst →" data-en="Save Tow & Log Bycatch →">Lagre høsting og logg bifangst →</button>
       <button class="btn btn-secondary" onclick="cancelTowForm()" data-no="Avbryt" data-en="Cancel">Avbryt</button>
     </div>
   </div>
 
   <!-- BYCATCH -->
   <div class="screen" id="screen-bycatch">
-    <div class="section-label"><span data-no="Bifangst — Høst" data-en="Bycatch — Tow">Bifangst — Høst</span> <span id="bycatchTowLabel">–</span></div>
+    <div class="section-label"><span data-no="Bifangst — Høsting" data-en="Bycatch — Tow">Bifangst — Høsting</span> <span id="bycatchTowLabel">–</span></div>
     <div class="info-box" data-no="Registrer antall per størrelse (S/M/L). La stå tom hvis ingen." data-en="Record counts per size class (S/M/L). Leave empty if none.">Registrer antall per størrelse (S/M/L). La stå tom hvis ingen.</div>
     <div id="bycatchList"></div>
     <button class="btn btn-add" onclick="addBycatchItem()" data-no="+ Legg til art" data-en="+ Add Species">+ Legg til art</button>
@@ -365,15 +365,15 @@ const HARVESTER_WIDTH_M=12,BASKET_VOLUME_M3=28,HFO_EMISSION_FACTOR=3.114;
 let currentTrip=null,currentActivityType=null,currentActivityId=null,currentTowId=null,currentTowNum=0;
 let towsThisActivity=[],activitiesThisTrip=[],bycatchItems=[],currentLang='no';
 
-/* ===== FIX 1: Centralized translation helper for activity labels ===== */
+/* ===== Centralized translation helpers ===== */
 function getActivityLabel(type) {
   const no=currentLang==='no';
   const labels={
-    fishing:    no?'FISKE':'FISHING',
-    steaming:   no?'TRANSITT':'STEAMING',
-    wow:        'WOW',
-    downtime_harvester: no?'NEDETID HØSTER':'HARVESTER DOWNTIME',
-    downtime_factory:   no?'NEDETID FABRIKK':'FACTORY DOWNTIME'
+    fishing:no?'FISKE':'FISHING',
+    steaming:no?'TRANSITT':'STEAMING',
+    wow:'WOW',
+    downtime_harvester:no?'NEDETID HØSTER':'HARVESTER DOWNTIME',
+    downtime_factory:no?'NEDETID FABRIKK':'FACTORY DOWNTIME'
   };
   return labels[type]||type;
 }
@@ -381,7 +381,6 @@ function getActivityIcon(type) {
   const icons={fishing:'🦪',steaming:'⚓',downtime_harvester:'⚙️',downtime_factory:'🏭',wow:'🌊'};
   return icons[type]||'📋';
 }
-/* ===== All 5 activity types for CSS highlighting ===== */
 const ALL_ACTIVITY_TYPES=['fishing','steaming','wow','downtime_harvester','downtime_factory'];
 const ACTIVITY_SEL_CLASS={fishing:'sel-fishing',steaming:'sel-steaming',wow:'sel-wow',downtime_harvester:'sel-wow',downtime_factory:'sel-wow'};
 
@@ -398,7 +397,7 @@ function setLang(lang) {
   document.querySelectorAll('select option[data-no]').forEach(opt=>{
     const val=opt.getAttribute('data-'+lang); if(val)opt.textContent=val;
   });
-  /* FIX 1b: Re-render dynamic content when language changes */
+  /* Re-render dynamic content when language changes */
   if(currentTrip && activitiesThisTrip.length) renderActivityList();
   if(currentTrip && currentActivityId) loadActivities();
 }
@@ -419,7 +418,6 @@ function hideNewTripForm(){document.getElementById('newTripForm').style.display=
 async function createTrip(){const code=document.getElementById('newTripCode').value.trim(),date=document.getElementById('newTripDate').value;const no=currentLang==='no';if(!code||!date){showToast(no?'Turkode og dato er påkrevd':'Trip code and date required','error');return;}const{data,error}=await sb.from('trip_registry').insert({trip_code:code,captain_name:document.getElementById('newCaptain').value.trim(),trip_date:date,site_id:document.getElementById('siteSelect').value||null,departure_port:document.getElementById('newPort').value.trim(),vessel_name:'Ava Ray'}).select().single();if(error){showToast((no?'Feil: ':'Error: ')+error.message,'error');return;}showToast(no?'Tur opprettet!':'Trip created!','success');currentTrip=data;await loadTrips();document.getElementById('tripSelect').value=data.id;await loadTripSummary(data.id);hideNewTripForm();}
 async function enterMainScreen(){await loadActivities();goTo('screen-main');}
 
-/* ===== FIX 2: loadActivities now uses centralized labels and shows End button for ALL non-fishing activities ===== */
 async function loadActivities(){
   const{data}=await sb.from('activity_log').select('*').eq('trip_id',currentTrip.id).order('created_at',{ascending:false});
   activitiesThisTrip=data||[];
@@ -433,7 +431,6 @@ async function loadActivities(){
     const icon=getActivityIcon(open.activity_type);
     const start=open.time_start?new Date(open.time_start).toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'}):'—';
     const actLabel=getActivityLabel(open.activity_type);
-    /* Fishing gets "Open" to go to tow screen; ALL others get "End" button */
     const resumeBtn=open.activity_type==='fishing'
       ?`<button class="btn btn-primary btn-sm" onclick="resumeFishing()">${no?'Åpne →':'Open →'}</button>`
       :`<button class="btn btn-warn btn-sm" onclick="endActivityPrompt()">${no?'Avslutt →':'End →'}</button>`;
@@ -445,7 +442,6 @@ async function loadActivities(){
   }
 }
 
-/* ===== FIX 1c: renderActivityList uses centralized labels ===== */
 function renderActivityList(){
   const el=document.getElementById('activityList'),no=currentLang==='no';
   if(!activitiesThisTrip.length){
@@ -462,7 +458,6 @@ function renderActivityList(){
   }).join('');
 }
 
-/* ===== FIX 2b: selectActivityType now handles ALL 5 activity types ===== */
 function selectActivityType(type){
   currentActivityType=type;
   ALL_ACTIVITY_TYPES.forEach(t=>{
@@ -474,7 +469,6 @@ function selectActivityType(type){
 
 function goToStartActivity(){
   const no=currentLang==='no';
-  /* FIX 2c: Block starting a new activity if one is already open */
   if(currentActivityId){
     showToast(no?'En aktivitet pågår allerede. Avslutt den først.':'An activity is already in progress. End it first.','error');
     return;
@@ -504,9 +498,7 @@ function goToStartActivity(){
 async function saveStartActivity(){
   const no=currentLang==='no';
   const insertObj={
-    trip_id:currentTrip.id,
-    activity_type:currentActivityType,
-    time_start:new Date().toISOString(),
+    trip_id:currentTrip.id,activity_type:currentActivityType,time_start:new Date().toISOString(),
     fuel_start_litres:parseFloat(document.getElementById('actFuelStart').value)||null,
     wave_height_m:parseFloat(document.getElementById('actWaveHeight').value)||null,
     wind_speed_knots:parseFloat(document.getElementById('actWindSpeed').value)||null,
@@ -517,22 +509,14 @@ async function saveStartActivity(){
     lat_start:parseFloat(document.getElementById('actLatStart').value)||null,
     lon_start:parseFloat(document.getElementById('actLonStart').value)||null
   };
-  /* Include reason for downtime activities */
   const reasonEl=document.getElementById('actReason');
   if(reasonEl && reasonEl.value) insertObj.notes=(insertObj.notes?insertObj.notes+' | ':'')+reasonEl.value;
-
   const{data,error}=await sb.from('activity_log').insert(insertObj).select().single();
   if(error){showToast((no?'Feil: ':'Error: ')+error.message,'error');return;}
   currentActivityId=data.id;
   showToast((no?'Aktivitet startet: ':'Started: ')+getActivityLabel(currentActivityType),'success');
-  if(currentActivityType==='fishing'){
-    towsThisActivity=[];
-    renderTowList();
-    goTo('screen-fishing');
-  }else{
-    await loadActivities();
-    goTo('screen-main');
-  }
+  if(currentActivityType==='fishing'){towsThisActivity=[];renderTowList();goTo('screen-fishing');}
+  else{await loadActivities();goTo('screen-main');}
 }
 
 async function resumeFishing(){await loadTowsForActivity(currentActivityId);goTo('screen-fishing');}
@@ -551,46 +535,26 @@ function renderTowList(){
   }).join('');
 }
 
-/* ===== FIX 3: showTowForm now makes GPS fields visible and editable ===== */
 function showTowForm(){
   currentTowNum=towsThisActivity.length>0?Math.max(...towsThisActivity.map(t=>t.tow_number))+1:1;
   document.getElementById('towNumLabel').textContent=currentTowNum;
   ['towLatStart','towLonStart','towLatEnd','towLonEnd','towDepth','towNotes'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  /* FIX 3: Convert hidden GPS inputs to visible text fields for manual entry */
+  /* Make hidden GPS inputs visible for manual entry */
   ['towLatStart','towLonStart','towLatEnd','towLonEnd'].forEach(id=>{
     const el=document.getElementById(id);
     if(el){
-      el.type='text';
-      el.inputMode='decimal';
-      el.style.display='block';
-      el.style.width='100%';
-      el.style.marginTop='6px';
-      el.style.background='var(--surface)';
-      el.style.border='1.5px solid var(--border)';
-      el.style.borderRadius='8px';
-      el.style.color='var(--text)';
-      el.style.fontFamily='var(--font-body)';
-      el.style.fontSize='15px';
-      el.style.padding='13px 14px';
+      el.type='text';el.inputMode='decimal';el.style.display='block';el.style.width='100%';el.style.marginTop='6px';
+      el.style.background='var(--surface)';el.style.border='1.5px solid var(--border)';el.style.borderRadius='8px';
+      el.style.color='var(--text)';el.style.fontFamily='var(--font-body)';el.style.fontSize='15px';el.style.padding='13px 14px';
       el.placeholder=id.includes('Lat')?(currentLang==='no'?'Breddegrad (f.eks. 74.123456)':'Latitude (e.g. 74.123456)'):(currentLang==='no'?'Lengdegrad (f.eks. 19.123456)':'Longitude (e.g. 19.123456)');
     }
   });
-  /* Also make activity GPS fields visible */
   ['actLatStart','actLonStart','actLatEnd','actLonEnd'].forEach(id=>{
     const el=document.getElementById(id);
     if(el){
-      el.type='text';
-      el.inputMode='decimal';
-      el.style.display='block';
-      el.style.width='100%';
-      el.style.marginTop='6px';
-      el.style.background='var(--surface)';
-      el.style.border='1.5px solid var(--border)';
-      el.style.borderRadius='8px';
-      el.style.color='var(--text)';
-      el.style.fontFamily='var(--font-body)';
-      el.style.fontSize='15px';
-      el.style.padding='13px 14px';
+      el.type='text';el.inputMode='decimal';el.style.display='block';el.style.width='100%';el.style.marginTop='6px';
+      el.style.background='var(--surface)';el.style.border='1.5px solid var(--border)';el.style.borderRadius='8px';
+      el.style.color='var(--text)';el.style.fontFamily='var(--font-body)';el.style.fontSize='15px';el.style.padding='13px 14px';
       el.placeholder=id.includes('Lat')?(currentLang==='no'?'Breddegrad':'Latitude'):(currentLang==='no'?'Lengdegrad':'Longitude');
     }
   });
@@ -607,14 +571,11 @@ function showTowForm(){
 
 function cancelTowForm(){document.getElementById('towFormSection').style.display='none';document.getElementById('towListSection').style.display='block';}
 
-/* ===== FIX 4: saveTow handles missing towSpeed gracefully ===== */
 async function saveTow(){
   const no=currentLang==='no';
   const speedEl=document.getElementById('towSpeed');
   const{data,error}=await sb.from('tow_log').insert({
-    activity_id:currentActivityId,
-    trip_id:currentTrip.id,
-    tow_number:currentTowNum,
+    activity_id:currentActivityId,trip_id:currentTrip.id,tow_number:currentTowNum,
     time_start:document.getElementById('towTimeStart').value||null,
     time_end:document.getElementById('towTimeEnd').value||null,
     lat_start:parseFloat(document.getElementById('towLatStart').value)||null,
@@ -639,13 +600,10 @@ async function saveTow(){
 function addBycatchItem(){const id=Date.now(),no=currentLang==='no';bycatchItems.push(id);const div=document.createElement('div');div.className='bycatch-item';div.id='by-'+id;div.innerHTML=`<button class="remove-btn" onclick="removeBycatch(${id})">×</button><div class="grid-2"><div class="field"><label>${no?'Norsk navn':'Common Name'}</label><input type="text" id="byCommon-${id}" placeholder="${no?'f.eks. Torsk':'e.g. Cod'}"></div><div class="field"><label>${no?'Kategori':'Category'}</label><select id="byCategory-${id}"><option value="fish">${no?'Fisk':'Fish'}</option><option value="invertebrate">${no?'Virvelløs':'Invertebrate'}</option><option value="crustacean">${no?'Krepsdyr':'Crustacean'}</option><option value="marine_mammal">${no?'Sjøpattedyr':'Marine Mammal'}</option><option value="seabird">${no?'Sjøfugl':'Seabird'}</option><option value="debris">${no?'Avfall':'Debris'}</option><option value="other">${no?'Annet':'Other'}</option></select></div></div><div class="field"><label>${no?'Vitenskapelig navn (valgfritt)':'Scientific Name (optional)'}</label><input type="text" id="bySci-${id}" placeholder="Genus species"></div><div class="field"><label>${no?'Antall per størrelse':'Count by Size'}</label><div class="size-grid"><div class="size-cell"><label>${no?'Liten':'Small'}</label><input type="number" id="byS-${id}" placeholder="0" inputmode="numeric" min="0"></div><div class="size-cell"><label>${no?'Medium':'Medium'}</label><input type="number" id="byM-${id}" placeholder="0" inputmode="numeric" min="0"></div><div class="size-cell"><label>${no?'Stor':'Large'}</label><input type="number" id="byL-${id}" placeholder="0" inputmode="numeric" min="0"></div></div></div><div class="toggle-row"><span class="toggle-label">${no?'Returnert til sjøen?':'Returned to sea?'}</span><label class="toggle"><input type="checkbox" id="byReturn-${id}" checked><span class="toggle-slider"></span></label></div>`;document.getElementById('bycatchList').appendChild(div);}
 function removeBycatch(id){document.getElementById('by-'+id)?.remove();bycatchItems=bycatchItems.filter(i=>i!==id);}
 
-/* ===== FIX 4b: saveBycatch returns to fishing screen properly ===== */
 async function saveBycatch(){
   const no=currentLang==='no';
   const rows=bycatchItems.map(id=>{
-    return{
-      tow_id:currentTowId,
-      trip_id:currentTrip.id,
+    return{tow_id:currentTowId,trip_id:currentTrip.id,
       species_common:document.getElementById('byCommon-'+id)?.value||null,
       species_scientific:document.getElementById('bySci-'+id)?.value||null,
       category:document.getElementById('byCategory-'+id)?.value||null,
@@ -655,12 +613,8 @@ async function saveBycatch(){
       returned_to_sea:document.getElementById('byReturn-'+id)?.checked??true
     };
   }).filter(r=>r.species_common||(r.count_small+r.count_medium+r.count_large)>0);
-  if(rows.length>0){
-    const{error}=await sb.from('bycatch_report').insert(rows);
-    if(error){showToast((no?'Feil: ':'Error: ')+error.message,'error');return;}
-  }
+  if(rows.length>0){const{error}=await sb.from('bycatch_report').insert(rows);if(error){showToast((no?'Feil: ':'Error: ')+error.message,'error');return;}}
   showToast(`${no?'Høsting':'Tow'} #${currentTowNum} ${no?'fullført!':'complete!'}` ,'success');
-  /* FIX 4b: Reload tows from DB to ensure list is fresh, then return to fishing screen */
   await loadTowsForActivity(currentActivityId);
   document.getElementById('towFormSection').style.display='none';
   document.getElementById('towListSection').style.display='block';
@@ -670,35 +624,23 @@ async function saveBycatch(){
 function skipBycatch(){
   const no=currentLang==='no';
   showToast(`${no?'Høsting':'Tow'} #${currentTowNum} — ${no?'ingen bifangst':'no bycatch'}` ,'success');
-  /* FIX 4c: Also reload tows on skip */
   loadTowsForActivity(currentActivityId);
   document.getElementById('towFormSection').style.display='none';
   document.getElementById('towListSection').style.display='block';
   goTo('screen-fishing');
 }
 
-/* ===== FIX 2d: endActivityPrompt works for all activity types ===== */
 function endActivityPrompt(){
   document.getElementById('endFuel').value='';
   document.getElementById('gpsActEndDisplay').textContent='';
   document.getElementById('actLatEnd').value='';
   document.getElementById('actLonEnd').value='';
-  /* FIX 3b: Make end GPS fields visible too */
   ['actLatEnd','actLonEnd'].forEach(id=>{
     const el=document.getElementById(id);
     if(el){
-      el.type='text';
-      el.inputMode='decimal';
-      el.style.display='block';
-      el.style.width='100%';
-      el.style.marginTop='6px';
-      el.style.background='var(--surface)';
-      el.style.border='1.5px solid var(--border)';
-      el.style.borderRadius='8px';
-      el.style.color='var(--text)';
-      el.style.fontFamily='var(--font-body)';
-      el.style.fontSize='15px';
-      el.style.padding='13px 14px';
+      el.type='text';el.inputMode='decimal';el.style.display='block';el.style.width='100%';el.style.marginTop='6px';
+      el.style.background='var(--surface)';el.style.border='1.5px solid var(--border)';el.style.borderRadius='8px';
+      el.style.color='var(--text)';el.style.fontFamily='var(--font-body)';el.style.fontSize='15px';el.style.padding='13px 14px';
       el.placeholder=id.includes('Lat')?(currentLang==='no'?'Breddegrad':'Latitude'):(currentLang==='no'?'Lengdegrad':'Longitude');
     }
   });
@@ -748,36 +690,23 @@ async function saveDailyLog() {
   if(!kg){showToast(no?'Legg inn kg landet':'Please enter kg landed','error');return;}
   const {data:existing}=await sb.from('daily_log').select('id').eq('trip_id',currentTrip.id).eq('log_date',date).maybeSingle();
   let error;
-  if(existing){
-    ({error}=await sb.from('daily_log').update({kg_landed:kg,notes:document.getElementById('dailyNotes').value||null}).eq('id',existing.id));
-  }else{
-    ({error}=await sb.from('daily_log').insert({trip_id:currentTrip.id,log_date:date,kg_landed:kg,notes:document.getElementById('dailyNotes').value||null}));
-  }
+  if(existing){({error}=await sb.from('daily_log').update({kg_landed:kg,notes:document.getElementById('dailyNotes').value||null}).eq('id',existing.id));}
+  else{({error}=await sb.from('daily_log').insert({trip_id:currentTrip.id,log_date:date,kg_landed:kg,notes:document.getElementById('dailyNotes').value||null}));}
   if(error){showToast('Error: '+error.message,'error');return;}
   showToast(no?`Lagret — ${kg} kg for ${date}`:`Saved — ${kg} kg for ${date}`,'success');
-  document.getElementById('dailyKg').value='';
-  document.getElementById('dailyNotes').value='';
+  document.getElementById('dailyKg').value='';document.getElementById('dailyNotes').value='';
   document.getElementById('dailyDate').value=new Date().toISOString().split('T')[0];
   await loadDailyLog();
 }
 
 async function loadDailyLog() {
   const {data}=await sb.from('daily_log').select('*').eq('trip_id',currentTrip.id).order('log_date',{ascending:false});
-  const el=document.getElementById('dailyLogList');
-  const no=currentLang==='no';
+  const el=document.getElementById('dailyLogList');const no=currentLang==='no';
   if(!data||!data.length){el.innerHTML=`<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px;">${no?'Ingen logger ennå.':'No entries yet.'}</div>`;return;}
-  el.innerHTML=data.map(d=>`
-    <div class="card" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
-      <div>
-        <div style="font-family:var(--font-head);font-weight:700;font-size:15px;color:var(--accent);">${d.log_date}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:3px;">${d.notes||''}</div>
-      </div>
-      <div style="font-family:var(--font-head);font-weight:700;font-size:22px;color:var(--text);">${d.kg_landed?.toLocaleString()} kg</div>
-    </div>`).join('');
+  el.innerHTML=data.map(d=>`<div class="card" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:var(--font-head);font-weight:700;font-size:15px;color:var(--accent);">${d.log_date}</div><div style="font-size:12px;color:var(--muted);margin-top:3px;">${d.notes||''}</div></div><div style="font-family:var(--font-head);font-weight:700;font-size:22px;color:var(--text);">${d.kg_landed?.toLocaleString()} kg</div></div>`).join('');
 }
 
 init();
-
 </script>
 </body>
 </html>
