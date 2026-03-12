@@ -365,6 +365,26 @@ const HARVESTER_WIDTH_M=12,BASKET_VOLUME_M3=28,HFO_EMISSION_FACTOR=3.114;
 let currentTrip=null,currentActivityType=null,currentActivityId=null,currentTowId=null,currentTowNum=0;
 let towsThisActivity=[],activitiesThisTrip=[],bycatchItems=[],currentLang='no';
 
+/* ===== FIX 1: Centralized translation helper for activity labels ===== */
+function getActivityLabel(type) {
+  const no=currentLang==='no';
+  const labels={
+    fishing:    no?'FISKE':'FISHING',
+    steaming:   no?'TRANSITT':'STEAMING',
+    wow:        'WOW',
+    downtime_harvester: no?'NEDETID HØSTER':'HARVESTER DOWNTIME',
+    downtime_factory:   no?'NEDETID FABRIKK':'FACTORY DOWNTIME'
+  };
+  return labels[type]||type;
+}
+function getActivityIcon(type) {
+  const icons={fishing:'🦪',steaming:'⚓',downtime_harvester:'⚙️',downtime_factory:'🏭',wow:'🌊'};
+  return icons[type]||'📋';
+}
+/* ===== All 5 activity types for CSS highlighting ===== */
+const ALL_ACTIVITY_TYPES=['fishing','steaming','wow','downtime_harvester','downtime_factory'];
+const ACTIVITY_SEL_CLASS={fishing:'sel-fishing',steaming:'sel-steaming',wow:'sel-wow',downtime_harvester:'sel-wow',downtime_factory:'sel-wow'};
+
 function setLang(lang) {
   currentLang=lang;
   localStorage.setItem('ava_lang',lang);
@@ -375,10 +395,12 @@ function setLang(lang) {
     const val=el.getAttribute('data-'+lang);
     if(val){ if(el.tagName==='INPUT'||el.tagName==='BUTTON')el.value=val; else el.textContent=val; }
   });
-  // Update select options
   document.querySelectorAll('select option[data-no]').forEach(opt=>{
     const val=opt.getAttribute('data-'+lang); if(val)opt.textContent=val;
   });
+  /* FIX 1b: Re-render dynamic content when language changes */
+  if(currentTrip && activitiesThisTrip.length) renderActivityList();
+  if(currentTrip && currentActivityId) loadActivities();
 }
 function initLang(){const s=localStorage.getItem('ava_lang')||'no'; if(s!=='no')setLang(s);}
 
@@ -396,15 +418,71 @@ function showNewTripForm(){document.getElementById('newTripForm').style.display=
 function hideNewTripForm(){document.getElementById('newTripForm').style.display='none';document.getElementById('newTripBtn').style.display='block';}
 async function createTrip(){const code=document.getElementById('newTripCode').value.trim(),date=document.getElementById('newTripDate').value;const no=currentLang==='no';if(!code||!date){showToast(no?'Turkode og dato er påkrevd':'Trip code and date required','error');return;}const{data,error}=await sb.from('trip_registry').insert({trip_code:code,captain_name:document.getElementById('newCaptain').value.trim(),trip_date:date,site_id:document.getElementById('siteSelect').value||null,departure_port:document.getElementById('newPort').value.trim(),vessel_name:'Ava Ray'}).select().single();if(error){showToast((no?'Feil: ':'Error: ')+error.message,'error');return;}showToast(no?'Tur opprettet!':'Trip created!','success');currentTrip=data;await loadTrips();document.getElementById('tripSelect').value=data.id;await loadTripSummary(data.id);hideNewTripForm();}
 async function enterMainScreen(){await loadActivities();goTo('screen-main');}
-async function loadActivities(){const{data}=await sb.from('activity_log').select('*').eq('trip_id',currentTrip.id).order('created_at',{ascending:false});activitiesThisTrip=data||[];renderActivityList();document.getElementById('headerTrip').textContent=currentTrip.trip_code;const open=activitiesThisTrip.find(a=>!a.time_end);const no=currentLang==='no';if(open){currentActivityId=open.id;currentActivityType=open.activity_type;const icon=open.activity_type==='fishing'?'🦪':open.activity_type==='steaming'?'⚓':open.activity_type==='downtime_harvester'?'⚙️':open.activity_type==='downtime_factory'?'🏭':'🌊';const start=open.time_start?new Date(open.time_start).toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'}):'—';const actLabel=open.activity_type==='fishing'?(no?'FISKE':'FISHING'):open.activity_type==='steaming'?'STEAMING':open.activity_type==='downtime_harvester'?(no?'NEDETID HØSTER':'HARVESTER DOWNTIME'):open.activity_type==='downtime_factory'?(no?'NEDETID FABRIKK':'FACTORY DOWNTIME'):'WOW';const resumeBtn=open.activity_type==='fishing'?`<button class="btn btn-primary btn-sm" onclick="resumeFishing()">${no?'Åpne →':'Open →'}</button>`:`<button class="btn btn-warn btn-sm" onclick="endActivityPrompt()">${no?'Avslutt →':'End →'}</button>`;document.getElementById('activeActivityBanner').innerHTML=`<div class="active-banner"><div><div class="ab-label">${no?'Pågår siden':'In progress since'} ${start}</div><div class="ab-val ${open.activity_type}">${icon} ${actLabel}</div></div>${resumeBtn}</div>`;}else{document.getElementById('activeActivityBanner').innerHTML='';currentActivityId=null;currentActivityType=null;}}
-function renderActivityList(){const el=document.getElementById('activityList'),no=currentLang==='no';if(!activitiesThisTrip.length){el.innerHTML=`<div style="color:var(--muted);font-size:13px;">${no?'Ingen aktiviteter logget ennå.':'No activities logged yet.'}</div>`;return;}el.innerHTML=activitiesThisTrip.map(a=>{const icon=a.activity_type==='fishing'?'🦪':a.activity_type==='steaming'?'⚓':a.activity_type==='downtime_harvester'?'⚙️':a.activity_type==='downtime_factory'?'🏭':'🌊';const actLabel=a.activity_type==='fishing'?(no?'FISKE':'FISHING'):a.activity_type==='steaming'?'STEAMING':a.activity_type==='downtime_harvester'?(no?'NEDETID HØSTER':'HARVESTER DOWNTIME'):a.activity_type==='downtime_factory'?(no?'NEDETID FABRIKK':'FACTORY DOWNTIME'):'WOW';const start=a.time_start?new Date(a.time_start).toLocaleString('no-NO',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'—';const fuel=(a.fuel_start_litres!=null&&a.fuel_end_litres!=null)?` · ${(a.fuel_end_litres-a.fuel_start_litres).toFixed(0)}L`:'';const badge=a.time_end?`<div class="act-badge">${no?'Ferdig ✓':'Done ✓'}</div>`:`<div class="act-badge open">● ${no?'Åpen':'Open'}</div>`;return `<div class="activity-item"><div><div class="act-type ${a.activity_type}">${icon} ${actLabel}</div><div class="act-meta">${start}${fuel}</div></div>${badge}</div>`;}).join('');}
-function selectActivityType(type){currentActivityType=type;['fishing','steaming','wow'].forEach(t=>{document.getElementById('btn-'+t).className='act-btn'+(t===type?' sel-'+t:'');});document.getElementById('startActivityBtn').disabled=false;}
-function goToStartActivity(){
-  const label=document.getElementById('startActTypeLabel');
+
+/* ===== FIX 2: loadActivities now uses centralized labels and shows End button for ALL non-fishing activities ===== */
+async function loadActivities(){
+  const{data}=await sb.from('activity_log').select('*').eq('trip_id',currentTrip.id).order('created_at',{ascending:false});
+  activitiesThisTrip=data||[];
+  renderActivityList();
+  document.getElementById('headerTrip').textContent=currentTrip.trip_code;
+  const open=activitiesThisTrip.find(a=>!a.time_end);
   const no=currentLang==='no';
+  if(open){
+    currentActivityId=open.id;
+    currentActivityType=open.activity_type;
+    const icon=getActivityIcon(open.activity_type);
+    const start=open.time_start?new Date(open.time_start).toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'}):'—';
+    const actLabel=getActivityLabel(open.activity_type);
+    /* Fishing gets "Open" to go to tow screen; ALL others get "End" button */
+    const resumeBtn=open.activity_type==='fishing'
+      ?`<button class="btn btn-primary btn-sm" onclick="resumeFishing()">${no?'Åpne →':'Open →'}</button>`
+      :`<button class="btn btn-warn btn-sm" onclick="endActivityPrompt()">${no?'Avslutt →':'End →'}</button>`;
+    document.getElementById('activeActivityBanner').innerHTML=`<div class="active-banner"><div><div class="ab-label">${no?'Pågår siden':'In progress since'} ${start}</div><div class="ab-val ${open.activity_type}">${icon} ${actLabel}</div></div>${resumeBtn}</div>`;
+  }else{
+    document.getElementById('activeActivityBanner').innerHTML='';
+    currentActivityId=null;
+    currentActivityType=null;
+  }
+}
+
+/* ===== FIX 1c: renderActivityList uses centralized labels ===== */
+function renderActivityList(){
+  const el=document.getElementById('activityList'),no=currentLang==='no';
+  if(!activitiesThisTrip.length){
+    el.innerHTML=`<div style="color:var(--muted);font-size:13px;">${no?'Ingen aktiviteter logget ennå.':'No activities logged yet.'}</div>`;
+    return;
+  }
+  el.innerHTML=activitiesThisTrip.map(a=>{
+    const icon=getActivityIcon(a.activity_type);
+    const actLabel=getActivityLabel(a.activity_type);
+    const start=a.time_start?new Date(a.time_start).toLocaleString('no-NO',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+    const fuel=(a.fuel_start_litres!=null&&a.fuel_end_litres!=null)?` · ${(a.fuel_end_litres-a.fuel_start_litres).toFixed(0)}L`:'';
+    const badge=a.time_end?`<div class="act-badge">${no?'Ferdig ✓':'Done ✓'}</div>`:`<div class="act-badge open">● ${no?'Åpen':'Open'}</div>`;
+    return `<div class="activity-item"><div><div class="act-type ${a.activity_type}">${icon} ${actLabel}</div><div class="act-meta">${start}${fuel}</div></div>${badge}</div>`;
+  }).join('');
+}
+
+/* ===== FIX 2b: selectActivityType now handles ALL 5 activity types ===== */
+function selectActivityType(type){
+  currentActivityType=type;
+  ALL_ACTIVITY_TYPES.forEach(t=>{
+    const btn=document.getElementById('btn-'+t);
+    if(btn) btn.className='act-btn'+(t===type?' '+(ACTIVITY_SEL_CLASS[t]||'sel-fishing'):'');
+  });
+  document.getElementById('startActivityBtn').disabled=false;
+}
+
+function goToStartActivity(){
+  const no=currentLang==='no';
+  /* FIX 2c: Block starting a new activity if one is already open */
+  if(currentActivityId){
+    showToast(no?'En aktivitet pågår allerede. Avslutt den først.':'An activity is already in progress. End it first.','error');
+    return;
+  }
+  const label=document.getElementById('startActTypeLabel');
   const typeLabels={
     fishing:no?'Fiske':'Fishing',
-    steaming:'Steaming',
+    steaming:no?'Transitt':'Steaming',
     wow:'WOW',
     downtime_harvester:no?'Nedetid høster':'Harvester Downtime',
     downtime_factory:no?'Nedetid fabrikk':'Factory Downtime'
@@ -415,32 +493,229 @@ function goToStartActivity(){
   const isDowntime=currentActivityType==='downtime_harvester'||currentActivityType==='downtime_factory';
   document.getElementById('actGpsSection').style.display=currentActivityType==='fishing'?'block':'none';
   document.getElementById('reasonSection').style.display=isDowntime?'block':'none';
-  ['actFuelStart','actWaveHeight','actWindSpeed','actNotes','actReason'].forEach(id=>document.getElementById(id).value='');
-  ['actSeaState','actWindDir','actVisibility'].forEach(id=>document.getElementById(id).value='');
+  ['actFuelStart','actWaveHeight','actWindSpeed','actNotes','actReason'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['actSeaState','actWindDir','actVisibility'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.getElementById('gpsActStartDisplay').textContent='';
   document.getElementById('actLatStart').value='';
   document.getElementById('actLonStart').value='';
   goTo('screen-start-activity');
 }
-async function saveStartActivity(){const{data,error}=await sb.from('activity_log').insert({trip_id:currentTrip.id,activity_type:currentActivityType,time_start:new Date().toISOString(),fuel_start_litres:parseFloat(document.getElementById('actFuelStart').value)||null,wave_height_m:parseFloat(document.getElementById('actWaveHeight').value)||null,wind_speed_knots:parseFloat(document.getElementById('actWindSpeed').value)||null,sea_state:document.getElementById('actSeaState').value||null,wind_direction:document.getElementById('actWindDir').value||null,visibility:document.getElementById('actVisibility').value||null,notes:document.getElementById('actNotes').value||null,lat_start:parseFloat(document.getElementById('actLatStart').value)||null,lon_start:parseFloat(document.getElementById('actLonStart').value)||null}).select().single();if(error){showToast((currentLang==='no'?'Feil: ':'Error: ')+error.message,'error');return;}currentActivityId=data.id;showToast((currentLang==='no'?'Aktivitet startet: ':'Started: ')+currentActivityType,'success');if(currentActivityType==='fishing'){towsThisActivity=[];renderTowList();goTo('screen-fishing');}else{await loadActivities();goTo('screen-main');}}
+
+async function saveStartActivity(){
+  const no=currentLang==='no';
+  const insertObj={
+    trip_id:currentTrip.id,
+    activity_type:currentActivityType,
+    time_start:new Date().toISOString(),
+    fuel_start_litres:parseFloat(document.getElementById('actFuelStart').value)||null,
+    wave_height_m:parseFloat(document.getElementById('actWaveHeight').value)||null,
+    wind_speed_knots:parseFloat(document.getElementById('actWindSpeed').value)||null,
+    sea_state:document.getElementById('actSeaState').value||null,
+    wind_direction:document.getElementById('actWindDir').value||null,
+    visibility:document.getElementById('actVisibility').value||null,
+    notes:document.getElementById('actNotes').value||null,
+    lat_start:parseFloat(document.getElementById('actLatStart').value)||null,
+    lon_start:parseFloat(document.getElementById('actLonStart').value)||null
+  };
+  /* Include reason for downtime activities */
+  const reasonEl=document.getElementById('actReason');
+  if(reasonEl && reasonEl.value) insertObj.notes=(insertObj.notes?insertObj.notes+' | ':'')+reasonEl.value;
+
+  const{data,error}=await sb.from('activity_log').insert(insertObj).select().single();
+  if(error){showToast((no?'Feil: ':'Error: ')+error.message,'error');return;}
+  currentActivityId=data.id;
+  showToast((no?'Aktivitet startet: ':'Started: ')+getActivityLabel(currentActivityType),'success');
+  if(currentActivityType==='fishing'){
+    towsThisActivity=[];
+    renderTowList();
+    goTo('screen-fishing');
+  }else{
+    await loadActivities();
+    goTo('screen-main');
+  }
+}
+
 async function resumeFishing(){await loadTowsForActivity(currentActivityId);goTo('screen-fishing');}
 async function loadTowsForActivity(actId){const{data}=await sb.from('tow_log').select('*').eq('activity_id',actId).order('tow_number');towsThisActivity=data||[];renderTowList();}
-function renderTowList(){const el=document.getElementById('towList'),no=currentLang==='no';if(!towsThisActivity.length){el.innerHTML=`<div style="color:var(--muted);font-size:13px;">${no?'Ingen høstere ennå.':'No tows yet.'}</div>`;return;}el.innerHTML=towsThisActivity.map(t=>{const ts=t.time_start?new Date(t.time_start).toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'}):'—';const te=t.time_end?new Date(t.time_end).toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'}):'—';return `<div class="tow-item"><div><div class="tow-num">#${t.tow_number}</div><div class="tow-meta">${ts} → ${te} · ${no?'Fylling':'Fill'}: ${t.harvester_fill_pct??'—'}%</div></div><div class="act-badge">✓</div></div>`;}).join('');}
-function showTowForm(){currentTowNum=towsThisActivity.length>0?Math.max(...towsThisActivity.map(t=>t.tow_number))+1:1;document.getElementById('towNumLabel').textContent=currentTowNum;['towLatStart','towLonStart','towLatEnd','towLonEnd','towDepth','towNotes'].forEach(id=>document.getElementById(id).value='');document.getElementById('gpsTowStartDisplay').textContent='';document.getElementById('gpsTowEndDisplay').textContent='';document.getElementById('harvesterFill').value=0;document.getElementById('fillVal').textContent='0';const now=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);document.getElementById('towTimeStart').value=now;document.getElementById('towTimeEnd').value=now;document.getElementById('towListSection').style.display='none';document.getElementById('towFormSection').style.display='block';}
+
+function renderTowList(){
+  const el=document.getElementById('towList'),no=currentLang==='no';
+  if(!towsThisActivity.length){
+    el.innerHTML=`<div style="color:var(--muted);font-size:13px;">${no?'Ingen høstinger ennå.':'No tows yet.'}</div>`;
+    return;
+  }
+  el.innerHTML=towsThisActivity.map(t=>{
+    const ts=t.time_start?new Date(t.time_start).toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'}):'—';
+    const te=t.time_end?new Date(t.time_end).toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'}):'—';
+    return `<div class="tow-item"><div><div class="tow-num">#${t.tow_number}</div><div class="tow-meta">${ts} → ${te} · ${no?'Fylling':'Fill'}: ${t.harvester_fill_pct??'—'}%</div></div><div class="act-badge">✓</div></div>`;
+  }).join('');
+}
+
+/* ===== FIX 3: showTowForm now makes GPS fields visible and editable ===== */
+function showTowForm(){
+  currentTowNum=towsThisActivity.length>0?Math.max(...towsThisActivity.map(t=>t.tow_number))+1:1;
+  document.getElementById('towNumLabel').textContent=currentTowNum;
+  ['towLatStart','towLonStart','towLatEnd','towLonEnd','towDepth','towNotes'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  /* FIX 3: Convert hidden GPS inputs to visible text fields for manual entry */
+  ['towLatStart','towLonStart','towLatEnd','towLonEnd'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){
+      el.type='text';
+      el.inputMode='decimal';
+      el.style.display='block';
+      el.style.width='100%';
+      el.style.marginTop='6px';
+      el.style.background='var(--surface)';
+      el.style.border='1.5px solid var(--border)';
+      el.style.borderRadius='8px';
+      el.style.color='var(--text)';
+      el.style.fontFamily='var(--font-body)';
+      el.style.fontSize='15px';
+      el.style.padding='13px 14px';
+      el.placeholder=id.includes('Lat')?(currentLang==='no'?'Breddegrad (f.eks. 74.123456)':'Latitude (e.g. 74.123456)'):(currentLang==='no'?'Lengdegrad (f.eks. 19.123456)':'Longitude (e.g. 19.123456)');
+    }
+  });
+  /* Also make activity GPS fields visible */
+  ['actLatStart','actLonStart','actLatEnd','actLonEnd'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){
+      el.type='text';
+      el.inputMode='decimal';
+      el.style.display='block';
+      el.style.width='100%';
+      el.style.marginTop='6px';
+      el.style.background='var(--surface)';
+      el.style.border='1.5px solid var(--border)';
+      el.style.borderRadius='8px';
+      el.style.color='var(--text)';
+      el.style.fontFamily='var(--font-body)';
+      el.style.fontSize='15px';
+      el.style.padding='13px 14px';
+      el.placeholder=id.includes('Lat')?(currentLang==='no'?'Breddegrad':'Latitude'):(currentLang==='no'?'Lengdegrad':'Longitude');
+    }
+  });
+  document.getElementById('gpsTowStartDisplay').textContent='';
+  document.getElementById('gpsTowEndDisplay').textContent='';
+  document.getElementById('harvesterFill').value=0;
+  document.getElementById('fillVal').textContent='0';
+  const now=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);
+  document.getElementById('towTimeStart').value=now;
+  document.getElementById('towTimeEnd').value=now;
+  document.getElementById('towListSection').style.display='none';
+  document.getElementById('towFormSection').style.display='block';
+}
+
 function cancelTowForm(){document.getElementById('towFormSection').style.display='none';document.getElementById('towListSection').style.display='block';}
-async function saveTow(){const{data,error}=await sb.from('tow_log').insert({activity_id:currentActivityId,trip_id:currentTrip.id,tow_number:currentTowNum,time_start:document.getElementById('towTimeStart').value||null,time_end:document.getElementById('towTimeEnd').value||null,lat_start:parseFloat(document.getElementById('towLatStart').value)||null,lon_start:parseFloat(document.getElementById('towLonStart').value)||null,lat_end:parseFloat(document.getElementById('towLatEnd').value)||null,lon_end:parseFloat(document.getElementById('towLonEnd').value)||null,harvester_fill_pct:parseInt(document.getElementById('harvesterFill').value),depth_m:parseFloat(document.getElementById('towDepth').value)||null,speed_knots:parseFloat(document.getElementById('towSpeed').value)||null,notes:document.getElementById('towNotes').value||null}).select().single();if(error){showToast((currentLang==='no'?'Feil: ':'Error: ')+error.message,'error');return;}currentTowId=data.id;towsThisActivity.push(data);showToast(`${currentLang==='no'?'Høst':'Tow'} #${currentTowNum} ${currentLang==='no'?'lagret!':'saved!'}` ,'success');bycatchItems=[];document.getElementById('bycatchList').innerHTML='';document.getElementById('bycatchTowLabel').textContent=currentTowNum;goTo('screen-bycatch');}
+
+/* ===== FIX 4: saveTow handles missing towSpeed gracefully ===== */
+async function saveTow(){
+  const no=currentLang==='no';
+  const speedEl=document.getElementById('towSpeed');
+  const{data,error}=await sb.from('tow_log').insert({
+    activity_id:currentActivityId,
+    trip_id:currentTrip.id,
+    tow_number:currentTowNum,
+    time_start:document.getElementById('towTimeStart').value||null,
+    time_end:document.getElementById('towTimeEnd').value||null,
+    lat_start:parseFloat(document.getElementById('towLatStart').value)||null,
+    lon_start:parseFloat(document.getElementById('towLonStart').value)||null,
+    lat_end:parseFloat(document.getElementById('towLatEnd').value)||null,
+    lon_end:parseFloat(document.getElementById('towLonEnd').value)||null,
+    harvester_fill_pct:parseInt(document.getElementById('harvesterFill').value),
+    depth_m:parseFloat(document.getElementById('towDepth').value)||null,
+    speed_knots:speedEl?parseFloat(speedEl.value)||null:null,
+    notes:document.getElementById('towNotes').value||null
+  }).select().single();
+  if(error){showToast((no?'Feil: ':'Error: ')+error.message,'error');return;}
+  currentTowId=data.id;
+  towsThisActivity.push(data);
+  showToast(`${no?'Høsting':'Tow'} #${currentTowNum} ${no?'lagret!':'saved!'}` ,'success');
+  bycatchItems=[];
+  document.getElementById('bycatchList').innerHTML='';
+  document.getElementById('bycatchTowLabel').textContent=currentTowNum;
+  goTo('screen-bycatch');
+}
+
 function addBycatchItem(){const id=Date.now(),no=currentLang==='no';bycatchItems.push(id);const div=document.createElement('div');div.className='bycatch-item';div.id='by-'+id;div.innerHTML=`<button class="remove-btn" onclick="removeBycatch(${id})">×</button><div class="grid-2"><div class="field"><label>${no?'Norsk navn':'Common Name'}</label><input type="text" id="byCommon-${id}" placeholder="${no?'f.eks. Torsk':'e.g. Cod'}"></div><div class="field"><label>${no?'Kategori':'Category'}</label><select id="byCategory-${id}"><option value="fish">${no?'Fisk':'Fish'}</option><option value="invertebrate">${no?'Virvelløs':'Invertebrate'}</option><option value="crustacean">${no?'Krepsdyr':'Crustacean'}</option><option value="marine_mammal">${no?'Sjøpattedyr':'Marine Mammal'}</option><option value="seabird">${no?'Sjøfugl':'Seabird'}</option><option value="debris">${no?'Avfall':'Debris'}</option><option value="other">${no?'Annet':'Other'}</option></select></div></div><div class="field"><label>${no?'Vitenskapelig navn (valgfritt)':'Scientific Name (optional)'}</label><input type="text" id="bySci-${id}" placeholder="Genus species"></div><div class="field"><label>${no?'Antall per størrelse':'Count by Size'}</label><div class="size-grid"><div class="size-cell"><label>${no?'Liten':'Small'}</label><input type="number" id="byS-${id}" placeholder="0" inputmode="numeric" min="0"></div><div class="size-cell"><label>${no?'Medium':'Medium'}</label><input type="number" id="byM-${id}" placeholder="0" inputmode="numeric" min="0"></div><div class="size-cell"><label>${no?'Stor':'Large'}</label><input type="number" id="byL-${id}" placeholder="0" inputmode="numeric" min="0"></div></div></div><div class="toggle-row"><span class="toggle-label">${no?'Returnert til sjøen?':'Returned to sea?'}</span><label class="toggle"><input type="checkbox" id="byReturn-${id}" checked><span class="toggle-slider"></span></label></div>`;document.getElementById('bycatchList').appendChild(div);}
 function removeBycatch(id){document.getElementById('by-'+id)?.remove();bycatchItems=bycatchItems.filter(i=>i!==id);}
-async function saveBycatch(){const rows=bycatchItems.map(id=>{return{tow_id:currentTowId,trip_id:currentTrip.id,species_common:document.getElementById('byCommon-'+id)?.value||null,species_scientific:document.getElementById('bySci-'+id)?.value||null,category:document.getElementById('byCategory-'+id)?.value||null,count_small:parseInt(document.getElementById('byS-'+id)?.value)||0,count_medium:parseInt(document.getElementById('byM-'+id)?.value)||0,count_large:parseInt(document.getElementById('byL-'+id)?.value)||0,returned_to_sea:document.getElementById('byReturn-'+id)?.checked??true};}).filter(r=>r.species_common||(r.count_small+r.count_medium+r.count_large)>0);if(rows.length>0){const{error}=await sb.from('bycatch_report').insert(rows);if(error){showToast((currentLang==='no'?'Feil: ':'Error: ')+error.message,'error');return;}}const no=currentLang==='no';showToast(`${no?'Høst':'Tow'} #${currentTowNum} ${no?'fullført!':'complete!'}` ,'success');renderTowList();document.getElementById('towFormSection').style.display='none';document.getElementById('towListSection').style.display='block';goTo('screen-fishing');}
-function skipBycatch(){const no=currentLang==='no';showToast(`${no?'Høst':'Tow'} #${currentTowNum} — ${no?'ingen bifangst':'no bycatch'}` ,'success');renderTowList();document.getElementById('towFormSection').style.display='none';document.getElementById('towListSection').style.display='block';goTo('screen-fishing');}
-function endActivityPrompt(){document.getElementById('endFuel').value='';document.getElementById('gpsActEndDisplay').textContent='';document.getElementById('actLatEnd').value='';document.getElementById('actLonEnd').value='';document.getElementById('endGpsSection').style.display=currentActivityType==='fishing'?'block':'none';document.getElementById('backFromEndBtn').onclick=currentActivityType==='fishing'?()=>goTo('screen-fishing'):()=>goTo('screen-main');goTo('screen-end-activity');}
+
+/* ===== FIX 4b: saveBycatch returns to fishing screen properly ===== */
+async function saveBycatch(){
+  const no=currentLang==='no';
+  const rows=bycatchItems.map(id=>{
+    return{
+      tow_id:currentTowId,
+      trip_id:currentTrip.id,
+      species_common:document.getElementById('byCommon-'+id)?.value||null,
+      species_scientific:document.getElementById('bySci-'+id)?.value||null,
+      category:document.getElementById('byCategory-'+id)?.value||null,
+      count_small:parseInt(document.getElementById('byS-'+id)?.value)||0,
+      count_medium:parseInt(document.getElementById('byM-'+id)?.value)||0,
+      count_large:parseInt(document.getElementById('byL-'+id)?.value)||0,
+      returned_to_sea:document.getElementById('byReturn-'+id)?.checked??true
+    };
+  }).filter(r=>r.species_common||(r.count_small+r.count_medium+r.count_large)>0);
+  if(rows.length>0){
+    const{error}=await sb.from('bycatch_report').insert(rows);
+    if(error){showToast((no?'Feil: ':'Error: ')+error.message,'error');return;}
+  }
+  showToast(`${no?'Høsting':'Tow'} #${currentTowNum} ${no?'fullført!':'complete!'}` ,'success');
+  /* FIX 4b: Reload tows from DB to ensure list is fresh, then return to fishing screen */
+  await loadTowsForActivity(currentActivityId);
+  document.getElementById('towFormSection').style.display='none';
+  document.getElementById('towListSection').style.display='block';
+  goTo('screen-fishing');
+}
+
+function skipBycatch(){
+  const no=currentLang==='no';
+  showToast(`${no?'Høsting':'Tow'} #${currentTowNum} — ${no?'ingen bifangst':'no bycatch'}` ,'success');
+  /* FIX 4c: Also reload tows on skip */
+  loadTowsForActivity(currentActivityId);
+  document.getElementById('towFormSection').style.display='none';
+  document.getElementById('towListSection').style.display='block';
+  goTo('screen-fishing');
+}
+
+/* ===== FIX 2d: endActivityPrompt works for all activity types ===== */
+function endActivityPrompt(){
+  document.getElementById('endFuel').value='';
+  document.getElementById('gpsActEndDisplay').textContent='';
+  document.getElementById('actLatEnd').value='';
+  document.getElementById('actLonEnd').value='';
+  /* FIX 3b: Make end GPS fields visible too */
+  ['actLatEnd','actLonEnd'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){
+      el.type='text';
+      el.inputMode='decimal';
+      el.style.display='block';
+      el.style.width='100%';
+      el.style.marginTop='6px';
+      el.style.background='var(--surface)';
+      el.style.border='1.5px solid var(--border)';
+      el.style.borderRadius='8px';
+      el.style.color='var(--text)';
+      el.style.fontFamily='var(--font-body)';
+      el.style.fontSize='15px';
+      el.style.padding='13px 14px';
+      el.placeholder=id.includes('Lat')?(currentLang==='no'?'Breddegrad':'Latitude'):(currentLang==='no'?'Lengdegrad':'Longitude');
+    }
+  });
+  document.getElementById('endGpsSection').style.display=currentActivityType==='fishing'?'block':'none';
+  document.getElementById('backFromEndBtn').onclick=currentActivityType==='fishing'?()=>goTo('screen-fishing'):()=>goTo('screen-main');
+  goTo('screen-end-activity');
+}
+
 async function confirmEndActivity(){const{error}=await sb.from('activity_log').update({time_end:new Date().toISOString(),fuel_end_litres:parseFloat(document.getElementById('endFuel').value)||null,lat_end:parseFloat(document.getElementById('actLatEnd').value)||null,lon_end:parseFloat(document.getElementById('actLonEnd').value)||null}).eq('id',currentActivityId);if(error){showToast((currentLang==='no'?'Feil: ':'Error: ')+error.message,'error');return;}showToast(currentLang==='no'?'Aktivitet avsluttet ✓':'Activity ended ✓','success');currentActivityId=null;currentActivityType=null;await loadActivities();goTo('screen-main');}
+
 function haversineM(lat1,lon1,lat2,lon2){const R=6371000,r=d=>d*Math.PI/180,dLat=r(lat2-lat1),dLon=r(lon2-lon1);const a=Math.sin(dLat/2)**2+Math.cos(r(lat1))*Math.cos(r(lat2))*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+
 async function closeTrip(){const meatKg=parseFloat(document.getElementById('closeMeatKg').value),retDate=document.getElementById('closeReturnDate').value,no=currentLang==='no';if(!meatKg||meatKg<=0){showToast(no?'Legg inn bearbeidet kjøttvekt':'Please enter processed meat weight','error');return;}if(!retDate){showToast(no?'Legg inn returdato':'Please enter return date','error');return;}const[{data:tows},{data:acts}]=await Promise.all([sb.from('tow_log').select('*').eq('trip_id',currentTrip.id),sb.from('activity_log').select('*').eq('trip_id',currentTrip.id)]);const towList=tows||[],actList=acts||[];let totalAreaM2=0,totalVolM3=0,towsWithGPS=0,totalFuelL=0;towList.forEach(t=>{totalVolM3+=(t.harvester_fill_pct/100)*BASKET_VOLUME_M3;if(t.lat_start&&t.lon_start&&t.lat_end&&t.lon_end){totalAreaM2+=haversineM(t.lat_start,t.lon_start,t.lat_end,t.lon_end)*HARVESTER_WIDTH_M;towsWithGPS++;}});actList.forEach(a=>{if(a.fuel_start_litres!=null&&a.fuel_end_litres!=null)totalFuelL+=Math.max(0,a.fuel_end_litres-a.fuel_start_litres);});const totalCO2kg=totalFuelL*HFO_EMISSION_FACTOR;const{error}=await sb.from('trip_registry').update({processed_meat_kg:meatKg,return_date:retDate,trip_notes:document.getElementById('closeTripNotes').value||null,trip_closed:true}).eq('id',currentTrip.id);if(error){showToast((no?'Feil: ':'Error: ')+error.message,'error');return;}showToast(no?'Tur avsluttet ✓':'Trip closed ✓','success');document.getElementById('closureResults').style.display='block';
 const metrics=no?[
-  {label:'Totalt antall trål',val:towList.length,unit:'høstere logget'},
+  {label:'Totalt antall høstinger',val:towList.length,unit:'høstinger logget'},
   {label:'Bearbeidet fangst',val:meatKg.toLocaleString(),unit:'kg kjøtt'},
-  {label:'Fangst per trål',val:towList.length>0?(meatKg/towList.length).toFixed(0):'—',unit:'kg per trål'},
+  {label:'Fangst per høsting',val:towList.length>0?(meatKg/towList.length).toFixed(0):'—',unit:'kg per høsting'},
   {label:'Totalt drivstoff',val:totalFuelL.toFixed(0),unit:'liter HFO'},
   {label:'Total CO₂',val:(totalCO2kg/1000).toFixed(2),unit:'tonn CO₂'},
   {label:'Utslipp per kg',val:meatKg>0?(totalCO2kg/meatKg).toFixed(3):'—',unit:'kg CO₂ per kg fangst'},
@@ -457,8 +732,10 @@ const metrics=no?[
   {label:'CPUE',val:totalAreaM2>0?(totalVolM3/totalAreaM2).toFixed(5):'—',unit:'m³ per m²'},
 ];
 document.getElementById('metricsGrid').innerHTML=metrics.map(m=>`<div class="metric-card"><div class="metric-label">${m.label}</div><div class="metric-val">${m.val}</div><div class="metric-unit">${m.unit}</div></div>`).join('');
-document.getElementById('metricsNote').textContent=towsWithGPS<towList.length?(no?`⚠️ ${towList.length-towsWithGPS} trål mangler GPS-data.`:`⚠️ ${towList.length-towsWithGPS} tow(s) missing GPS data.`):(no?'✓ Alle trål hadde GPS-data.':'✓ All tows had GPS data.');}
+document.getElementById('metricsNote').textContent=towsWithGPS<towList.length?(no?`⚠️ ${towList.length-towsWithGPS} høstinger mangler GPS-data.`:`⚠️ ${towList.length-towsWithGPS} tow(s) missing GPS data.`):(no?'✓ Alle høstinger hadde GPS-data.':'✓ All tows had GPS data.');}
+
 function getGPS(which){if(!navigator.geolocation){showToast(currentLang==='no'?'GPS ikke tilgjengelig':'GPS not available','error');return;}const btn=event.target.closest('.gps-btn');btn.innerHTML=`<span class="spinner"></span> ${currentLang==='no'?'Henter posisjon...':'Getting position...'}`;navigator.geolocation.getCurrentPosition(pos=>{const lat=pos.coords.latitude.toFixed(6),lon=pos.coords.longitude.toFixed(6);const map={actStart:['actLatStart','actLonStart','gpsActStartDisplay'],actEnd:['actLatEnd','actLonEnd','gpsActEndDisplay'],towStart:['towLatStart','towLonStart','gpsTowStartDisplay'],towEnd:['towLatEnd','towLonEnd','gpsTowEndDisplay']};const[latId,lonId,dispId]=map[which];document.getElementById(latId).value=lat;document.getElementById(lonId).value=lon;document.getElementById(dispId).textContent=`${lat}, ${lon}`;btn.innerHTML=`✓ ${lat}, ${lon}`;},(err)=>{btn.innerHTML=currentLang==='no'?'📍 Hent GPS':'📍 Capture GPS';showToast((currentLang==='no'?'GPS-feil: ':'GPS error: ')+err.message,'error');},{enableHighAccuracy:true,timeout:15000});}
+
 function goTo(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
 let toastTimer;
 function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+type;clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3500);}
@@ -500,6 +777,7 @@ async function loadDailyLog() {
 }
 
 init();
+
 </script>
 </body>
 </html>
