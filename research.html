@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ava Ray — Forskning</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --deep:#2C262E;--ocean:#332D35;--surface:#3C3540;--panel:#433A46;--border:#5c5060;
+  --accent:#D9FFAC;--accent2:#c2f090;--warn:#FF8C69;--scallop:#E6D2C5;
+  --research:#88C8FF;--research2:#6BB5F0;
+  --text:#F0EAE6;--muted:#a8959e;--radius:12px;
+  --font-head:'ABCFavorit',sans-serif;--font-body:'ProtoGrotesk','ABCFavorit',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-size:14px;min-height:100dvh;padding-bottom:60px;font-weight:300;}
+
+/* Login */
+#loginScreen{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;}
+.login-logo{height:44px;margin-bottom:36px;display:block;}
+.login-card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:28px 24px;width:100%;max-width:360px;}
+.login-title{font-family:var(--font-head);font-weight:700;font-size:17px;margin-bottom:6px;}
+.login-desc{font-size:12px;color:var(--muted);margin-bottom:22px;}
+.login-field{margin-bottom:16px;}
+.login-field label{display:block;font-family:var(--font-head);font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+.login-field input{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:15px;padding:13px 14px;outline:none;transition:border-color 0.2s;-webkit-appearance:none;}
+.login-field input:focus{border-color:var(--accent);}
+.login-btn{width:100%;padding:16px;border-radius:10px;border:none;font-family:var(--font-head);font-weight:700;font-size:16px;cursor:pointer;background:var(--accent);color:var(--deep);margin-top:8px;transition:all 0.15s;}
+.login-btn:active{transform:scale(0.98);}
+.login-btn:disabled{opacity:0.5;pointer-events:none;}
+.login-error{color:var(--warn);font-size:12px;margin-top:12px;text-align:center;min-height:18px;}
+.login-note{font-size:11px;color:var(--muted);text-align:center;margin-top:16px;line-height:1.6;}
+.login-back{font-size:11px;color:var(--muted);text-align:center;margin-top:12px;}
+.login-back a{color:var(--accent);text-decoration:none;font-family:var(--font-head);font-weight:700;}
+.lang-toggle{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px;margin-bottom:20px;align-self:center;}
+.lang-btn{padding:5px 14px;border-radius:16px;border:none;font-family:var(--font-head);font-weight:700;font-size:12px;cursor:pointer;background:transparent;color:var(--muted);transition:all 0.15s;}
+.lang-btn.active{background:var(--accent);color:var(--deep);}
+
+/* App shell */
+#app{display:none;}
+.header{background:var(--ocean);border-bottom:2px solid var(--research);padding:11px 20px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;}
+.header-logo{height:26px;}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+.header-trip{font-size:10px;color:var(--muted);font-family:var(--font-head);}
+.header-controls{display:flex;align-items:center;gap:8px;}
+.header-lang{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.header-lang-btn{padding:3px 9px;border:none;font-family:var(--font-head);font-weight:700;font-size:10px;cursor:pointer;background:transparent;color:var(--muted);transition:all 0.15s;}
+.header-lang-btn.active{background:var(--research);color:var(--deep);}
+.signout-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:var(--font-head);font-size:10px;padding:4px 9px;border-radius:5px;cursor:pointer;font-weight:700;}
+.badge-research{font-size:9px;padding:2px 8px;border-radius:10px;background:rgba(136,200,255,0.15);color:var(--research);border:1px solid rgba(136,200,255,0.3);font-family:var(--font-head);font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+
+/* Screens & layout */
+.screen{display:none;padding:20px;}
+.screen.active{display:block;}
+.section-label{font-family:var(--font-head);font-weight:700;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--research);margin-bottom:14px;margin-top:24px;}
+.section-label:first-child{margin-top:0;}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+.field{margin-bottom:16px;}
+.field:last-child{margin-bottom:0;}
+.field label{display:block;font-family:var(--font-head);font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+.field input,.field select,.field textarea{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:15px;padding:13px 14px;outline:none;transition:border-color 0.2s;-webkit-appearance:none;appearance:none;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--research);}
+.field textarea{min-height:80px;resize:vertical;}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a8959e' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+
+/* Buttons */
+.btn{width:100%;padding:16px;border-radius:var(--radius);border:none;font-family:var(--font-head);font-weight:700;font-size:15px;cursor:pointer;transition:all 0.15s;margin-top:8px;display:block;}
+.btn:active{transform:scale(0.98);}
+.btn:disabled{opacity:0.4;pointer-events:none;}
+.btn-primary{background:var(--research);color:var(--deep);}
+.btn-accent{background:var(--accent);color:var(--deep);}
+.btn-secondary{background:transparent;border:1.5px solid var(--border);color:var(--text);}
+.btn-warn{background:var(--warn);color:white;}
+.btn-add{background:rgba(136,200,255,0.06);border:1.5px dashed var(--border);color:var(--research);font-size:13px;padding:13px;}
+.btn-sm{padding:10px 16px;font-size:13px;width:auto;display:inline-block;margin-top:0;}
+
+/* Session type picker */
+.session-picker{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;}
+.session-btn{padding:20px 8px;border-radius:var(--radius);border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:var(--font-head);font-weight:700;font-size:12px;text-align:center;cursor:pointer;transition:all 0.2s;display:flex;flex-direction:column;align-items:center;gap:8px;}
+.session-btn .s-icon{font-size:26px;}
+.session-btn.sel{border-color:var(--research);color:var(--research);background:rgba(136,200,255,0.07);}
+
+/* GPS */
+.gps-btn{width:100%;padding:13px;background:rgba(136,200,255,0.06);border:1.5px dashed var(--research);border-radius:8px;color:var(--research);font-family:var(--font-head);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s;}
+.gps-coords{margin-top:7px;font-size:12px;color:var(--research2);text-align:center;min-height:18px;}
+
+/* Metrics */
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.metric-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;font-family:var(--font-head);font-weight:700;}
+.metric-val{font-family:var(--font-head);font-weight:700;font-size:22px;color:var(--research);line-height:1;}
+.metric-unit{font-size:11px;color:var(--muted);margin-top:3px;}
+
+/* Species list items */
+.species-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.species-name{font-family:var(--font-head);font-weight:700;font-size:14px;}
+.species-sci{font-size:11px;color:var(--muted);font-style:italic;margin-top:2px;}
+.species-counts{text-align:right;font-family:var(--font-head);font-weight:700;}
+.species-vuln{font-size:10px;padding:2px 7px;border-radius:8px;font-family:var(--font-head);font-weight:700;}
+.vuln-A{background:rgba(217,255,172,0.15);color:var(--accent);}
+.vuln-B{background:rgba(136,200,255,0.15);color:var(--research);}
+.vuln-C{background:rgba(230,210,197,0.15);color:var(--scallop);}
+.vuln-D{background:rgba(255,140,105,0.15);color:var(--warn);}
+.vuln-E{background:rgba(168,149,158,0.15);color:var(--muted);}
+.vuln-F{background:rgba(92,80,96,0.15);color:var(--muted);}
+
+/* Scallop measurement row */
+.scallop-row{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;}
+.scallop-row .grid-fields{display:grid;grid-template-columns:1fr 1fr 1fr 0.7fr 0.7fr;gap:8px;align-items:end;}
+.scallop-row input,.scallop-row select{background:var(--ocean);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font-body);font-size:14px;padding:8px;outline:none;width:100%;-webkit-appearance:none;appearance:none;}
+.scallop-row input:focus{border-color:var(--research);}
+.scallop-row label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-family:var(--font-head);font-weight:700;display:block;margin-bottom:3px;}
+
+/* Video log item */
+.video-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;}
+
+/* Info box */
+.info-box{background:rgba(136,200,255,0.04);border:1px solid rgba(136,200,255,0.12);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:16px;}
+
+/* Summary row */
+.summary-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.summary-row:last-child{border-bottom:none;}
+.summary-key{color:var(--muted);font-family:var(--font-head);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;}
+
+/* Tab bar */
+.tab-bar{display:flex;gap:2px;background:var(--ocean);border-radius:10px;padding:3px;margin-bottom:16px;overflow-x:auto;}
+.tab-btn{flex:1;padding:9px 6px;border:none;border-radius:8px;background:transparent;color:var(--muted);font-family:var(--font-head);font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;cursor:pointer;transition:all 0.15s;white-space:nowrap;text-align:center;}
+.tab-btn.active{background:var(--research);color:var(--deep);}
+
+/* Remove button */
+.remove-btn{background:none;border:none;color:var(--warn);font-size:18px;cursor:pointer;padding:4px;line-height:1;}
+
+/* Toast */
+.toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 20px;font-family:var(--font-head);font-size:13px;font-weight:700;z-index:999;opacity:0;transition:all 0.3s;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.success{border-color:var(--accent);color:var(--accent);}
+.toast.error{border-color:var(--warn);color:var(--warn);}
+
+/* Species search */
+.species-search-wrap{position:relative;}
+.species-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--panel);border:1px solid var(--border);border-radius:8px;max-height:200px;overflow-y:auto;z-index:50;display:none;}
+.species-dropdown.open{display:block;}
+.species-dropdown-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.1s;}
+.species-dropdown-item:hover,.species-dropdown-item.highlighted{background:var(--surface);}
+.species-dropdown-item:last-child{border-bottom:none;}
+.species-dropdown-item .sd-name{font-family:var(--font-head);font-weight:700;font-size:13px;}
+.species-dropdown-item .sd-sci{font-size:11px;color:var(--muted);font-style:italic;}
+.species-dropdown-item .sd-vuln{font-size:10px;color:var(--research);margin-left:8px;}
+
+/* Active session banner */
+.session-banner{background:rgba(136,200,255,0.05);border:1px solid rgba(136,200,255,0.2);border-radius:10px;padding:14px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
+.sb-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-family:var(--font-head);font-weight:700;}
+.sb-val{font-family:var(--font-head);font-weight:700;font-size:16px;color:var(--research);margin-top:3px;}
+
+/* Session list items */
+.session-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer;transition:border-color 0.15s;}
+.session-item:active{border-color:var(--research);}
+.si-type{font-family:var(--font-head);font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:0.5px;color:var(--research);}
+.si-meta{font-size:11px;color:var(--muted);margin-top:3px;}
+.si-badge{font-size:11px;padding:4px 10px;border-radius:20px;background:rgba(136,200,255,0.1);color:var(--research);border:1px solid rgba(136,200,255,0.3);white-space:nowrap;font-family:var(--font-head);font-weight:700;}
+.si-badge.open{background:rgba(255,140,105,0.1);color:var(--warn);border-color:rgba(255,140,105,0.3);}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="loginScreen">
+  <div class="lang-toggle">
+    <button class="lang-btn active" onclick="setLang('no')">NO</button>
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+  </div>
+  <img src="ava-ocean-logo-mark-lime-purple-master.png" alt="Ava Ocean" class="login-logo">
+  <div class="login-card">
+    <div class="login-title" data-no="Forskning" data-en="Research">Forskning</div>
+    <div class="login-desc" data-no="Datainnsamling for miljøvurdering" data-en="Data collection for environmental assessment">Datainnsamling for miljøvurdering</div>
+    <div class="login-field">
+      <label data-no="E-post" data-en="Email">E-post</label>
+      <input type="email" id="loginEmail" autocomplete="email">
+    </div>
+    <div class="login-field">
+      <label data-no="Passord" data-en="Password">Passord</label>
+      <input type="password" id="loginPassword" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="signIn()" data-no="Logg inn" data-en="Sign In">Logg inn</button>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-back"><a href="captain.html" data-no="← Tilbake til Kaptein" data-en="← Back to Captain">← Tilbake til Kaptein</a></div>
+  </div>
+</div>
+
+<!-- ===== APP SHELL ===== -->
+<div id="app">
+  <div class="header">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <img src="ava-ocean-logo-mark-lime-purple-master.png" alt="Ava Ocean" class="header-logo">
+      <span class="badge-research">Research</span>
+    </div>
+    <div class="header-right">
+      <div class="header-trip" id="headerTrip">—</div>
+      <div class="header-controls">
+        <div class="header-lang">
+          <button class="header-lang-btn active" onclick="setLang('no')">NO</button>
+          <button class="header-lang-btn" onclick="setLang('en')">EN</button>
+        </div>
+        <button class="signout-btn" onclick="signOut()" data-no="Logg ut" data-en="Sign out">Logg ut</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN: Trip select -->
+  <div class="screen active" id="scrTripSelect">
+    <div class="section-label" data-no="Velg tur" data-en="Select trip">Velg tur</div>
+    <div class="card">
+      <div class="field">
+        <label data-no="Aktiv tur" data-en="Active trip">Aktiv tur</label>
+        <select id="tripSelect" onchange="onTripSelect(this.value)">
+          <option value="">— Velg tur —</option>
+        </select>
+      </div>
+    </div>
+    <div id="tripSummaryCard" class="card" style="display:none;">
+      <div id="tripSummaryContent"></div>
+      <button class="btn btn-primary" id="continueBtn" data-no="Fortsett →" data-en="Continue →">Fortsett →</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: Session list (main hub) -->
+  <div class="screen" id="scrSessionList">
+    <div class="section-label" data-no="Forskningsøkter" data-en="Research sessions">Forskningsøkter</div>
+    <button class="btn btn-primary" onclick="showNewSession()" data-no="+ Ny økt" data-en="+ New session">+ Ny økt</button>
+    <div id="sessionList" style="margin-top:16px;"></div>
+    <button class="btn btn-secondary" onclick="goTo('scrTripSelect')" style="margin-top:16px;" data-no="← Bytt tur" data-en="← Switch trip">← Bytt tur</button>
+  </div>
+
+  <!-- SCREEN: New session setup -->
+  <div class="screen" id="scrNewSession">
+    <div class="section-label" data-no="Ny forskningsøkt" data-en="New research session">Ny forskningsøkt</div>
+    <div class="info-box" data-no="Velg type datainnsamling for denne økten." data-en="Choose the type of data collection for this session.">Velg type datainnsamling for denne økten.</div>
+    <div class="session-picker">
+      <button class="session-btn" onclick="pickSessionType('commercial')" id="btnCommercial">
+        <span class="s-icon">🐚</span>
+        <span data-no="Kommersiell" data-en="Commercial">Kommersiell</span>
+      </button>
+      <button class="session-btn" onclick="pickSessionType('baci')" id="btnBaci">
+        <span class="s-icon">🔬</span>
+        <span data-no="BACI" data-en="BACI">BACI</span>
+      </button>
+      <button class="session-btn" onclick="pickSessionType('control')" id="btnControl">
+        <span class="s-icon">📷</span>
+        <span data-no="Kontroll" data-en="Control">Kontroll</span>
+      </button>
+    </div>
+    <div class="card">
+      <div class="field">
+        <label data-no="Økt-kode" data-en="Session code">Økt-kode</label>
+        <input type="text" id="sessionCode" placeholder="f.eks. S01, BACI-01">
+      </div>
+      <div class="field">
+        <label data-no="Stasjons-ID" data-en="Station ID">Stasjons-ID</label>
+        <input type="text" id="stationId" placeholder="f.eks. S01, S02">
+      </div>
+      <div class="field" id="controlSiteField" style="display:none;">
+        <label data-no="Kontrollområde" data-en="Control site">Kontrollområde</label>
+        <select id="controlSiteSelect"><option value="">— Velg —</option></select>
+      </div>
+      <div class="field">
+        <label data-no="Dato" data-en="Date">Dato</label>
+        <input type="date" id="sessionDate">
+      </div>
+      <div class="field">
+        <label data-no="Prøvetakingsgang" data-en="Sampling occasion">Prøvetakingsgang</label>
+        <input type="number" id="samplingOccasion" min="1" value="1" placeholder="1, 2, 3...">
+      </div>
+      <div class="field">
+        <label data-no="Notater" data-en="Notes">Notater</label>
+        <textarea id="sessionNotes" rows="2"></textarea>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="createSession()" data-no="Start økt →" data-en="Start session →">Start økt →</button>
+    <button class="btn btn-secondary" onclick="goTo('scrSessionList')" data-no="← Tilbake" data-en="← Back">← Tilbake</button>
+  </div>
+
+  <!-- SCREEN: Active session hub -->
+  <div class="screen" id="scrSessionHub">
+    <div class="session-banner">
+      <div><div class="sb-label" id="hubSessionType">—</div><div class="sb-val" id="hubSessionCode">—</div></div>
+      <div style="text-align:right;"><div class="sb-label" data-no="Stasjon" data-en="Station">Stasjon</div><div class="sb-val" id="hubStationId">—</div></div>
+    </div>
+
+    <div class="tab-bar" id="hubTabs">
+      <button class="tab-btn active" onclick="showHubTab('transect')" data-no="Transekt" data-en="Transect" id="tabTransect">Transekt</button>
+      <button class="tab-btn" onclick="showHubTab('sample')" data-no="Prøve" data-en="Sample" id="tabSample">Prøve</button>
+      <button class="tab-btn" onclick="showHubTab('species')" data-no="Arter" data-en="Species" id="tabSpecies">Arter</button>
+      <button class="tab-btn" onclick="showHubTab('scallop')" data-no="Skjell" data-en="Scallop" id="tabScallop">Skjell</button>
+      <button class="tab-btn" onclick="showHubTab('video')" data-no="ROV" data-en="ROV" id="tabVideo">ROV</button>
+      <button class="tab-btn" onclick="showHubTab('photo')" data-no="Foto" data-en="Photo" id="tabPhoto">Foto</button>
+      <button class="tab-btn" onclick="showHubTab('summary')" data-no="Oversikt" data-en="Summary" id="tabSummary">Oversikt</button>
+    </div>
+
+    <!-- TAB: Transect -->
+    <div id="tabContentTransect" class="tab-content">
+      <div class="section-label" data-no="Transekt-logg" data-en="Transect log">Transekt-logg</div>
+      <div class="card">
+        <div class="field">
+          <label data-no="Transekt-kode" data-en="Transect code">Transekt-kode</label>
+          <input type="text" id="transectCode" placeholder="f.eks. T01">
+        </div>
+        <div class="grid-2" id="baciFields" style="display:none;">
+          <div class="field">
+            <label data-no="BACI-type" data-en="BACI type">BACI-type</label>
+            <select id="baciDesignation">
+              <option value="impact" data-no="Påvirkning" data-en="Impact">Påvirkning</option>
+              <option value="control" data-no="Kontroll" data-en="Control">Kontroll</option>
+            </select>
+          </div>
+          <div class="field">
+            <label data-no="Før/Etter" data-en="Before/After">Før/Etter</label>
+            <select id="beforeAfter">
+              <option value="before" data-no="Før" data-en="Before">Før</option>
+              <option value="after" data-no="Etter" data-en="After">Etter</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label data-no="Høster" data-en="Harvester">Høster</label>
+          <select id="harvester">
+            <option value="S">S (Styrbord)</option>
+            <option value="B">B (Babord)</option>
+          </select>
+        </div>
+        <div class="section-label" data-no="Substrat og miljø" data-en="Substrate & environment">Substrat og miljø</div>
+        <div class="grid-2">
+          <div class="field">
+            <label data-no="Substrattype" data-en="Substrate type">Substrattype</label>
+            <select id="substrateType">
+              <option value="">—</option>
+              <option value="sand">Sand</option>
+              <option value="gravel" data-no="Grus" data-en="Gravel">Grus</option>
+              <option value="shell" data-no="Skjell" data-en="Shell">Skjell</option>
+              <option value="mud" data-no="Mudder" data-en="Mud">Mudder</option>
+              <option value="rock" data-no="Stein" data-en="Rock">Stein</option>
+              <option value="mixed" data-no="Blandet" data-en="Mixed">Blandet</option>
+            </select>
+          </div>
+          <div class="field">
+            <label data-no="Epifauna" data-en="Epifaunal cover">Epifauna</label>
+            <select id="epifaunalCover">
+              <option value="">—</option>
+              <option value="barren" data-no="Bart" data-en="Barren">Bart</option>
+              <option value="sparse" data-no="Spredt" data-en="Sparse">Spredt</option>
+              <option value="moderate" data-no="Moderat" data-en="Moderate">Moderat</option>
+              <option value="dense" data-no="Tett" data-en="Dense">Tett</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label data-no="Vanntemp. (°C)" data-en="Water temp (°C)">Vanntemp. (°C)</label><input type="number" id="waterTemp" step="0.1"></div>
+          <div class="field"><label data-no="Salinitet (PSU)" data-en="Salinity (PSU)">Salinitet (PSU)</label><input type="number" id="salinity" step="0.1"></div>
+        </div>
+        <div class="field">
+          <label data-no="Substrat-notater" data-en="Substrate notes">Substrat-notater</label>
+          <input type="text" id="substrateNotes" placeholder="">
+        </div>
+        <div class="section-label" data-no="GPS Start" data-en="GPS Start">GPS Start</div>
+        <button class="gps-btn" onclick="getGPS('tStart')">📍 <span data-no="Hent GPS Start" data-en="Capture GPS Start">Hent GPS Start</span></button>
+        <div class="gps-coords" id="gpsTransectStart"></div>
+        <div class="grid-2" style="margin-top:8px;">
+          <div class="field"><label>Lat</label><input type="text" id="tLatStart" placeholder="74.123456"></div>
+          <div class="field"><label>Lon</label><input type="text" id="tLonStart" placeholder="19.123456"></div>
+        </div>
+        <div class="section-label" data-no="GPS Slutt" data-en="GPS End">GPS Slutt</div>
+        <button class="gps-btn" onclick="getGPS('tEnd')">📍 <span data-no="Hent GPS Slutt" data-en="Capture GPS End">Hent GPS Slutt</span></button>
+        <div class="gps-coords" id="gpsTransectEnd"></div>
+        <div class="grid-2" style="margin-top:8px;">
+          <div class="field"><label>Lat</label><input type="text" id="tLatEnd" placeholder="74.123456"></div>
+          <div class="field"><label>Lon</label><input type="text" id="tLonEnd" placeholder="19.123456"></div>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label data-no="Dyp start (m)" data-en="Depth start (m)">Dyp start (m)</label><input type="number" id="depthStart" step="0.1"></div>
+          <div class="field"><label data-no="Dyp slutt (m)" data-en="Depth end (m)">Dyp slutt (m)</label><input type="number" id="depthEnd" step="0.1"></div>
+        </div>
+        <div class="field">
+          <label data-no="Notater" data-en="Notes">Notater</label>
+          <textarea id="transectNotes" rows="2"></textarea>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveTransect()" data-no="Lagre transekt" data-en="Save transect">Lagre transekt</button>
+      <div id="transectList" style="margin-top:16px;"></div>
+    </div>
+
+    <!-- TAB: Catch sample -->
+    <div id="tabContentSample" class="tab-content" style="display:none;">
+      <div class="section-label" data-no="Fangstprøve" data-en="Catch sample">Fangstprøve</div>
+      <div id="noTransectWarn" class="info-box" data-no="Lagre et transekt først for å legge til prøver." data-en="Save a transect first to add samples.">Lagre et transekt først for å legge til prøver.</div>
+      <div id="sampleForm" style="display:none;">
+        <div class="card">
+          <div class="field">
+            <label data-no="Velg transekt" data-en="Select transect">Velg transekt</label>
+            <select id="sampleTransectSelect"></select>
+          </div>
+          <div class="field">
+            <label data-no="Prøve-kode" data-en="Sample code">Prøve-kode</label>
+            <input type="text" id="sampleCode" placeholder="f.eks. C01">
+          </div>
+          <div class="field">
+            <label data-no="Kurvtype" data-en="Basket type">Kurvtype</label>
+            <select id="basketType">
+              <option value="normal" data-no="Normal" data-en="Normal">Normal</option>
+              <option value="experimental" data-no="Eksperimentell" data-en="Experimental">Eksperimentell</option>
+              <option value="control" data-no="Kontroll" data-en="Control">Kontroll</option>
+            </select>
+          </div>
+          <div class="field">
+            <label data-no="Underprøve?" data-en="Subsample?">Underprøve?</label>
+            <select id="isSubsample" onchange="toggleSubsampleFields()">
+              <option value="yes" data-no="Ja" data-en="Yes">Ja</option>
+              <option value="no" data-no="Nei" data-en="No">Nei</option>
+            </select>
+          </div>
+          <div id="subsampleFields">
+            <div class="grid-2">
+              <div class="field"><label data-no="Kurver i underprøve" data-en="Baskets in subsample">Kurver i underprøve</label><input type="number" id="basketsSubsample" value="3"></div>
+              <div class="field"><label data-no="Underprøve volum (l)" data-en="Subsample volume (l)">Underprøve volum (l)</label><input type="number" id="subsampleVolume" step="0.1" value="120"></div>
+            </div>
+            <div class="grid-2">
+              <div class="field"><label data-no="Kurver totalt" data-en="Total baskets">Kurver totalt</label><input type="number" id="basketsTotal"></div>
+              <div class="field"><label data-no="Høster fyll %" data-en="Harvester fill %">Høster fyll %</label><input type="number" id="harvesterFillPct" step="0.1"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label data-no="Notater" data-en="Notes">Notater</label>
+            <textarea id="sampleNotes" rows="2"></textarea>
+          </div>
+        </div>
+        <div id="calcCard" class="card" style="display:none;">
+          <div class="section-label" data-no="Beregnet" data-en="Calculated">Beregnet</div>
+          <div class="grid-2">
+            <div class="metric-card"><div class="metric-label" data-no="Total volum (l)" data-en="Total vol (l)">Total volum (l)</div><div class="metric-val" id="calcTotalVol">—</div></div>
+            <div class="metric-card"><div class="metric-label" data-no="Ekstrapolering" data-en="Extrapolation">Ekstrapolering</div><div class="metric-val" id="calcExtrapol">—</div></div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveSample()" data-no="Lagre prøve" data-en="Save sample">Lagre prøve</button>
+      </div>
+      <div id="sampleList" style="margin-top:16px;"></div>
+    </div>
+
+    <!-- TAB: Species entry -->
+    <div id="tabContentSpecies" class="tab-content" style="display:none;">
+      <div class="section-label" data-no="Artsregistrering" data-en="Species entry">Artsregistrering</div>
+      <div id="noSampleWarn" class="info-box" data-no="Lagre en prøve først for å registrere arter." data-en="Save a sample first to enter species.">Lagre en prøve først for å registrere arter.</div>
+      <div id="speciesForm" style="display:none;">
+        <div class="card">
+          <div class="field">
+            <label data-no="Velg prøve" data-en="Select sample">Velg prøve</label>
+            <select id="speciesSampleSelect" onchange="loadSpeciesForSample()"></select>
+          </div>
+          <div class="field species-search-wrap">
+            <label data-no="Søk art" data-en="Search species">Søk art</label>
+            <input type="text" id="speciesSearch" placeholder="Skriv artsnavn..." autocomplete="off" oninput="filterSpecies()" onfocus="filterSpecies()">
+            <div class="species-dropdown" id="speciesDropdown"></div>
+          </div>
+          <div id="selectedSpeciesInfo" style="display:none;margin-bottom:12px;">
+            <div class="card" style="border-color:var(--research);background:rgba(136,200,255,0.04);">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div class="species-name" id="selSpeciesName">—</div>
+                  <div class="species-sci" id="selSpeciesSci">—</div>
+                </div>
+                <span class="species-vuln" id="selSpeciesVuln">—</span>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label data-no="Fangst-kategori" data-en="Catch category">Fangst-kategori</label>
+            <select id="catchCategory">
+              <option value="target" data-no="Målart" data-en="Target">Målart</option>
+              <option value="commercial_bycatch" data-no="Kommersiell bifangst" data-en="Commercial bycatch">Kommersiell bifangst</option>
+              <option value="benthic_bycatch" data-no="Bentisk bifangst" data-en="Benthic bycatch">Bentisk bifangst</option>
+              <option value="undersized_target" data-no="Undermåls" data-en="Undersized target">Undermåls</option>
+            </select>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label data-no="Antall" data-en="Count">Antall</label><input type="number" id="speciesCount" min="0"></div>
+            <div class="field"><label data-no="Vekt (g)" data-en="Weight (g)">Vekt (g)</label><input type="number" id="speciesWeight" step="0.1" min="0"></div>
+          </div>
+          <div class="field">
+            <label data-no="Del av individ" data-en="Portion of individual">Del av individ</label>
+            <input type="number" id="portionIndividual" step="0.1" min="0" max="1" placeholder="1.0 = hel, 0.5 = halv">
+          </div>
+          <div class="field">
+            <label data-no="Notater" data-en="Notes">Notater</label>
+            <textarea id="speciesNotes" rows="1"></textarea>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveSpeciesRecord()" data-no="Legg til art" data-en="Add species">Legg til art</button>
+        <button class="btn btn-add" onclick="showAddCustomSpecies()" data-no="+ Ny art (ikke i listen)" data-en="+ New species (not in list)">+ Ny art (ikke i listen)</button>
+      </div>
+      <div id="speciesRecordList" style="margin-top:16px;"></div>
+    </div>
+
+    <!-- TAB: Scallop measurements -->
+    <div id="tabContentScallop" class="tab-content" style="display:none;">
+      <div class="section-label" data-no="Skjellmålinger" data-en="Scallop measurements">Skjellmålinger</div>
+      <div id="noSampleWarnScallop" class="info-box" data-no="Lagre en prøve først." data-en="Save a sample first.">Lagre en prøve først.</div>
+      <div id="scallopForm" style="display:none;">
+        <div class="card">
+          <div class="field">
+            <label data-no="Velg prøve" data-en="Select sample">Velg prøve</label>
+            <select id="scallopSampleSelect" onchange="loadScallopsForSample()"></select>
+          </div>
+        </div>
+        <div class="info-box" data-no="Mål bredde og høyde i mm. Skadeindeks: 0=ingen, 1=overlevbar, 2=dødelig." data-en="Measure width and height in mm. Damage index: 0=none, 1=survivable, 2=lethal.">Mål bredde og høyde i mm. Skadeindeks: 0=ingen, 1=overlevbar, 2=dødelig.</div>
+        <div class="card">
+          <div class="scallop-row">
+            <div class="grid-fields">
+              <div><label data-no="Bredde" data-en="Width">Bredde</label><input type="number" id="scWidth" step="0.1" placeholder="mm"></div>
+              <div><label data-no="Høyde" data-en="Height">Høyde</label><input type="number" id="scHeight" step="0.1" placeholder="mm"></div>
+              <div><label data-no="Vekst" data-en="Growth">Vekst</label><input type="number" id="scGrowth" step="0.1"></div>
+              <div><label data-no="Skade" data-en="Damage">Skade</label>
+                <select id="scDamage"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select>
+              </div>
+              <div><label data-no="Rekr." data-en="Recr.">Rekr.</label>
+                <select id="scRecruitment"><option value="no" data-no="Nei" data-en="No">Nei</option><option value="yes" data-no="Ja" data-en="Yes">Ja</option></select>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveScallopMeasurement()" data-no="+ Legg til" data-en="+ Add">+ Legg til</button>
+        </div>
+        <div id="scallopCount" style="font-family:var(--font-head);font-weight:700;font-size:13px;color:var(--research);margin:12px 0;text-align:center;"></div>
+        <div id="scallopList"></div>
+      </div>
+    </div>
+
+    <!-- TAB: Video log -->
+    <div id="tabContentVideo" class="tab-content" style="display:none;">
+      <div class="section-label" data-no="ROV / Undervanns-drone" data-en="ROV / Underwater drone">ROV / Undervanns-drone</div>
+      <div class="card">
+        <div class="field">
+          <label data-no="Videotype" data-en="Video type">Videotype</label>
+          <select id="videoType" onchange="toggleROVFields()">
+            <option value="rov" data-no="Undervanns-drone (ROV)" data-en="Underwater drone (ROV)">Undervanns-drone (ROV)</option>
+            <option value="drone_surface" data-no="Overflatedrone" data-en="Surface drone">Overflatedrone</option>
+            <option value="handheld" data-no="Håndholdt" data-en="Handheld">Håndholdt</option>
+            <option value="other" data-no="Annet" data-en="Other">Annet</option>
+          </select>
+        </div>
+        <div class="field">
+          <label data-no="Kontrollområde" data-en="Control site">Kontrollområde</label>
+          <select id="videoControlSiteSelect"><option value="">— Velg —</option></select>
+        </div>
+        <button class="gps-btn" onclick="getGPS('video')">📍 <span data-no="Hent GPS" data-en="Capture GPS">Hent GPS</span></button>
+        <div class="gps-coords" id="gpsVideo"></div>
+        <div class="grid-2" style="margin-top:8px;">
+          <div class="field"><label>Lat</label><input type="text" id="videoLat" placeholder="74.123456"></div>
+          <div class="field"><label>Lon</label><input type="text" id="videoLon" placeholder="19.123456"></div>
+        </div>
+        <div id="rovFields">
+          <div class="grid-2">
+            <div class="field"><label data-no="Dyp (m)" data-en="Depth (m)">Dyp (m)</label><input type="number" id="rovDepth" step="0.1"></div>
+            <div class="field">
+              <label data-no="Sikt" data-en="Visibility">Sikt</label>
+              <select id="rovVisibility">
+                <option value="">—</option>
+                <option value="good" data-no="God" data-en="Good">God</option>
+                <option value="moderate" data-no="Moderat" data-en="Moderate">Moderat</option>
+                <option value="poor" data-no="Dårlig" data-en="Poor">Dårlig</option>
+                <option value="very_poor" data-no="Svært dårlig" data-en="Very poor">Svært dårlig</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label data-no="ROV kurs" data-en="ROV heading">ROV kurs</label><input type="text" id="rovHeading" placeholder="f.eks. NNE, 045°"></div>
+            <div class="field"><label data-no="Transekt (m)" data-en="Transect (m)">Transekt (m)</label><input type="number" id="rovTransectLength" step="0.1"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label data-no="Varighet (sek)" data-en="Duration (sec)">Varighet (sek)</label>
+          <input type="number" id="videoDuration">
+        </div>
+        <div class="field">
+          <label data-no="Notater" data-en="Notes">Notater</label>
+          <textarea id="videoNotes" rows="2"></textarea>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveVideoLog()" data-no="Lagre video-logg" data-en="Save video log">Lagre video-logg</button>
+      <div id="videoList" style="margin-top:16px;"></div>
+    </div>
+
+    <!-- TAB: Photo documentation -->
+    <div id="tabContentPhoto" class="tab-content" style="display:none;">
+      <div class="section-label" data-no="Fotodokumentasjon" data-en="Photo documentation">Fotodokumentasjon</div>
+      <div class="info-box" data-no="Logg standardiserte bilder tatt med kamerastativ og belysning." data-en="Log standardised photos taken with camera stand and lighting.">Logg standardiserte bilder tatt med kamerastativ og belysning.</div>
+      <div class="card">
+        <div class="field">
+          <label data-no="Velg prøve (valgfritt)" data-en="Select sample (optional)">Velg prøve (valgfritt)</label>
+          <select id="photoSampleSelect"><option value="">— Ingen —</option></select>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label data-no="Fototype" data-en="Photo type">Fototype</label>
+            <select id="photoType">
+              <option value="sample_overview" data-no="Prøveoversikt" data-en="Sample overview">Prøveoversikt</option>
+              <option value="quadrat" data-no="Kvadrat" data-en="Quadrat">Kvadrat</option>
+              <option value="detail" data-no="Detalj" data-en="Detail">Detalj</option>
+              <option value="scale_reference" data-no="Skalareferanse" data-en="Scale reference">Skalareferanse</option>
+              <option value="other" data-no="Annet" data-en="Other">Annet</option>
+            </select>
+          </div>
+          <div class="field">
+            <label data-no="Fotonummer" data-en="Photo number">Fotonummer</label>
+            <input type="number" id="photoNumber" min="1">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label data-no="Stasjons-ID" data-en="Station ID">Stasjons-ID</label><input type="text" id="photoStationId"></div>
+          <div class="field"><label data-no="Kvadrat-posisjon" data-en="Quadrat position">Kvadrat-posisjon</label><input type="text" id="photoQuadratPos" placeholder="f.eks. A1, B2"></div>
+        </div>
+        <div class="field">
+          <label data-no="Notater" data-en="Notes">Notater</label>
+          <textarea id="photoNotes" rows="2"></textarea>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="savePhotoLog()" data-no="Lagre foto-logg" data-en="Save photo log">Lagre foto-logg</button>
+      <div id="photoList" style="margin-top:16px;"></div>
+    </div>
+
+    <!-- TAB: Summary -->
+    <div id="tabContentSummary" class="tab-content" style="display:none;">
+      <div class="section-label" data-no="Live oversikt" data-en="Live summary">Live oversikt</div>
+      <div id="summaryContent">
+        <div class="info-box" data-no="Legg til arter og skjellmålinger for å se statistikk." data-en="Add species and scallop measurements to see statistics.">Legg til arter og skjellmålinger for å se statistikk.</div>
+      </div>
+    </div>
+
+    <!-- Session actions -->
+    <div style="margin-top:24px;padding:0 20px 20px;">
+      <button class="btn btn-warn" onclick="completeSession()" data-no="Fullfør økt ✓" data-en="Complete session ✓">Fullfør økt ✓</button>
+      <button class="btn btn-secondary" onclick="goTo('scrSessionList');loadSessions()" data-no="← Tilbake til øktliste" data-en="← Back to session list">← Tilbake til øktliste</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: Add custom species -->
+  <div class="screen" id="scrAddSpecies">
+    <div class="section-label" data-no="Legg til ny art" data-en="Add new species">Legg til ny art</div>
+    <div class="card">
+      <div class="field"><label data-no="Vanlig navn" data-en="Common name">Vanlig navn</label><input type="text" id="customCommonName"></div>
+      <div class="field"><label data-no="Vitenskapelig navn" data-en="Scientific name">Vitenskapelig navn</label><input type="text" id="customSciName"></div>
+      <div class="grid-2">
+        <div class="field"><label>Phylum</label><input type="text" id="customPhylum"></div>
+        <div class="field"><label>Class</label><input type="text" id="customClass"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Order</label><input type="text" id="customOrder"></div>
+        <div class="field"><label>Family</label><input type="text" id="customFamily"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Genus</label><input type="text" id="customGenus"></div>
+        <div class="field"><label>Species</label><input type="text" id="customSpecies"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label data-no="Sårbarhet" data-en="Vulnerability">Sårbarhet</label>
+          <select id="customVuln"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option></select>
+        </div>
+        <div class="field">
+          <label data-no="Kategori" data-en="Category">Kategori</label>
+          <select id="customCategory">
+            <option value="target" data-no="Målart" data-en="Target">Målart</option>
+            <option value="commercial_bycatch" data-no="Komm. bifangst" data-en="Comm. bycatch">Komm. bifangst</option>
+            <option value="benthic_bycatch" data-no="Bentisk bifangst" data-en="Benthic bycatch">Bentisk bifangst</option>
+            <option value="undersized_target" data-no="Undermåls" data-en="Undersized">Undermåls</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="saveCustomSpecies()" data-no="Lagre art" data-en="Save species">Lagre art</button>
+    <button class="btn btn-secondary" onclick="goTo('scrSessionHub')" data-no="← Avbryt" data-en="← Cancel">← Avbryt</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+const SUPABASE_URL='https://hpfxkamqbsbaohrwbppa.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwZnhrYW1xYnNiYW9ocndicHBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NjQyOTEsImV4cCI6MjA4ODA0MDI5MX0.coiX7bWx0CiiUmuU_pRMK8pSqe38-luT30lgatJBTz8';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+/* ===== State ===== */
+let currentTrip=null, currentSession=null, currentLang='no';
+let allTransects=[], allSamples=[], speciesRef=[], allSpeciesRecords=[], allScallops=[], allVideos=[], allPhotos=[];
+let selectedSpeciesRefId=null, controlSites=[];
+
+/* ===== Language ===== */
+function setLang(lang){
+  currentLang=lang;
+  localStorage.setItem('ava_lang',lang);
+  document.querySelectorAll('[data-no]').forEach(el=>{
+    const txt=lang==='no'?el.getAttribute('data-no'):el.getAttribute('data-en');
+    if(txt){
+      if(el.tagName==='INPUT'&&el.type!=='text'&&el.type!=='number'&&el.type!=='email'&&el.type!=='password') el.value=txt;
+      else if(el.tagName==='BUTTON'&&!el.querySelector('[data-no]')) el.textContent=txt;
+      else if(el.tagName!=='BUTTON') el.textContent=txt;
+    }
+  });
+  document.querySelectorAll('.lang-btn,.header-lang-btn').forEach(b=>{
+    b.classList.toggle('active',b.textContent.trim()===lang.toUpperCase());
+  });
+}
+function L(no,en){return currentLang==='no'?no:en;}
+function initLang(){const s=localStorage.getItem('ava_lang')||'no';if(s!=='no')setLang(s);}
+
+/* ===== Auth ===== */
+async function signIn(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const password=document.getElementById('loginPassword').value;
+  const btn=document.getElementById('loginBtn'),errEl=document.getElementById('loginError');
+  errEl.textContent='';
+  if(!email||!password){errEl.textContent=L('Fyll inn e-post og passord.','Please enter email and password.');return;}
+  btn.disabled=true;btn.textContent=L('Logger inn...','Signing in...');
+  const{error}=await sb.auth.signInWithPassword({email,password});
+  if(error){errEl.textContent=L('Feil e-post eller passord.','Incorrect email or password.');btn.disabled=false;btn.textContent=L('Logg inn','Sign In');}
+}
+async function signOut(){await sb.auth.signOut();location.reload();}
+
+/* ===== Init ===== */
+async function init(){
+  initLang();
+  const{data:{session}}=await sb.auth.getSession();
+  if(session){enterApp();}
+  sb.auth.onAuthStateChange((ev,ses)=>{if(ev==='SIGNED_IN')enterApp();if(ev==='SIGNED_OUT')location.reload();});
+}
+async function enterApp(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  await loadTrips();
+  await loadSpeciesRef();
+  await loadControlSites();
+}
+
+/* ===== Trip selection ===== */
+async function loadTrips(){
+  const{data}=await sb.from('trip_registry').select('*').order('trip_date',{ascending:false}).limit(30);
+  const sel=document.getElementById('tripSelect');
+  sel.innerHTML=`<option value="">— ${L('Velg tur','Select trip')} —</option>`;
+  (data||[]).forEach(t=>{
+    const o=document.createElement('option');o.value=t.id;
+    o.textContent=`${t.trip_code} · ${t.trip_date}${t.trip_closed?' ✓':''}`;
+    sel.appendChild(o);
+  });
+}
+async function onTripSelect(id){
+  if(!id){document.getElementById('tripSummaryCard').style.display='none';return;}
+  const{data}=await sb.from('trip_registry').select('*').eq('id',id).single();
+  if(!data)return;
+  currentTrip=data;
+  document.getElementById('tripSummaryContent').innerHTML=`
+    <div class="summary-row"><span class="summary-key">${L('Tur','Trip')}</span><span>${data.trip_code}</span></div>
+    <div class="summary-row"><span class="summary-key">${L('Dato','Date')}</span><span>${data.trip_date}</span></div>
+    <div class="summary-row"><span class="summary-key">${L('Kaptein','Captain')}</span><span>${data.captain_name||'—'}</span></div>`;
+  document.getElementById('tripSummaryCard').style.display='block';
+  document.getElementById('continueBtn').onclick=()=>{goTo('scrSessionList');loadSessions();};
+}
+
+/* ===== Sessions ===== */
+async function loadSessions(){
+  if(!currentTrip)return;
+  document.getElementById('headerTrip').textContent=currentTrip.trip_code;
+  const{data}=await sb.from('research_session').select('*').eq('trip_id',currentTrip.id).order('created_at',{ascending:false});
+  const el=document.getElementById('sessionList');
+  if(!data||!data.length){el.innerHTML=`<div class="info-box">${L('Ingen økter ennå.','No sessions yet.')}</div>`;return;}
+  el.innerHTML=data.map(s=>`
+    <div class="session-item" onclick="openSession('${s.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+        <div>
+          <div class="si-type">${getSessionLabel(s.session_type)}</div>
+          <div class="si-meta">${s.session_code||''} · ${s.control_site_id?'CS-'+s.control_site_id:(s.station_id||'')} · ${s.session_date}${s.sampling_occasion>1?' · #'+s.sampling_occasion:''}</div>
+        </div>
+        <span class="si-badge${s.completed_at?'':' open'}">${s.completed_at?'✓':L('Åpen','Open')}</span>
+      </div>
+    </div>`).join('');
+}
+function getSessionLabel(type){
+  const map={commercial:L('Kommersiell','Commercial'),baci:'BACI',control:L('Kontroll','Control')};
+  return map[type]||type;
+}
+
+let newSessionType=null;
+function showNewSession(){
+  newSessionType=null;
+  document.querySelectorAll('.session-btn').forEach(b=>b.classList.remove('sel'));
+  document.getElementById('sessionCode').value='';
+  document.getElementById('stationId').value='';
+  document.getElementById('sessionDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('sessionNotes').value='';
+  goTo('scrNewSession');
+}
+function pickSessionType(type){
+  newSessionType=type;
+  document.querySelectorAll('.session-btn').forEach(b=>b.classList.remove('sel'));
+  document.getElementById('btn'+type.charAt(0).toUpperCase()+type.slice(1)).classList.add('sel');
+  document.getElementById('controlSiteField').style.display=type==='control'?'block':'none';
+}
+
+async function createSession(){
+  if(!newSessionType){showToast(L('Velg økttype','Select session type'),'error');return;}
+  const{data,error}=await sb.from('research_session').insert({
+    trip_id:currentTrip.id,
+    session_type:newSessionType,
+    session_code:document.getElementById('sessionCode').value.trim()||null,
+    station_id:document.getElementById('stationId').value.trim()||null,
+    control_site_id:newSessionType==='control'?parseInt(document.getElementById('controlSiteSelect').value)||null:null,
+    session_date:document.getElementById('sessionDate').value||new Date().toISOString().split('T')[0],
+    sampling_occasion:parseInt(document.getElementById('samplingOccasion').value)||1,
+    notes:document.getElementById('sessionNotes').value.trim()||null
+  }).select().single();
+  if(error){showToast('Error: '+error.message,'error');return;}
+  showToast(L('Økt opprettet!','Session created!'),'success');
+  await openSession(data.id);
+}
+
+async function openSession(id){
+  const{data}=await sb.from('research_session').select('*').eq('id',id).single();
+  if(!data)return;
+  currentSession=data;
+  document.getElementById('hubSessionType').textContent=getSessionLabel(data.session_type);
+  document.getElementById('hubSessionCode').textContent=(data.session_code||'—')+(data.sampling_occasion>1?' · #'+data.sampling_occasion:'');
+  document.getElementById('hubStationId').textContent=data.control_site_id?'CS-'+data.control_site_id:(data.station_id||'—');
+  // Show/hide BACI fields
+  document.getElementById('baciFields').style.display=data.session_type==='baci'?'grid':'none';
+  goTo('scrSessionHub');
+  showHubTab('transect');
+  await loadAllSessionData();
+}
+
+/* ===== Hub tabs ===== */
+function showHubTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.style.display='none');
+  const tabBtn=document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1));
+  if(tabBtn)tabBtn.classList.add('active');
+  const content=document.getElementById('tabContent'+tab.charAt(0).toUpperCase()+tab.slice(1));
+  if(content)content.style.display='block';
+  // Refresh data for relevant tabs
+  if(tab==='species')loadSpeciesForSample();
+  if(tab==='scallop')loadScallopsForSample();
+  if(tab==='summary')renderSummary();
+}
+
+/* ===== Transects ===== */
+async function saveTransect(){
+  if(!currentSession){showToast(L('Ingen aktiv økt','No active session'),'error');return;}
+  const latS=parseFloat(document.getElementById('tLatStart').value);
+  const lonS=parseFloat(document.getElementById('tLonStart').value);
+  const latE=parseFloat(document.getElementById('tLatEnd').value);
+  const lonE=parseFloat(document.getElementById('tLonEnd').value);
+  let lengthKm=null;
+  if(latS&&lonS&&latE&&lonE) lengthKm=haversine(latS,lonS,latE,lonE);
+  const row={
+    session_id:currentSession.id,
+    transect_code:document.getElementById('transectCode').value.trim()||null,
+    transect_type:currentSession.session_type==='baci'?'baci':'commercial',
+    baci_designation:currentSession.session_type==='baci'?document.getElementById('baciDesignation').value:null,
+    before_after:currentSession.session_type==='baci'?document.getElementById('beforeAfter').value:null,
+    harvester:document.getElementById('harvester').value,
+    lat_start:latS||null, lon_start:lonS||null,
+    lat_end:latE||null, lon_end:lonE||null,
+    time_start:new Date().toISOString(),
+    depth_start:parseFloat(document.getElementById('depthStart').value)||null,
+    depth_end:parseFloat(document.getElementById('depthEnd').value)||null,
+    transect_length_km:lengthKm,
+    substrate_type:document.getElementById('substrateType').value||null,
+    substrate_notes:document.getElementById('substrateNotes').value.trim()||null,
+    epifaunal_cover:document.getElementById('epifaunalCover').value||null,
+    water_temp_c:parseFloat(document.getElementById('waterTemp').value)||null,
+    salinity_psu:parseFloat(document.getElementById('salinity').value)||null,
+    notes:document.getElementById('transectNotes').value.trim()||null
+  };
+  const{data,error}=await sb.from('research_transect').insert(row).select().single();
+  if(error){showToast('Error: '+error.message,'error');return;}
+  showToast(L('Transekt lagret!','Transect saved!'),'success');
+  allTransects.push(data);
+  renderTransectList();
+  updateSampleSelects();
+  clearTransectForm();
+}
+function clearTransectForm(){
+  ['transectCode','tLatStart','tLonStart','tLatEnd','tLonEnd','depthStart','depthEnd','transectNotes','substrateNotes','waterTemp','salinity'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  document.getElementById('substrateType').value='';
+  document.getElementById('epifaunalCover').value='';
+  document.getElementById('gpsTransectStart').textContent='';
+  document.getElementById('gpsTransectEnd').textContent='';
+}
+function renderTransectList(){
+  const el=document.getElementById('transectList');
+  if(!allTransects.length){el.innerHTML='';return;}
+  el.innerHTML=`<div class="section-label">${L('Lagrede transekter','Saved transects')}</div>`+
+    allTransects.map(t=>`
+    <div class="species-item">
+      <div>
+        <div class="species-name">${t.transect_code||'—'}</div>
+        <div class="species-sci">${t.baci_designation?t.baci_designation+' · ':'' }${t.before_after||''} · ${t.harvester||''} · ${t.transect_length_km?t.transect_length_km.toFixed(3)+' km':'—'}${t.substrate_type?' · '+t.substrate_type:''}${t.water_temp_c?' · '+t.water_temp_c+'°C':''}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ===== Catch samples ===== */
+function updateSampleSelects(){
+  const hasTransects=allTransects.length>0;
+  document.getElementById('noTransectWarn').style.display=hasTransects?'none':'block';
+  document.getElementById('sampleForm').style.display=hasTransects?'block':'none';
+  // Populate transect select for samples
+  const tSel=document.getElementById('sampleTransectSelect');
+  tSel.innerHTML=allTransects.map(t=>`<option value="${t.id}">${t.transect_code||'T'} ${t.baci_designation?'('+t.baci_designation+')':''}</option>`).join('');
+  // Update species/scallop sample selects
+  const hasSamples=allSamples.length>0;
+  document.getElementById('noSampleWarn').style.display=hasSamples?'none':'block';
+  document.getElementById('speciesForm').style.display=hasSamples?'block':'none';
+  document.getElementById('noSampleWarnScallop').style.display=hasSamples?'none':'block';
+  document.getElementById('scallopForm').style.display=hasSamples?'block':'none';
+  const opts=allSamples.map(s=>`<option value="${s.id}">${s.sample_code||'—'} (${s.basket_type||''})</option>`).join('');
+  const spSel=document.getElementById('speciesSampleSelect');
+  const scSel=document.getElementById('scallopSampleSelect');
+  if(spSel)spSel.innerHTML=opts;
+  if(scSel)scSel.innerHTML=opts;
+}
+function toggleSubsampleFields(){
+  document.getElementById('subsampleFields').style.display=document.getElementById('isSubsample').value==='yes'?'block':'none';
+}
+async function saveSample(){
+  const transectId=document.getElementById('sampleTransectSelect').value;
+  if(!transectId){showToast(L('Velg transekt','Select transect'),'error');return;}
+  const isSub=document.getElementById('isSubsample').value==='yes';
+  const subVol=parseFloat(document.getElementById('subsampleVolume').value)||0;
+  const fillPct=parseFloat(document.getElementById('harvesterFillPct').value)||0;
+  const basketsTotal=parseInt(document.getElementById('basketsTotal').value)||0;
+  // Auto-calculate volumes
+  const BASKET_VOL_L=2022, HARVESTER_VOL_L=8088;
+  let totalVol=0, subFrac=0, extrapol=1;
+  if(isSub&&fillPct>0){
+    totalVol=(fillPct/100)*HARVESTER_VOL_L;
+    if(subVol>0&&totalVol>0){subFrac=subVol/totalVol;extrapol=1/subFrac;}
+  }
+  const row={
+    transect_id:transectId,session_id:currentSession.id,
+    sample_code:document.getElementById('sampleCode').value.trim()||null,
+    basket_type:document.getElementById('basketType').value,
+    is_subsample:isSub,
+    baskets_subsample:isSub?parseInt(document.getElementById('basketsSubsample').value)||null:null,
+    subsample_volume_l:isSub?subVol:null,
+    baskets_total:basketsTotal||null,
+    harvester_fill_pct:fillPct||null,
+    total_harvester_volume_l:totalVol||null,
+    subsample_fraction:subFrac||null,
+    extrapolation_factor:extrapol,
+    notes:document.getElementById('sampleNotes').value.trim()||null
+  };
+  const{data,error}=await sb.from('research_catch_sample').insert(row).select().single();
+  if(error){showToast('Error: '+error.message,'error');return;}
+  showToast(L('Prøve lagret!','Sample saved!'),'success');
+  allSamples.push(data);
+  updateSampleSelects();
+  renderSampleList();
+  document.getElementById('sampleCode').value='';
+  document.getElementById('sampleNotes').value='';
+}
+function renderSampleList(){
+  const el=document.getElementById('sampleList');
+  if(!allSamples.length){el.innerHTML='';return;}
+  el.innerHTML=`<div class="section-label">${L('Lagrede prøver','Saved samples')}</div>`+
+    allSamples.map(s=>`
+    <div class="species-item">
+      <div>
+        <div class="species-name">${s.sample_code||'—'}</div>
+        <div class="species-sci">${s.basket_type||''} · ${s.is_subsample?L('Underprøve','Subsample'):L('Full','Full')} · ${s.extrapolation_factor?'×'+s.extrapolation_factor.toFixed(1):''}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ===== Species reference ===== */
+async function loadSpeciesRef(){
+  const{data}=await sb.from('species_reference').select('*').eq('is_active',true).order('common_name');
+  speciesRef=data||[];
+}
+function filterSpecies(){
+  const q=document.getElementById('speciesSearch').value.toLowerCase();
+  const dd=document.getElementById('speciesDropdown');
+  if(!q){dd.classList.remove('open');return;}
+  const matches=speciesRef.filter(s=>
+    s.common_name.toLowerCase().includes(q)||
+    (s.scientific_name&&s.scientific_name.toLowerCase().includes(q))
+  ).slice(0,8);
+  if(!matches.length){dd.innerHTML=`<div class="species-dropdown-item"><span class="sd-name">${L('Ingen treff','No matches')}</span></div>`;dd.classList.add('open');return;}
+  dd.innerHTML=matches.map(s=>`
+    <div class="species-dropdown-item" onclick="selectSpecies('${s.id}')">
+      <span class="sd-name">${s.common_name}</span>
+      <span class="sd-sci">${s.scientific_name||''}</span>
+      <span class="sd-vuln">${s.vulnerability||''}</span>
+    </div>`).join('');
+  dd.classList.add('open');
+}
+function selectSpecies(id){
+  const sp=speciesRef.find(s=>s.id===id);
+  if(!sp)return;
+  selectedSpeciesRefId=id;
+  document.getElementById('speciesSearch').value=sp.common_name;
+  document.getElementById('speciesDropdown').classList.remove('open');
+  document.getElementById('selectedSpeciesInfo').style.display='block';
+  document.getElementById('selSpeciesName').textContent=sp.common_name;
+  document.getElementById('selSpeciesSci').textContent=sp.scientific_name||'—';
+  const vulnEl=document.getElementById('selSpeciesVuln');
+  vulnEl.textContent=sp.vulnerability||'—';
+  vulnEl.className='species-vuln vuln-'+(sp.vulnerability||'C');
+  if(sp.catch_category)document.getElementById('catchCategory').value=sp.catch_category;
+}
+// Close dropdown on outside click
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.species-search-wrap'))document.getElementById('speciesDropdown').classList.remove('open');
+});
+
+/* ===== Species records ===== */
+async function loadSpeciesForSample(){
+  const sampleId=document.getElementById('speciesSampleSelect')?.value;
+  if(!sampleId){allSpeciesRecords=[];renderSpeciesRecordList();return;}
+  const{data}=await sb.from('research_species_record').select('*,species_reference(common_name,scientific_name,vulnerability)').eq('sample_id',sampleId).order('created_at');
+  allSpeciesRecords=data||[];
+  renderSpeciesRecordList();
+}
+async function saveSpeciesRecord(){
+  const sampleId=document.getElementById('speciesSampleSelect')?.value;
+  if(!sampleId){showToast(L('Velg prøve','Select sample'),'error');return;}
+  if(!selectedSpeciesRefId&&!document.getElementById('speciesSearch').value.trim()){
+    showToast(L('Velg eller skriv artsnavn','Select or type species name'),'error');return;
+  }
+  const count=parseInt(document.getElementById('speciesCount').value)||0;
+  const weight=parseFloat(document.getElementById('speciesWeight').value)||0;
+  // Find sample for extrapolation
+  const sample=allSamples.find(s=>s.id===sampleId);
+  const extrapol=sample?.extrapolation_factor||1;
+  const row={
+    sample_id:sampleId,
+    species_ref_id:selectedSpeciesRefId||null,
+    custom_species_name:selectedSpeciesRefId?null:document.getElementById('speciesSearch').value.trim(),
+    catch_category:document.getElementById('catchCategory').value,
+    vulnerability:selectedSpeciesRefId?speciesRef.find(s=>s.id===selectedSpeciesRefId)?.vulnerability:null,
+    catch_count:count,catch_weight_g:weight,
+    total_count_extrapolated:count*extrapol,
+    total_weight_extrapolated_g:weight*extrapol,
+    portion_of_individual:parseFloat(document.getElementById('portionIndividual').value)||1,
+    notes:document.getElementById('speciesNotes').value.trim()||null
+  };
+  const{data,error}=await sb.from('research_species_record').insert(row).select('*,species_reference(common_name,scientific_name,vulnerability)').single();
+  if(error){showToast('Error: '+error.message,'error');return;}
+  showToast(L('Art lagt til!','Species added!'),'success');
+  allSpeciesRecords.push(data);
+  renderSpeciesRecordList();
+  // Clear form
+  document.getElementById('speciesSearch').value='';
+  document.getElementById('speciesCount').value='';
+  document.getElementById('speciesWeight').value='';
+  document.getElementById('portionIndividual').value='';
+  document.getElementById('speciesNotes').value='';
+  document.getElementById('selectedSpeciesInfo').style.display='none';
+  selectedSpeciesRefId=null;
+}
+function renderSpeciesRecordList(){
+  const el=document.getElementById('speciesRecordList');
+  if(!allSpeciesRecords.length){el.innerHTML=`<div class="info-box">${L('Ingen arter registrert for denne prøven.','No species recorded for this sample.')}</div>`;return;}
+  el.innerHTML=allSpeciesRecords.map(r=>{
+    const name=r.species_reference?.common_name||r.custom_species_name||'—';
+    const sci=r.species_reference?.scientific_name||'';
+    const vuln=r.vulnerability||r.species_reference?.vulnerability||'';
+    return `<div class="species-item">
+      <div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="species-name">${name}</span>
+          ${vuln?`<span class="species-vuln vuln-${vuln}">${vuln}</span>`:''}
+        </div>
+        <div class="species-sci">${sci} · ${getCatchCatLabel(r.catch_category)}</div>
+      </div>
+      <div class="species-counts">
+        <div style="color:var(--research);font-size:16px;">${r.catch_count||0}</div>
+        <div style="font-size:11px;color:var(--muted);">${r.catch_weight_g||0}g</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function getCatchCatLabel(cat){
+  const map={target:L('Målart','Target'),commercial_bycatch:L('Komm. bifangst','Comm. bycatch'),benthic_bycatch:L('Bentisk','Benthic'),undersized_target:L('Undermåls','Undersized')};
+  return map[cat]||cat||'';
+}
+
+/* ===== Custom species ===== */
+function showAddCustomSpecies(){goTo('scrAddSpecies');}
+async function saveCustomSpecies(){
+  const name=document.getElementById('customCommonName').value.trim();
+  if(!name){showToast(L('Skriv vanlig navn','Enter common name'),'error');return;}
+  const row={
+    common_name:name,
+    scientific_name:document.getElementById('customSciName').value.trim()||null,
+    phylum:document.getElementById('customPhylum').value.trim()||null,
+    class:document.getElementById('customClass').value.trim()||null,
+    order:document.getElementById('customOrder').value.trim()||null,
+    family:document.getElementById('customFamily').value.trim()||null,
+    genus:document.getElementById('customGenus').value.trim()||null,
+    species:document.getElementById('customSpecies').value.trim()||null,
+    vulnerability:document.getElementById('customVuln').value,
+    catch_category:document.getElementById('customCategory').value
+  };
+  const{data,error}=await sb.from('species_reference').insert(row).select().single();
+  if(error){showToast('Error: '+error.message,'error');return;}
+  showToast(L('Art lagret!','Species saved!'),'success');
+  speciesRef.push(data);
+  goTo('scrSessionHub');
+}
+
+/* ===== Scallop measurements ===== */
+async function loadScallopsForSample(){
+  const sampleId=document.getElementById('scallopSampleSelect')?.value;
+  if(!sampleId){allScallops=[];renderScallopList();return;}
+  const{data}=await sb.from('research_scallop_measurement').select('*').eq('sample_id',sampleId).order('created_at');
+  allScallops=data||[];
+  renderScallopList();
+}
+async function saveScallopMeasurement(){
+  const sampleId=document.getElementById('scallopSampleSelect')?.value;
+  if(!sampleId){showToast(L('Velg prøve','Select sample'),'error');return;}
+  const w=parseFloat(document.getElementById('scWidth').value);
+  const h=parseFloat(document.getElementById('scHeight').value);
+  if(!w&&!h){showToast(L('Skriv inn mål','Enter measurements'),'error');return;}
+  const row={
+    sample_id:sampleId,
+    width_mm:w||null,height_mm:h||null,
+    growth:parseFloat(document.getElementById('scGrowth').value)||null,
+    damage_index:parseInt(document.getElementById('scDamage').value),
+    recruitment_attached:document.getElementById('scRecruitment').value==='yes'
+  };
+  const{data,error}=await sb.from('research_scallop_measurement').insert(row).select().single();
+  if(error){showToast('Error: '+error.message,'error');return;}
+  showToast(`#${allScallops.length+1} ${L('lagret','saved')}`,'success');
+  allScallops.push(data);
+  renderScallopList();
+  document.getElementById('scWidth').value='';
+  document.getElementById('scHeight').value='';
+  document.getElementById('scGrowth').value='';
+  document.getElementById('scDamage').value='0';
+  document.getElementById('scRecruitment').value='no';
+  document.getElementById('scWidth').focus();
+}
+function renderScallopList(){
+  const el=document.getElementById('scallopList');
+  document.getElementById('scallopCount').textContent=`${allScallops.length} ${L('skjell målt','scallops measured')}`;
+  if(!allScallops.length){el.innerHTML='';return;}
+  // Show last 10 in reverse
+  const recent=allScallops.slice(-10).reverse();
+  el.innerHTML=recent.map((s,i)=>{
+    const num=allScallops.length-i;
+    const dmgColors=['var(--accent)','var(--scallop)','var(--warn)'];
+    return `<div class="scallop-row" style="display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-family:var(--font-head);font-weight:700;color:var(--research);width:30px;">#${num}</span>
+      <span>${s.width_mm||'—'}×${s.height_mm||'—'}mm</span>
+      <span style="color:${dmgColors[s.damage_index||0]};">${L('Skade','Dmg')}:${s.damage_index}</span>
+      <span style="color:var(--muted);font-size:11px;">${s.recruitment_attached?'🟢':'⚪'}</span>
+    </div>`;
+  }).join('');
+}
+
+/* ===== Video log ===== */
+async function saveVideoLog(){
+  if(!currentSession){showToast(L('Ingen aktiv økt','No active session'),'error');return;}
+  const row={
+    session_id:currentSession.id,
+    video_type:document.getElementById('videoType').value,
+    control_site_id:parseInt(document.getElementById('videoControlSiteSelect').value)||null,
+    latitude:parseFloat(document.getElementById('videoLat').value)||null,
+    longitude:parseFloat(document.getElementById('videoLon').value)||null,
+    depth_m:parseFloat(document.getElementById('rovDepth').value)||null,
+    visibility:document.getElementById('rovVisibility').value||null,
+    rov_heading:document.getElementById('rovHeading').value.trim()||null,
+    rov_transect_length_m:parseFloat(document.getElementById('rovTransectLength').value)||null,
+    duration_seconds:parseInt(document.getElementById('videoDuration').value)||null,
+    notes:document.getElementById('videoNotes').value.trim()||null
+  };
+  const{data,error}=await sb.from('research_video_log').insert(row).select().single();
+  if(error){showToast('Error: '+error.message,'error');return;}
+  showToast(L('Video-logg lagret!','Video log saved!'),'success');
+  allVideos.push(data);
+  renderVideoList();
+  document.getElementById('videoControlSiteSelect').value='';
+  document.getElementById('videoLat').value='';
+  document.getElementById('videoLon').value='';
+  document.getElementById('rovDepth').value='';
+  document.getElementById('rovVisibility').value='';
+  document.getElementById('rovHeading').value='';
+  document.getElementById('rovTransectLength').value='';
+  document.getElementById('videoDuration').value='';
+  document.getElementById('videoNotes').value='';
+  document.getElementById('gpsVideo').textContent='';
+}
+function renderVideoList(){
+  const el=document.getElementById('videoList');
+  if(!allVideos.length){el.innerHTML='';return;}
+  el.innerHTML=`<div class="section-label">${L('Lagrede video-logger','Saved video logs')}</div>`+
+    allVideos.map(v=>`
+    <div class="video-item">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-family:var(--font-head);font-weight:700;color:var(--research);">${v.video_type} ${v.control_site_id?'· CS-'+v.control_site_id:''}</div>
+          <div style="font-size:11px;color:var(--muted);">${v.latitude?v.latitude.toFixed(4)+', '+v.longitude.toFixed(4):'—'} ${v.depth_m?'· '+v.depth_m+'m':''} ${v.visibility?'· '+v.visibility:''} ${v.duration_seconds?'· '+v.duration_seconds+'s':''}</div>
+        </div>
+      </div>
+      ${v.notes?`<div style="font-size:12px;color:var(--muted);margin-top:6px;">${v.notes}</div>`:''}
+    </div>`).join('');
+}
+
+/* ===== Summary / Live stats ===== */
+async function renderSummary(){
+  const el=document.getElementById('summaryContent');
+  if(!currentSession){el.innerHTML='';return;}
+  // Load all species records for this session (across all samples)
+  const{data:allSpRec}=await sb.from('research_species_record').select('*').in('sample_id',allSamples.map(s=>s.id));
+  const specRecs=allSpRec||[];
+  // Load all scallop measurements for this session
+  const{data:allScMeas}=await sb.from('research_scallop_measurement').select('*').in('sample_id',allSamples.map(s=>s.id));
+  const scMeas=allScMeas||[];
+
+  // Species stats
+  const speciesCount=new Set(specRecs.map(r=>r.species_ref_id||r.custom_species_name)).size;
+  const totalCount=specRecs.reduce((a,r)=>a+(r.total_count_extrapolated||r.catch_count||0),0);
+  const totalWeight=specRecs.reduce((a,r)=>a+(r.total_weight_extrapolated_g||r.catch_weight_g||0),0);
+  const targetRecs=specRecs.filter(r=>r.catch_category==='target');
+  const bycatchRecs=specRecs.filter(r=>r.catch_category!=='target');
+  const targetWeight=targetRecs.reduce((a,r)=>a+(r.total_weight_extrapolated_g||r.catch_weight_g||0),0);
+  const bycatchWeight=bycatchRecs.reduce((a,r)=>a+(r.total_weight_extrapolated_g||r.catch_weight_g||0),0);
+  const pctBycatch=totalWeight>0?((bycatchWeight/totalWeight)*100).toFixed(1):'—';
+  const pctTarget=totalWeight>0?((targetWeight/totalWeight)*100).toFixed(1):'—';
+
+  // Shannon diversity (H' = -Σ pi * ln(pi))
+  let shannonH='—';
+  if(specRecs.length>0&&totalCount>0){
+    const countsBySpecies={};
+    specRecs.forEach(r=>{
+      const key=r.species_ref_id||r.custom_species_name;
+      countsBySpecies[key]=(countsBySpecies[key]||0)+(r.total_count_extrapolated||r.catch_count||0);
+    });
+    let H=0;
+    Object.values(countsBySpecies).forEach(n=>{
+      if(n>0){const p=n/totalCount;H-=p*Math.log(p);}
+    });
+    shannonH=H.toFixed(3);
+  }
+
+  // Scallop stats
+  const sizes=scMeas.filter(m=>m.width_mm).map(m=>m.width_mm);
+  const meanSize=sizes.length>0?(sizes.reduce((a,b)=>a+b,0)/sizes.length).toFixed(1):'—';
+  const medianSize=sizes.length>0?sizes.sort((a,b)=>a-b)[Math.floor(sizes.length/2)].toFixed(1):'—';
+  const UNDERSIZED_MM=55;
+  const undersized=sizes.filter(s=>s<UNDERSIZED_MM).length;
+  const pctUndersized=sizes.length>0?((undersized/sizes.length)*100).toFixed(1):'—';
+  const dmg0=scMeas.filter(m=>m.damage_index===0).length;
+  const dmg1=scMeas.filter(m=>m.damage_index===1).length;
+  const dmg2=scMeas.filter(m=>m.damage_index===2).length;
+  const pctSurvival=scMeas.length>0?(((dmg0+dmg1)/scMeas.length)*100).toFixed(1):'—';
+  const pctLethal=scMeas.length>0?((dmg2/scMeas.length)*100).toFixed(1):'—';
+
+  // Density
+  const totalLengthKm=allTransects.reduce((a,t)=>a+(t.transect_length_km||0),0);
+  const density=totalLengthKm>0?(totalCount/totalLengthKm).toFixed(0):'—';
+
+  el.innerHTML=`
+    <div class="section-label">${L('Artsoversikt','Species overview')}</div>
+    <div class="grid-2" style="margin-bottom:12px;">
+      <div class="metric-card"><div class="metric-label">${L('Arter','Species')}</div><div class="metric-val">${speciesCount}</div></div>
+      <div class="metric-card"><div class="metric-label">Shannon H'</div><div class="metric-val">${shannonH}</div></div>
+    </div>
+    <div class="grid-2" style="margin-bottom:12px;">
+      <div class="metric-card"><div class="metric-label">${L('Totalt antall','Total count')}</div><div class="metric-val">${Math.round(totalCount)}</div></div>
+      <div class="metric-card"><div class="metric-label">${L('Total vekt','Total weight')}</div><div class="metric-val">${(totalWeight/1000).toFixed(1)}</div><div class="metric-unit">kg</div></div>
+    </div>
+    <div class="grid-2" style="margin-bottom:12px;">
+      <div class="metric-card"><div class="metric-label">${L('% Målart','% Target')}</div><div class="metric-val" style="color:var(--accent);">${pctTarget}%</div></div>
+      <div class="metric-card"><div class="metric-label">${L('% Bifangst','% Bycatch')}</div><div class="metric-val" style="color:var(--warn);">${pctBycatch}%</div></div>
+    </div>
+    ${totalLengthKm>0?`<div class="metric-card" style="margin-bottom:12px;"><div class="metric-label">${L('Tetthet','Density')}</div><div class="metric-val">${density}</div><div class="metric-unit">${L('individer/km','individuals/km')}</div></div>`:''}
+
+    <div class="section-label">${L('Skjellmålinger','Scallop measurements')}</div>
+    <div class="grid-2" style="margin-bottom:12px;">
+      <div class="metric-card"><div class="metric-label">${L('Snitt størrelse','Mean size')}</div><div class="metric-val">${meanSize}</div><div class="metric-unit">mm</div></div>
+      <div class="metric-card"><div class="metric-label">${L('Median','Median')}</div><div class="metric-val">${medianSize}</div><div class="metric-unit">mm</div></div>
+    </div>
+    <div class="grid-3" style="margin-bottom:12px;">
+      <div class="metric-card"><div class="metric-label">${L('% Undermåls','% Undersized')}</div><div class="metric-val" style="font-size:18px;">${pctUndersized}%</div></div>
+      <div class="metric-card"><div class="metric-label">${L('% Overlev.','% Survival')}</div><div class="metric-val" style="font-size:18px;color:var(--accent);">${pctSurvival}%</div></div>
+      <div class="metric-card"><div class="metric-label">${L('% Dødelig','% Lethal')}</div><div class="metric-val" style="font-size:18px;color:var(--warn);">${pctLethal}%</div></div>
+    </div>
+    <div class="grid-3">
+      <div class="metric-card"><div class="metric-label">${L('Skade 0','Dmg 0')}</div><div class="metric-val" style="font-size:18px;">${dmg0}</div></div>
+      <div class="metric-card"><div class="metric-label">${L('Skade 1','Dmg 1')}</div><div class="metric-val" style="font-size:18px;">${dmg1}</div></div>
+      <div class="metric-card"><div class="metric-label">${L('Skade 2','Dmg 2')}</div><div class="metric-val" style="font-size:18px;">${dmg2}</div></div>
+    </div>
+    <div style="margin-top:12px;font-size:11px;color:var(--muted);text-align:center;">${scMeas.length} ${L('skjell målt totalt','scallops measured total')}</div>
+  `;
+}
+
+/* ===== Complete session ===== */
+async function completeSession(){
+  if(!currentSession)return;
+  if(!confirm(L('Vil du fullføre denne økten?','Complete this session?')))return;
+  const{error}=await sb.from('research_session').update({completed_at:new Date().toISOString()}).eq('id',currentSession.id);
+  if(error){showToast('Error: '+error.message,'error');return;}
+  showToast(L('Økt fullført!','Session completed!'),'success');
+  currentSession=null;
+  goTo('scrSessionList');
+  await loadSessions();
+}
+
+/* ===== GPS ===== */
+function getGPS(which){
+  if(!navigator.geolocation){showToast(L('GPS ikke tilgjengelig','GPS not available'),'error');return;}
+  const btn=event.target.closest('.gps-btn');
+  btn.innerHTML=`⏳ ${L('Henter posisjon...','Getting position...')}`;
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const lat=pos.coords.latitude.toFixed(6),lon=pos.coords.longitude.toFixed(6);
+    const map={
+      tStart:['tLatStart','tLonStart','gpsTransectStart'],
+      tEnd:['tLatEnd','tLonEnd','gpsTransectEnd'],
+      video:['videoLat','videoLon','gpsVideo']
+    };
+    const[latId,lonId,dispId]=map[which];
+    document.getElementById(latId).value=lat;
+    document.getElementById(lonId).value=lon;
+    document.getElementById(dispId).textContent=`${lat}, ${lon}`;
+    btn.innerHTML=`✓ ${lat}, ${lon}`;
+  },(err)=>{
+    btn.innerHTML=`📍 ${L('Hent GPS','Capture GPS')}`;
+    showToast((L('GPS-feil: ','GPS error: '))+err.message,'error');
+  },{enableHighAccuracy:true,timeout:15000});
+}
+
+/* ===== Control sites ===== */
+async function loadControlSites(){
+  const{data}=await sb.from('control_site').select('*').order('control_id').order('vertex_order');
+  controlSites=data||[];
+  // Build dropdown options grouped by site
+  const grouped={};
+  controlSites.forEach(c=>{
+    if(!grouped[c.control_id]) grouped[c.control_id]={site:c.site_name,id:c.control_id,center_lat:c.center_lat,center_lon:c.center_lon};
+  });
+  const opts=Object.values(grouped).map(c=>`<option value="${c.id}">CS-${c.id} (${c.site})</option>`).join('');
+  const defOpt=`<option value="">— ${L('Velg','Select')} —</option>`;
+  const sel1=document.getElementById('controlSiteSelect');
+  const sel2=document.getElementById('videoControlSiteSelect');
+  if(sel1) sel1.innerHTML=defOpt+opts;
+  if(sel2) sel2.innerHTML=defOpt+opts;
+}
+
+/* ===== ROV fields toggle ===== */
+function toggleROVFields(){
+  const isROV=document.getElementById('videoType').value==='rov';
+  document.getElementById('rovFields').style.display=isROV?'block':'none';
+}
+
+/* ===== Photo documentation ===== */
+async function savePhotoLog(){
+  if(!currentSession){showToast(L('Ingen aktiv økt','No active session'),'error');return;}
+  const row={
+    session_id:currentSession.id,
+    sample_id:document.getElementById('photoSampleSelect').value||null,
+    station_id:document.getElementById('photoStationId').value.trim()||null,
+    photo_number:parseInt(document.getElementById('photoNumber').value)||null,
+    photo_type:document.getElementById('photoType').value,
+    quadrat_position:document.getElementById('photoQuadratPos').value.trim()||null,
+    notes:document.getElementById('photoNotes').value.trim()||null
+  };
+  const{data,error}=await sb.from('research_photo_log').insert(row).select().single();
+  if(error){showToast('Error: '+error.message,'error');return;}
+  showToast(L('Foto-logg lagret!','Photo log saved!'),'success');
+  allPhotos.push(data);
+  renderPhotoList();
+  // Auto-increment photo number
+  const numEl=document.getElementById('photoNumber');
+  numEl.value=(parseInt(numEl.value)||0)+1;
+  document.getElementById('photoNotes').value='';
+}
+function renderPhotoList(){
+  const el=document.getElementById('photoList');
+  if(!allPhotos.length){el.innerHTML='';return;}
+  el.innerHTML=`<div class="section-label">${L('Lagrede foto-logger','Saved photo logs')}</div>`+
+    allPhotos.slice(-10).reverse().map(p=>`
+    <div class="species-item">
+      <div>
+        <div class="species-name">#${p.photo_number||'—'} ${p.photo_type||''}</div>
+        <div class="species-sci">${p.station_id||''} ${p.quadrat_position?'· '+p.quadrat_position:''} ${p.notes?'· '+p.notes:''}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ===== Updated loadAllSessionData ===== */
+async function loadAllSessionData(){
+  if(!currentSession)return;
+  const{data:tData}=await sb.from('research_transect').select('*').eq('session_id',currentSession.id).order('created_at');
+  allTransects=tData||[];
+  renderTransectList();
+  const{data:sData}=await sb.from('research_catch_sample').select('*').eq('session_id',currentSession.id).order('created_at');
+  allSamples=sData||[];
+  updateSampleSelects();
+  renderSampleList();
+  const{data:vData}=await sb.from('research_video_log').select('*').eq('session_id',currentSession.id).order('created_at');
+  allVideos=vData||[];
+  renderVideoList();
+  const{data:pData}=await sb.from('research_photo_log').select('*').eq('session_id',currentSession.id).order('created_at');
+  allPhotos=pData||[];
+  renderPhotoList();
+  // Update photo sample select
+  const photoSel=document.getElementById('photoSampleSelect');
+  if(photoSel) photoSel.innerHTML=`<option value="">— ${L('Ingen','None')} —</option>`+allSamples.map(s=>`<option value="${s.id}">${s.sample_code||'—'}</option>`).join('');
+}
+
+/* ===== Utilities ===== */
+function haversine(lat1,lon1,lat2,lon2){
+  const R=6371;
+  const dLat=(lat2-lat1)*Math.PI/180;
+  const dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function goTo(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
+let toastTimer;
+function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+type;clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3500);}
+
+init();
+</script>
+</body>
+</html>
