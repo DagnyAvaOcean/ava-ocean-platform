@@ -452,6 +452,43 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
             <div class="metric-card"><div class="metric-label" data-no="Total volum (l)" data-en="Total volume (l)">Total volum (l)</div><div class="metric-val" id="towTotalVol">—</div></div>
           </div>
         </div>
+        <!-- Environment fields for commercial (normally on transect tab) -->
+        <div class="card">
+          <div class="section-label" data-no="Substrat & miljø" data-en="Substrate & environment">Substrat & miljø</div>
+          <div class="grid-2">
+            <div class="field">
+              <label data-no="Substrattype" data-en="Substrate type">Substrattype</label>
+              <select id="comSubstrate"><option value="">—</option><option value="sand">Sand</option><option value="gravel">Gravel / Grus</option><option value="shell">Shell / Skjell</option><option value="mud">Mud / Mudder</option><option value="rock">Rock / Stein</option><option value="mixed">Mixed / Blanding</option></select>
+            </div>
+            <div class="field">
+              <label data-no="Epifauna-dekke" data-en="Epifaunal cover">Epifauna-dekke</label>
+              <select id="comEpifaunal"><option value="">—</option><option value="barren" data-no="Øde" data-en="Barren">Øde</option><option value="sparse" data-no="Spredt" data-en="Sparse">Spredt</option><option value="moderate" data-no="Moderat" data-en="Moderate">Moderat</option><option value="dense" data-no="Tett" data-en="Dense">Tett</option></select>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label data-no="Vanntemp (°C)" data-en="Water temp (°C)">Vanntemp (°C)</label><input type="number" id="comWaterTemp" step="0.1"></div>
+            <div class="field"><label data-no="Salinitet (PSU)" data-en="Salinity (PSU)">Salinitet (PSU)</label><input type="number" id="comSalinity" step="0.1"></div>
+          </div>
+          <div class="field">
+            <label data-no="Video tatt?" data-en="Video taken?">Video tatt?</label>
+            <select id="comVideoTaken" onchange="toggleComVideoType()">
+              <option value="no" data-no="Nei" data-en="No">Nei</option>
+              <option value="yes" data-no="Ja" data-en="Yes">Ja</option>
+            </select>
+          </div>
+          <div id="comVideoTypeField" class="field" style="display:none;">
+            <label data-no="Videotype" data-en="Video type">Videotype</label>
+            <select id="comVideoType">
+              <option value="harvester_camera" data-no="Høsterkamera" data-en="Harvester camera">Høsterkamera</option>
+              <option value="drone" data-no="Drone" data-en="Drone">Drone</option>
+              <option value="both" data-no="Begge" data-en="Both">Begge</option>
+            </select>
+          </div>
+          <div class="field">
+            <label data-no="Substratnotater" data-en="Substrate notes">Substratnotater</label>
+            <textarea id="comSubstrateNotes" rows="1"></textarea>
+          </div>
+        </div>
       </div>
 
       <!-- Sample form (shared by all types) -->
@@ -483,6 +520,58 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
             </div>
             <div style="margin-top:8px;padding:8px 12px;background:var(--ocean);border-radius:8px;font-size:11px;color:var(--muted);">
               <span data-no="Høster 100% = 28 000 liter (28 m³)" data-en="Harvester 100% = 28,000 litres (28 m³)">Høster 100% = 28 000 liter (28 m³)</span>
+            </div>
+          </div>
+
+          <!-- Environment fields (commercial only — for BACI these are on the Transect tab) -->
+          <div id="commercialEnvFields" style="display:none;">
+            <div class="section-label" data-no="Observasjoner" data-en="Observations">Observasjoner</div>
+            <div class="grid-2">
+              <div class="field">
+                <label data-no="Substrattype" data-en="Substrate type">Substrattype</label>
+                <select id="comSubstrateType">
+                  <option value="">—</option>
+                  <option value="sand">Sand</option>
+                  <option value="gravel" data-no="Grus" data-en="Gravel">Grus</option>
+                  <option value="shell" data-no="Skjell" data-en="Shell">Skjell</option>
+                  <option value="mud" data-no="Mudder" data-en="Mud">Mudder</option>
+                  <option value="rock" data-no="Stein" data-en="Rock">Stein</option>
+                  <option value="mixed" data-no="Blandet" data-en="Mixed">Blandet</option>
+                </select>
+              </div>
+              <div class="field">
+                <label data-no="Epifauna" data-en="Epifaunal cover">Epifauna</label>
+                <select id="comEpifaunalCover">
+                  <option value="">—</option>
+                  <option value="barren" data-no="Bart" data-en="Barren">Bart</option>
+                  <option value="sparse" data-no="Spredt" data-en="Sparse">Spredt</option>
+                  <option value="moderate" data-no="Moderat" data-en="Moderate">Moderat</option>
+                  <option value="dense" data-no="Tett" data-en="Dense">Tett</option>
+                </select>
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="field"><label data-no="Vanntemp. (°C)" data-en="Water temp (°C)">Vanntemp. (°C)</label><input type="number" id="comWaterTemp" step="0.1"></div>
+              <div class="field"><label data-no="Salinitet (PSU)" data-en="Salinity (PSU)">Salinitet (PSU)</label><input type="number" id="comSalinity" step="0.1"></div>
+            </div>
+            <div class="field">
+              <label data-no="Video tatt?" data-en="Video taken?">Video tatt?</label>
+              <select id="comVideoTaken" onchange="document.getElementById('comVideoTypeField').style.display=this.value==='yes'?'block':'none';">
+                <option value="no" data-no="Nei" data-en="No">Nei</option>
+                <option value="yes" data-no="Ja" data-en="Yes">Ja</option>
+              </select>
+            </div>
+            <div class="field" id="comVideoTypeField" style="display:none;">
+              <label data-no="Videokilde" data-en="Video source">Videokilde</label>
+              <select id="comVideoType">
+                <option value="harvester_camera" data-no="Høsterkamera" data-en="Harvester camera">Høsterkamera</option>
+                <option value="drone" data-no="Drone (ROV)" data-en="Drone (ROV)">Drone (ROV)</option>
+                <option value="both" data-no="Begge" data-en="Both">Begge</option>
+              </select>
+            </div>
+            <div class="field">
+              <label data-no="Substrat-notater" data-en="Substrate notes">Substrat-notater</label>
+              <input type="text" id="comSubstrateNotes" placeholder="">
             </div>
           </div>
 
@@ -848,8 +937,11 @@ async function openSession(id){
   document.getElementById('hubStationId').textContent=data.control_site_id?'CS-'+data.control_site_id:(data.station_id||'—');
   // Show/hide BACI fields
   document.getElementById('baciFields').style.display=data.session_type==='baci'?'grid':'none';
+  // Hide transect tab for commercial (tow = transect)
+  const isCommercial=data.session_type==='commercial';
+  document.getElementById('tabTransect').style.display=isCommercial?'none':'inline-block';
   goTo('scrSessionHub');
-  showHubTab('transect');
+  showHubTab(isCommercial?'sample':'transect');
   await loadAllSessionData();
 }
 
@@ -938,10 +1030,11 @@ function updateSampleSelects(){
   const isBaci=currentSession&&(currentSession.session_type==='baci'||currentSession.session_type==='control');
   const hasTransects=allTransects.length>0;
 
-  // Commercial: always show tow picker, no transect needed from user
+  // Show commercial tow picker only for commercial sessions
   document.getElementById('commercialTowPicker').style.display=isCommercial?'block':'none';
   document.getElementById('sampleForm').style.display=isCommercial?'block':'none';
   document.getElementById('subsampleFields').style.display=isCommercial?'block':'none';
+  document.getElementById('commercialEnvFields').style.display=isCommercial?'block':'none';
 
   // BACI: needs transect first
   document.getElementById('noTransectWarn').style.display=(isBaci&&!hasTransects)?'block':'none';
@@ -979,6 +1072,10 @@ async function loadCaptainTows(){
   const sel=document.getElementById('captainTowSelect');
   sel.innerHTML=`<option value="">— ${L('Velg drag','Select tow')} —</option>`+
     captainTows.map(t=>`<option value="${t.id}">${L('Drag','Tow')} ${t.tow_number} · ${t.harvester_fill_pct||'?'}% ${t.lat_start?'· GPS ✓':''}</option>`).join('');
+}
+
+function toggleComVideoType(){
+  document.getElementById('comVideoTypeField').style.display=document.getElementById('comVideoTaken').value==='yes'?'block':'none';
 }
 
 function onCaptainTowSelect(){
@@ -1041,6 +1138,11 @@ async function saveSample(){
       start_time:selectedTow?.start_time||selectedTow?.created_at||null,
       end_time:selectedTow?.end_time||null,
       harvester_side:selectedTow?.harvester||null,
+      substrate_type:document.getElementById('comSubstrate').value||null,
+      epifaunal_cover:document.getElementById('comEpifaunal').value||null,
+      water_temp_c:parseFloat(document.getElementById('comWaterTemp').value)||null,
+      salinity_psu:parseFloat(document.getElementById('comSalinity').value)||null,
+      substrate_notes:document.getElementById('comSubstrateNotes').value.trim()||null,
     };
     const{data:tData,error:tErr}=await sb.from('research_transect').insert(tRow).select().single();
     if(tErr){showToast('Transect error: '+tErr.message,'error');return;}
@@ -1089,9 +1191,16 @@ async function saveSample(){
   document.getElementById('sampleCode').value='';
   document.getElementById('sampleNotes').value='';
   selectedTow=null;
-  document.getElementById('captainTowSelect').value='';
-  document.getElementById('towInfo').style.display='none';
-  document.getElementById('manualTowNumber').value='';
+  if(document.getElementById('captainTowSelect'))document.getElementById('captainTowSelect').value='';
+  if(document.getElementById('towInfo'))document.getElementById('towInfo').style.display='none';
+  if(document.getElementById('manualTowNumber'))document.getElementById('manualTowNumber').value='';
+  // Clear commercial env fields
+  if(document.getElementById('comSubstrateType'))document.getElementById('comSubstrateType').value='';
+  if(document.getElementById('comEpifaunalCover'))document.getElementById('comEpifaunalCover').value='';
+  if(document.getElementById('comWaterTemp'))document.getElementById('comWaterTemp').value='';
+  if(document.getElementById('comSalinity'))document.getElementById('comSalinity').value='';
+  if(document.getElementById('comVideoTaken')){document.getElementById('comVideoTaken').value='no';document.getElementById('comVideoTypeField').style.display='none';}
+  if(document.getElementById('comSubstrateNotes'))document.getElementById('comSubstrateNotes').value='';
 }
 
 function renderSampleList(){
