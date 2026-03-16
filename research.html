@@ -409,9 +409,22 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
     <div id="tabContentSample" class="tab-content" style="display:none;">
       <div class="section-label" data-no="Fangstprøve" data-en="Catch sample">Fangstprøve</div>
 
+      <!-- Needs transect first (shown for all session types) -->
+      <div id="noTransectWarn" class="info-box" data-no="Lagre et transekt først for å legge til prøver." data-en="Save a transect first to add samples.">Lagre et transekt først for å legge til prøver.</div>
+
+      <!-- Transect picker (shown for all types when transects exist) -->
+      <div id="sampleTransectPicker" style="display:none;">
+        <div class="card">
+          <div class="field">
+            <label data-no="Velg transekt" data-en="Select transect">Velg transekt</label>
+            <select id="sampleTransectSelect"></select>
+          </div>
+        </div>
+      </div>
+
       <!-- Commercial: pick from captain's tows -->
       <div id="commercialTowPicker" style="display:none;">
-        <div class="info-box" data-no="Velg et høstdrag fra kapteinens logg, eller skriv inn dragnummer manuelt." data-en="Select a tow from the captain's log, or enter a tow number manually.">Velg et høstdrag fra kapteinens logg, eller skriv inn dragnummer manuelt.</div>
+        <div class="info-box" data-no="Koble til kapteinens drag for høster-fyll % og GPS." data-en="Link to captain's tow for harvester fill % and GPS.">Koble til kapteinens drag for høster-fyll % og GPS.</div>
         <div class="card">
           <div class="field">
             <label data-no="Kapteinens høstdrag" data-en="Captain's tow">Kapteinens høstdrag</label>
@@ -432,17 +445,6 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
               <div class="metric-card"><div class="metric-label">GPS Start</div><div class="metric-val" id="towGPS" style="font-size:12px;">—</div></div>
               <div class="metric-card"><div class="metric-label" data-no="Høster" data-en="Harvester">Høster</div><div class="metric-val" id="towHarvester">—</div></div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- BACI/Control: needs transect first -->
-      <div id="noTransectWarn" class="info-box" data-no="Lagre et transekt først for å legge til prøver." data-en="Save a transect first to add samples.">Lagre et transekt først for å legge til prøver.</div>
-      <div id="baciTransectPicker" style="display:none;">
-        <div class="card">
-          <div class="field">
-            <label data-no="Velg transekt" data-en="Select transect">Velg transekt</label>
-            <select id="sampleTransectSelect"></select>
           </div>
         </div>
       </div>
@@ -931,21 +933,22 @@ function updateSampleSelects(){
   const isBaci=currentSession&&(currentSession.session_type==='baci'||currentSession.session_type==='control');
   const hasTransects=allTransects.length>0;
 
-  // Show/hide the right picker
-  document.getElementById('commercialTowPicker').style.display=isCommercial?'block':'none';
-  document.getElementById('noTransectWarn').style.display=(!isCommercial&&!hasTransects)?'block':'none';
-  document.getElementById('baciTransectPicker').style.display=(isBaci&&hasTransects)?'block':'none';
+  // All session types need a transect first
+  document.getElementById('noTransectWarn').style.display=hasTransects?'none':'block';
+  document.getElementById('sampleTransectPicker').style.display=hasTransects?'block':'none';
 
-  // Show sample form
-  const canAddSample=isCommercial||(isBaci&&hasTransects);
-  document.getElementById('sampleForm').style.display=canAddSample?'block':'none';
+  // Show commercial tow picker only for commercial sessions with transects
+  document.getElementById('commercialTowPicker').style.display=(isCommercial&&hasTransects)?'block':'none';
+
+  // Show sample form only when transects exist
+  document.getElementById('sampleForm').style.display=hasTransects?'block':'none';
 
   // Show/hide subsample vs BACI info
-  document.getElementById('subsampleFields').style.display=isCommercial?'block':'none';
+  document.getElementById('subsampleFields').style.display=(isCommercial&&hasTransects)?'block':'none';
   const baciInfo=document.getElementById('baciSampleInfo');
-  if(baciInfo) baciInfo.style.display=isBaci?'block':'none';
+  if(baciInfo) baciInfo.style.display=(isBaci&&hasTransects)?'block':'none';
 
-  // Populate transect select for BACI samples
+  // Populate transect select
   const tSel=document.getElementById('sampleTransectSelect');
   if(tSel) tSel.innerHTML=allTransects.map(t=>`<option value="${t.id}">${t.transect_code||'T'} ${t.baci_designation?'('+t.baci_designation+')':''}</option>`).join('');
 
@@ -1004,14 +1007,10 @@ function calcSubsample(){
 
 async function saveSample(){
   const isCommercial=currentSession&&currentSession.session_type==='commercial';
-  const isBaci=currentSession&&(currentSession.session_type==='baci'||currentSession.session_type==='control');
 
-  // Get transect ID (from BACI picker or null for commercial)
-  let transectId=null;
-  if(isBaci){
-    transectId=document.getElementById('sampleTransectSelect').value;
-    if(!transectId){showToast(L('Velg transekt','Select transect'),'error');return;}
-  }
+  // Always require transect
+  const transectId=document.getElementById('sampleTransectSelect').value;
+  if(!transectId){showToast(L('Velg transekt','Select transect'),'error');return;}
 
   // Get tow reference for commercial
   let towRef=null, fillPct=0, totalVol=0, subVol=0, subFrac=0, extrapol=1;
