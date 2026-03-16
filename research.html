@@ -296,7 +296,6 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
       <button class="tab-btn" onclick="showHubTab('species')" data-no="Arter" data-en="Species" id="tabSpecies">Arter</button>
       <button class="tab-btn" onclick="showHubTab('scallop')" data-no="Skjell" data-en="Scallop" id="tabScallop">Skjell</button>
       <button class="tab-btn" onclick="showHubTab('video')" data-no="ROV" data-en="ROV" id="tabVideo">ROV</button>
-      <button class="tab-btn" onclick="showHubTab('photo')" data-no="Foto" data-en="Photo" id="tabPhoto">Foto</button>
       <button class="tab-btn" onclick="showHubTab('summary')" data-no="Oversikt" data-en="Summary" id="tabSummary">Oversikt</button>
     </div>
 
@@ -327,8 +326,8 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
         <div class="field">
           <label data-no="Høster" data-en="Harvester">Høster</label>
           <select id="harvester">
-            <option value="S">S (Styrbord)</option>
-            <option value="B">B (Babord)</option>
+            <option value="S" data-no="S (Styrbord)" data-en="S (Starboard)">S (Styrbord)</option>
+            <option value="B" data-no="B (Babord)" data-en="B (Port)">B (Babord)</option>
           </select>
         </div>
         <div class="section-label" data-no="Substrat og miljø" data-en="Substrate & environment">Substrat og miljø</div>
@@ -383,6 +382,21 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
           <div class="field"><label data-no="Dyp slutt (m)" data-en="Depth end (m)">Dyp slutt (m)</label><input type="number" id="depthEnd" step="0.1"></div>
         </div>
         <div class="field">
+          <label data-no="Video tatt?" data-en="Video taken?">Video tatt?</label>
+          <select id="videoTaken" onchange="toggleVideoType()">
+            <option value="no" data-no="Nei" data-en="No">Nei</option>
+            <option value="yes" data-no="Ja" data-en="Yes">Ja</option>
+          </select>
+        </div>
+        <div class="field" id="videoTypeField" style="display:none;">
+          <label data-no="Videokilde" data-en="Video source">Videokilde</label>
+          <select id="transectVideoType">
+            <option value="harvester_camera" data-no="Høsterkamera" data-en="Harvester camera">Høsterkamera</option>
+            <option value="drone" data-no="Drone (ROV)" data-en="Drone (ROV)">Drone (ROV)</option>
+            <option value="both" data-no="Begge" data-en="Both">Begge</option>
+          </select>
+        </div>
+        <div class="field">
           <label data-no="Notater" data-en="Notes">Notater</label>
           <textarea id="transectNotes" rows="2"></textarea>
         </div>
@@ -394,52 +408,85 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
     <!-- TAB: Catch sample -->
     <div id="tabContentSample" class="tab-content" style="display:none;">
       <div class="section-label" data-no="Fangstprøve" data-en="Catch sample">Fangstprøve</div>
+
+      <!-- Commercial: pick from captain's tows -->
+      <div id="commercialTowPicker" style="display:none;">
+        <div class="info-box" data-no="Velg et høstdrag fra kapteinens logg, eller skriv inn dragnummer manuelt." data-en="Select a tow from the captain's log, or enter a tow number manually.">Velg et høstdrag fra kapteinens logg, eller skriv inn dragnummer manuelt.</div>
+        <div class="card">
+          <div class="field">
+            <label data-no="Kapteinens høstdrag" data-en="Captain's tow">Kapteinens høstdrag</label>
+            <select id="captainTowSelect" onchange="onCaptainTowSelect()">
+              <option value="">— Velg drag —</option>
+            </select>
+          </div>
+          <div class="field">
+            <label data-no="Eller skriv dragnummer" data-en="Or enter tow number">Eller skriv dragnummer</label>
+            <input type="text" id="manualTowNumber" placeholder="f.eks. 1, 2, 3...">
+          </div>
+          <div id="towInfo" style="display:none;margin-top:8px;">
+            <div class="grid-2" style="margin-bottom:8px;">
+              <div class="metric-card"><div class="metric-label" data-no="Høster fyll %" data-en="Harvester fill %">Høster fyll %</div><div class="metric-val" id="towFillPct">—</div></div>
+              <div class="metric-card"><div class="metric-label" data-no="Total volum (l)" data-en="Total volume (l)">Total volum (l)</div><div class="metric-val" id="towTotalVol">—</div></div>
+            </div>
+            <div class="grid-2">
+              <div class="metric-card"><div class="metric-label">GPS Start</div><div class="metric-val" id="towGPS" style="font-size:12px;">—</div></div>
+              <div class="metric-card"><div class="metric-label" data-no="Høster" data-en="Harvester">Høster</div><div class="metric-val" id="towHarvester">—</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BACI/Control: needs transect first -->
       <div id="noTransectWarn" class="info-box" data-no="Lagre et transekt først for å legge til prøver." data-en="Save a transect first to add samples.">Lagre et transekt først for å legge til prøver.</div>
-      <div id="sampleForm" style="display:none;">
+      <div id="baciTransectPicker" style="display:none;">
         <div class="card">
           <div class="field">
             <label data-no="Velg transekt" data-en="Select transect">Velg transekt</label>
             <select id="sampleTransectSelect"></select>
           </div>
+        </div>
+      </div>
+
+      <!-- Sample form (shared by all types) -->
+      <div id="sampleForm" style="display:none;">
+        <div class="card">
           <div class="field">
             <label data-no="Prøve-kode" data-en="Sample code">Prøve-kode</label>
             <input type="text" id="sampleCode" placeholder="f.eks. C01">
           </div>
-          <div class="field">
-            <label data-no="Kurvtype" data-en="Basket type">Kurvtype</label>
-            <select id="basketType">
-              <option value="normal" data-no="Normal" data-en="Normal">Normal</option>
-              <option value="experimental" data-no="Eksperimentell" data-en="Experimental">Eksperimentell</option>
-              <option value="control" data-no="Kontroll" data-en="Control">Kontroll</option>
-            </select>
-          </div>
-          <div class="field">
-            <label data-no="Underprøve?" data-en="Subsample?">Underprøve?</label>
-            <select id="isSubsample" onchange="toggleSubsampleFields()">
-              <option value="yes" data-no="Ja" data-en="Yes">Ja</option>
-              <option value="no" data-no="Nei" data-en="No">Nei</option>
-            </select>
-          </div>
-          <div id="subsampleFields">
-            <div class="grid-2">
-              <div class="field"><label data-no="Kurver i underprøve" data-en="Baskets in subsample">Kurver i underprøve</label><input type="number" id="basketsSubsample" value="3"></div>
-              <div class="field"><label data-no="Underprøve volum (l)" data-en="Subsample volume (l)">Underprøve volum (l)</label><input type="number" id="subsampleVolume" step="0.1" value="120"></div>
+
+          <!-- Subsample fields (commercial only) -->
+          <div id="subsampleFields" style="display:none;">
+            <div class="section-label" data-no="Underprøve" data-en="Subsample">Underprøve</div>
+            <div class="field">
+              <label data-no="Antall kurver i underprøve" data-en="Baskets in subsample">Antall kurver i underprøve</label>
+              <input type="number" id="basketsSubsample" value="3" min="1" oninput="calcSubsample()">
             </div>
-            <div class="grid-2">
-              <div class="field"><label data-no="Kurver totalt" data-en="Total baskets">Kurver totalt</label><input type="number" id="basketsTotal"></div>
-              <div class="field"><label data-no="Høster fyll %" data-en="Harvester fill %">Høster fyll %</label><input type="number" id="harvesterFillPct" step="0.1"></div>
+            <div class="grid-2" style="margin-top:8px;">
+              <div class="metric-card">
+                <div class="metric-label" data-no="Underprøve volum" data-en="Subsample volume">Underprøve volum</div>
+                <div class="metric-val" id="calcSubVol">120</div>
+                <div class="metric-unit" data-no="liter (kurver × 40L)" data-en="litres (baskets × 40L)">liter (kurver × 40L)</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label" data-no="Ekstrapolering" data-en="Extrapolation factor">Ekstrapolering</div>
+                <div class="metric-val" id="calcExtrapol">—</div>
+                <div class="metric-unit" data-no="total vol / underprøve vol" data-en="total vol / subsample vol">total vol / underprøve vol</div>
+              </div>
+            </div>
+            <div style="margin-top:8px;padding:8px 12px;background:var(--ocean);border-radius:8px;font-size:11px;color:var(--muted);">
+              <span data-no="Høster 100% = 28 000 liter (28 m³)" data-en="Harvester 100% = 28,000 litres (28 m³)">Høster 100% = 28 000 liter (28 m³)</span>
             </div>
           </div>
-          <div class="field">
+
+          <!-- BACI info (no subsampling) -->
+          <div id="baciSampleInfo" style="display:none;">
+            <div class="info-box" data-no="BACI prøve — all fangst samles, ingen underprøve. Ekstraperingsfaktor = 1." data-en="BACI sample — all catch collected, no subsampling. Extrapolation factor = 1.">BACI prøve — all fangst samles, ingen underprøve. Ekstraperingsfaktor = 1.</div>
+          </div>
+
+          <div class="field" style="margin-top:12px;">
             <label data-no="Notater" data-en="Notes">Notater</label>
             <textarea id="sampleNotes" rows="2"></textarea>
-          </div>
-        </div>
-        <div id="calcCard" class="card" style="display:none;">
-          <div class="section-label" data-no="Beregnet" data-en="Calculated">Beregnet</div>
-          <div class="grid-2">
-            <div class="metric-card"><div class="metric-label" data-no="Total volum (l)" data-en="Total vol (l)">Total volum (l)</div><div class="metric-val" id="calcTotalVol">—</div></div>
-            <div class="metric-card"><div class="metric-label" data-no="Ekstrapolering" data-en="Extrapolation">Ekstrapolering</div><div class="metric-val" id="calcExtrapol">—</div></div>
           </div>
         </div>
         <button class="btn btn-primary" onclick="saveSample()" data-no="Lagre prøve" data-en="Save sample">Lagre prøve</button>
@@ -516,18 +563,19 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
         <div class="card">
           <div class="scallop-row">
             <div class="grid-fields">
-              <div><label data-no="Bredde" data-en="Width">Bredde</label><input type="number" id="scWidth" step="0.1" placeholder="mm"></div>
-              <div><label data-no="Høyde" data-en="Height">Høyde</label><input type="number" id="scHeight" step="0.1" placeholder="mm"></div>
-              <div><label data-no="Vekst" data-en="Growth">Vekst</label><input type="number" id="scGrowth" step="0.1"></div>
+              <div><label data-no="Bredde" data-en="Width">Bredde</label><input type="number" id="scWidth" step="0.01" placeholder="mm" tabindex="1"></div>
+              <div><label data-no="Høyde" data-en="Height">Høyde</label><input type="number" id="scHeight" step="0.01" placeholder="mm" tabindex="2"></div>
+              <div><label data-no="Vekst" data-en="Growth">Vekst</label><input type="number" id="scGrowth" step="0.1" tabindex="3"></div>
               <div><label data-no="Skade" data-en="Damage">Skade</label>
-                <select id="scDamage"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select>
+                <input type="number" id="scDamage" min="0" max="2" value="0" tabindex="4">
               </div>
               <div><label data-no="Rekr." data-en="Recr.">Rekr.</label>
-                <select id="scRecruitment"><option value="no" data-no="Nei" data-en="No">Nei</option><option value="yes" data-no="Ja" data-en="Yes">Ja</option></select>
+                <input type="number" id="scRecruitment" min="0" max="1" value="0" placeholder="0/1" tabindex="5">
               </div>
             </div>
+            <div style="font-size:10px;color:var(--muted);margin-top:6px;" data-no="Skade: 0=ingen, 1=ikke-dødelig, 2=dødelig · Rekr: 0=nei, 1=ja" data-en="Damage: 0=none, 1=non-lethal, 2=lethal · Recr: 0=no, 1=yes">Skade: 0=ingen, 1=ikke-dødelig, 2=dødelig · Rekr: 0=nei, 1=ja</div>
           </div>
-          <button class="btn btn-primary btn-sm" onclick="saveScallopMeasurement()" data-no="+ Legg til" data-en="+ Add">+ Legg til</button>
+          <button class="btn btn-primary btn-sm" onclick="saveScallopMeasurement()" data-no="+ Legg til (Enter)" data-en="+ Add (Enter)">+ Legg til (Enter)</button>
         </div>
         <div id="scallopCount" style="font-family:var(--font-head);font-weight:700;font-size:13px;color:var(--research);margin:12px 0;text-align:center;"></div>
         <div id="scallopList"></div>
@@ -587,44 +635,6 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
       </div>
       <button class="btn btn-primary" onclick="saveVideoLog()" data-no="Lagre video-logg" data-en="Save video log">Lagre video-logg</button>
       <div id="videoList" style="margin-top:16px;"></div>
-    </div>
-
-    <!-- TAB: Photo documentation -->
-    <div id="tabContentPhoto" class="tab-content" style="display:none;">
-      <div class="section-label" data-no="Fotodokumentasjon" data-en="Photo documentation">Fotodokumentasjon</div>
-      <div class="info-box" data-no="Logg standardiserte bilder tatt med kamerastativ og belysning." data-en="Log standardised photos taken with camera stand and lighting.">Logg standardiserte bilder tatt med kamerastativ og belysning.</div>
-      <div class="card">
-        <div class="field">
-          <label data-no="Velg prøve (valgfritt)" data-en="Select sample (optional)">Velg prøve (valgfritt)</label>
-          <select id="photoSampleSelect"><option value="">— Ingen —</option></select>
-        </div>
-        <div class="grid-2">
-          <div class="field">
-            <label data-no="Fototype" data-en="Photo type">Fototype</label>
-            <select id="photoType">
-              <option value="sample_overview" data-no="Prøveoversikt" data-en="Sample overview">Prøveoversikt</option>
-              <option value="quadrat" data-no="Kvadrat" data-en="Quadrat">Kvadrat</option>
-              <option value="detail" data-no="Detalj" data-en="Detail">Detalj</option>
-              <option value="scale_reference" data-no="Skalareferanse" data-en="Scale reference">Skalareferanse</option>
-              <option value="other" data-no="Annet" data-en="Other">Annet</option>
-            </select>
-          </div>
-          <div class="field">
-            <label data-no="Fotonummer" data-en="Photo number">Fotonummer</label>
-            <input type="number" id="photoNumber" min="1">
-          </div>
-        </div>
-        <div class="grid-2">
-          <div class="field"><label data-no="Stasjons-ID" data-en="Station ID">Stasjons-ID</label><input type="text" id="photoStationId"></div>
-          <div class="field"><label data-no="Kvadrat-posisjon" data-en="Quadrat position">Kvadrat-posisjon</label><input type="text" id="photoQuadratPos" placeholder="f.eks. A1, B2"></div>
-        </div>
-        <div class="field">
-          <label data-no="Notater" data-en="Notes">Notater</label>
-          <textarea id="photoNotes" rows="2"></textarea>
-        </div>
-      </div>
-      <button class="btn btn-primary" onclick="savePhotoLog()" data-no="Lagre foto-logg" data-en="Save photo log">Lagre foto-logg</button>
-      <div id="photoList" style="margin-top:16px;"></div>
     </div>
 
     <!-- TAB: Summary -->
@@ -909,51 +919,122 @@ function renderTransectList(){
     </div>`).join('');
 }
 
+/* ===== Constants ===== */
+const BASKET_VOL_L=40;
+const HARVESTER_MAX_L=28000;
+
 /* ===== Catch samples ===== */
+let captainTows=[], selectedTow=null;
+
 function updateSampleSelects(){
+  const isCommercial=currentSession&&currentSession.session_type==='commercial';
+  const isBaci=currentSession&&(currentSession.session_type==='baci'||currentSession.session_type==='control');
   const hasTransects=allTransects.length>0;
-  document.getElementById('noTransectWarn').style.display=hasTransects?'none':'block';
-  document.getElementById('sampleForm').style.display=hasTransects?'block':'none';
-  // Populate transect select for samples
+
+  // Show/hide the right picker
+  document.getElementById('commercialTowPicker').style.display=isCommercial?'block':'none';
+  document.getElementById('noTransectWarn').style.display=(!isCommercial&&!hasTransects)?'block':'none';
+  document.getElementById('baciTransectPicker').style.display=(isBaci&&hasTransects)?'block':'none';
+
+  // Show sample form
+  const canAddSample=isCommercial||(isBaci&&hasTransects);
+  document.getElementById('sampleForm').style.display=canAddSample?'block':'none';
+
+  // Show/hide subsample vs BACI info
+  document.getElementById('subsampleFields').style.display=isCommercial?'block':'none';
+  const baciInfo=document.getElementById('baciSampleInfo');
+  if(baciInfo) baciInfo.style.display=isBaci?'block':'none';
+
+  // Populate transect select for BACI samples
   const tSel=document.getElementById('sampleTransectSelect');
-  tSel.innerHTML=allTransects.map(t=>`<option value="${t.id}">${t.transect_code||'T'} ${t.baci_designation?'('+t.baci_designation+')':''}</option>`).join('');
+  if(tSel) tSel.innerHTML=allTransects.map(t=>`<option value="${t.id}">${t.transect_code||'T'} ${t.baci_designation?'('+t.baci_designation+')':''}</option>`).join('');
+
+  // Load captain's tows for commercial
+  if(isCommercial) loadCaptainTows();
+
   // Update species/scallop sample selects
   const hasSamples=allSamples.length>0;
   document.getElementById('noSampleWarn').style.display=hasSamples?'none':'block';
   document.getElementById('speciesForm').style.display=hasSamples?'block':'none';
   document.getElementById('noSampleWarnScallop').style.display=hasSamples?'none':'block';
   document.getElementById('scallopForm').style.display=hasSamples?'block':'none';
-  const opts=allSamples.map(s=>`<option value="${s.id}">${s.sample_code||'—'} (${s.basket_type||''})</option>`).join('');
+  const opts=allSamples.map(s=>`<option value="${s.id}">${s.sample_code||'—'} (×${s.extrapolation_factor?s.extrapolation_factor.toFixed(1):'1'})</option>`).join('');
   const spSel=document.getElementById('speciesSampleSelect');
   const scSel=document.getElementById('scallopSampleSelect');
   if(spSel)spSel.innerHTML=opts;
   if(scSel)scSel.innerHTML=opts;
 }
-function toggleSubsampleFields(){
-  document.getElementById('subsampleFields').style.display=document.getElementById('isSubsample').value==='yes'?'block':'none';
+
+async function loadCaptainTows(){
+  if(!currentTrip)return;
+  const{data}=await sb.from('tow_log').select('*').eq('trip_id',currentTrip.id).order('tow_number');
+  captainTows=data||[];
+  const sel=document.getElementById('captainTowSelect');
+  sel.innerHTML=`<option value="">— ${L('Velg drag','Select tow')} —</option>`+
+    captainTows.map(t=>`<option value="${t.id}">${L('Drag','Tow')} ${t.tow_number} · ${t.harvester_fill_pct||'?'}% ${t.lat_start?'· GPS ✓':''}</option>`).join('');
 }
-async function saveSample(){
-  const transectId=document.getElementById('sampleTransectSelect').value;
-  if(!transectId){showToast(L('Velg transekt','Select transect'),'error');return;}
-  const isSub=document.getElementById('isSubsample').value==='yes';
-  const subVol=parseFloat(document.getElementById('subsampleVolume').value)||0;
-  const fillPct=parseFloat(document.getElementById('harvesterFillPct').value)||0;
-  const basketsTotal=parseInt(document.getElementById('basketsTotal').value)||0;
-  // Auto-calculate volumes
-  const BASKET_VOL_L=2022, HARVESTER_VOL_L=8088;
-  let totalVol=0, subFrac=0, extrapol=1;
-  if(isSub&&fillPct>0){
-    totalVol=(fillPct/100)*HARVESTER_VOL_L;
-    if(subVol>0&&totalVol>0){subFrac=subVol/totalVol;extrapol=1/subFrac;}
+
+function onCaptainTowSelect(){
+  const towId=document.getElementById('captainTowSelect').value;
+  if(!towId){selectedTow=null;document.getElementById('towInfo').style.display='none';calcSubsample();return;}
+  selectedTow=captainTows.find(t=>t.id===towId)||null;
+  if(!selectedTow)return;
+  const fillPct=selectedTow.harvester_fill_pct||0;
+  const totalVol=Math.round((fillPct/100)*HARVESTER_MAX_L);
+  document.getElementById('towFillPct').textContent=fillPct+'%';
+  document.getElementById('towTotalVol').textContent=totalVol.toLocaleString();
+  document.getElementById('towGPS').textContent=selectedTow.lat_start?`${selectedTow.lat_start.toFixed(4)}, ${selectedTow.lon_start.toFixed(4)}`:'—';
+  document.getElementById('towHarvester').textContent=selectedTow.harvester||'—';
+  document.getElementById('towInfo').style.display='block';
+  calcSubsample();
+}
+
+function calcSubsample(){
+  const baskets=parseInt(document.getElementById('basketsSubsample').value)||0;
+  const subVol=baskets*BASKET_VOL_L;
+  document.getElementById('calcSubVol').textContent=subVol.toLocaleString();
+  // Calculate extrapolation from selected tow or manual fill
+  let totalVol=0;
+  if(selectedTow){
+    totalVol=Math.round((selectedTow.harvester_fill_pct/100)*HARVESTER_MAX_L);
   }
+  const extrapol=subVol>0&&totalVol>0?(totalVol/subVol):0;
+  document.getElementById('calcExtrapol').textContent=extrapol>0?extrapol.toFixed(1):'—';
+}
+
+async function saveSample(){
+  const isCommercial=currentSession&&currentSession.session_type==='commercial';
+  const isBaci=currentSession&&(currentSession.session_type==='baci'||currentSession.session_type==='control');
+
+  // Get transect ID (from BACI picker or null for commercial)
+  let transectId=null;
+  if(isBaci){
+    transectId=document.getElementById('sampleTransectSelect').value;
+    if(!transectId){showToast(L('Velg transekt','Select transect'),'error');return;}
+  }
+
+  // Get tow reference for commercial
+  let towRef=null, fillPct=0, totalVol=0, subVol=0, subFrac=0, extrapol=1;
+  if(isCommercial){
+    const baskets=parseInt(document.getElementById('basketsSubsample').value)||0;
+    subVol=baskets*BASKET_VOL_L;
+    if(selectedTow){
+      towRef=selectedTow.id;
+      fillPct=selectedTow.harvester_fill_pct||0;
+    }
+    totalVol=Math.round((fillPct/100)*HARVESTER_MAX_L);
+    if(subVol>0&&totalVol>0){subFrac=subVol/totalVol;extrapol=totalVol/subVol;}
+    if(subVol===0){showToast(L('Legg inn antall kurver','Enter number of baskets'),'error');return;}
+  }
+
   const row={
-    transect_id:transectId,session_id:currentSession.id,
+    transect_id:transectId,
+    session_id:currentSession.id,
     sample_code:document.getElementById('sampleCode').value.trim()||null,
-    basket_type:document.getElementById('basketType').value,
-    is_subsample:isSub,
-    baskets_subsample:isSub?parseInt(document.getElementById('basketsSubsample').value)||null:null,
-    subsample_volume_l:isSub?subVol:null,
-    baskets_total:basketsTotal||null,
+    basket_type:isCommercial?'normal':(isBaci?'experimental':'control'),
+    is_subsample:isCommercial,
+    baskets_subsample:isCommercial?parseInt(document.getElementById('basketsSubsample').value)||null:null,
+    subsample_volume_l:isCommercial?subVol:null,
     harvester_fill_pct:fillPct||null,
     total_harvester_volume_l:totalVol||null,
     subsample_fraction:subFrac||null,
@@ -968,7 +1049,12 @@ async function saveSample(){
   renderSampleList();
   document.getElementById('sampleCode').value='';
   document.getElementById('sampleNotes').value='';
+  selectedTow=null;
+  document.getElementById('captainTowSelect').value='';
+  document.getElementById('towInfo').style.display='none';
+  document.getElementById('manualTowNumber').value='';
 }
+
 function renderSampleList(){
   const el=document.getElementById('sampleList');
   if(!allSamples.length){el.innerHTML='';return;}
@@ -977,7 +1063,7 @@ function renderSampleList(){
     <div class="species-item">
       <div>
         <div class="species-name">${s.sample_code||'—'}</div>
-        <div class="species-sci">${s.basket_type||''} · ${s.is_subsample?L('Underprøve','Subsample'):L('Full','Full')} · ${s.extrapolation_factor?'×'+s.extrapolation_factor.toFixed(1):''}</div>
+        <div class="species-sci">${s.is_subsample?L('Underprøve','Subsample')+' · ×'+((s.extrapolation_factor||1).toFixed(1)):L('Full fangst','Full catch')} · ${s.total_harvester_volume_l?Math.round(s.total_harvester_volume_l).toLocaleString()+'L':''}</div>
       </div>
     </div>`).join('');
 }
@@ -1133,12 +1219,15 @@ async function saveScallopMeasurement(){
   const w=parseFloat(document.getElementById('scWidth').value);
   const h=parseFloat(document.getElementById('scHeight').value);
   if(!w&&!h){showToast(L('Skriv inn mål','Enter measurements'),'error');return;}
+  const dmg=parseInt(document.getElementById('scDamage').value)||0;
+  if(dmg<0||dmg>2){showToast(L('Skade må være 0, 1 eller 2','Damage must be 0, 1 or 2'),'error');return;}
+  const recr=parseInt(document.getElementById('scRecruitment').value)||0;
   const row={
     sample_id:sampleId,
     width_mm:w||null,height_mm:h||null,
     growth:parseFloat(document.getElementById('scGrowth').value)||null,
-    damage_index:parseInt(document.getElementById('scDamage').value),
-    recruitment_attached:document.getElementById('scRecruitment').value==='yes'
+    damage_index:dmg,
+    recruitment_attached:recr===1
   };
   const{data,error}=await sb.from('research_scallop_measurement').insert(row).select().single();
   if(error){showToast('Error: '+error.message,'error');return;}
@@ -1149,9 +1238,19 @@ async function saveScallopMeasurement(){
   document.getElementById('scHeight').value='';
   document.getElementById('scGrowth').value='';
   document.getElementById('scDamage').value='0';
-  document.getElementById('scRecruitment').value='no';
+  document.getElementById('scRecruitment').value='0';
   document.getElementById('scWidth').focus();
 }
+// Enter key saves scallop and refocuses width for next entry
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'){
+    const active=document.activeElement;
+    if(active&&(active.id==='scWidth'||active.id==='scHeight'||active.id==='scGrowth'||active.id==='scDamage'||active.id==='scRecruitment')){
+      e.preventDefault();
+      saveScallopMeasurement();
+    }
+  }
+});
 function renderScallopList(){
   const el=document.getElementById('scallopList');
   document.getElementById('scallopCount').textContent=`${allScallops.length} ${L('skjell målt','scallops measured')}`;
@@ -1340,6 +1439,11 @@ function getGPS(which){
     btn.innerHTML=`📍 ${L('Hent GPS','Capture GPS')}`;
     showToast((L('GPS-feil: ','GPS error: '))+err.message,'error');
   },{enableHighAccuracy:true,timeout:15000});
+}
+
+/* ===== Video on transect toggle ===== */
+function toggleVideoType(){
+  document.getElementById('videoTypeField').style.display=document.getElementById('videoTaken').value==='yes'?'block':'none';
 }
 
 /* ===== Control sites ===== */
