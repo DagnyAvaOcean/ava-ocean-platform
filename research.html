@@ -6,6 +6,8 @@
 <title>Ava Ray — Forskning</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+@font-face { font-family: 'ABCFavorit'; src: url('ABCFavorit-Bold.woff2') format('woff2'); font-weight: 700; }
+@font-face { font-family: 'ProtoGrotesk'; src: url('protogroteskweb-light.woff2') format('woff2'); font-weight: 300; }
 :root {
   --deep:#2C262E;--ocean:#332D35;--surface:#3C3540;--panel:#433A46;--border:#5c5060;
   --accent:#D9FFAC;--accent2:#c2f090;--warn:#FF8C69;--scallop:#E6D2C5;
@@ -40,7 +42,7 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
 /* App shell */
 #app{display:none;}
 .header{background:var(--ocean);border-bottom:2px solid var(--research);padding:11px 20px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;}
-.header-logo{height:26px;}
+.header-logo{height:26px;cursor:pointer;}
 .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
 .header-trip{font-size:10px;color:var(--muted);font-family:var(--font-head);}
 .header-controls{display:flex;align-items:center;gap:8px;}
@@ -193,7 +195,7 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
 <div id="app">
   <div class="header">
     <div style="display:flex;align-items:center;gap:10px;">
-      <img src="ava-ocean-logo-mark-lime-purple-master.png" alt="Ava Ocean" class="header-logo">
+      <a href="index.html"><img src="ava-ocean-logo-mark-lime-purple-master.png" alt="Ava Ocean" class="header-logo"></a>
       <span class="badge-research">Research</span>
     </div>
     <div class="header-right">
