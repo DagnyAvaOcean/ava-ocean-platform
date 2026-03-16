@@ -409,11 +409,11 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
     <div id="tabContentSample" class="tab-content" style="display:none;">
       <div class="section-label" data-no="Fangstprøve" data-en="Catch sample">Fangstprøve</div>
 
-      <!-- Needs transect first (shown for all session types) -->
-      <div id="noTransectWarn" class="info-box" data-no="Lagre et transekt først for å legge til prøver." data-en="Save a transect first to add samples.">Lagre et transekt først for å legge til prøver.</div>
+      <!-- BACI/Control: needs transect first -->
+      <div id="noTransectWarn" class="info-box" style="display:none;" data-no="Lagre et transekt først for å legge til prøver." data-en="Save a transect first to add samples.">Lagre et transekt først for å legge til prøver.</div>
 
-      <!-- Transect picker (shown for all types when transects exist) -->
-      <div id="sampleTransectPicker" style="display:none;">
+      <!-- BACI: transect picker -->
+      <div id="baciTransectPicker" style="display:none;">
         <div class="card">
           <div class="field">
             <label data-no="Velg transekt" data-en="Select transect">Velg transekt</label>
@@ -422,29 +422,34 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
         </div>
       </div>
 
-      <!-- Commercial: pick from captain's tows -->
+      <!-- Commercial: pick captain's tow (= transect) -->
       <div id="commercialTowPicker" style="display:none;">
-        <div class="info-box" data-no="Koble til kapteinens drag for høster-fyll % og GPS." data-en="Link to captain's tow for harvester fill % and GPS.">Koble til kapteinens drag for høster-fyll % og GPS.</div>
         <div class="card">
           <div class="field">
-            <label data-no="Kapteinens høstdrag" data-en="Captain's tow">Kapteinens høstdrag</label>
+            <label data-no="Velg kapteinens drag" data-en="Select captain's tow">Velg kapteinens drag</label>
             <select id="captainTowSelect" onchange="onCaptainTowSelect()">
-              <option value="">— Velg drag —</option>
+              <option value="">— Velg drag / Select tow —</option>
             </select>
           </div>
           <div class="field">
-            <label data-no="Eller skriv dragnummer" data-en="Or enter tow number">Eller skriv dragnummer</label>
-            <input type="text" id="manualTowNumber" placeholder="f.eks. 1, 2, 3...">
+            <label data-no="Eller skriv dragnummer manuelt" data-en="Or enter tow number manually">Eller skriv dragnummer manuelt</label>
+            <input type="text" id="manualTowNumber" placeholder="f.eks. 1, 2, 3..." oninput="onManualTowInput()">
           </div>
-          <div id="towInfo" style="display:none;margin-top:8px;">
-            <div class="grid-2" style="margin-bottom:8px;">
-              <div class="metric-card"><div class="metric-label" data-no="Høster fyll %" data-en="Harvester fill %">Høster fyll %</div><div class="metric-val" id="towFillPct">—</div></div>
-              <div class="metric-card"><div class="metric-label" data-no="Total volum (l)" data-en="Total volume (l)">Total volum (l)</div><div class="metric-val" id="towTotalVol">—</div></div>
-            </div>
-            <div class="grid-2">
-              <div class="metric-card"><div class="metric-label">GPS Start</div><div class="metric-val" id="towGPS" style="font-size:12px;">—</div></div>
-              <div class="metric-card"><div class="metric-label" data-no="Høster" data-en="Harvester">Høster</div><div class="metric-val" id="towHarvester">—</div></div>
-            </div>
+        </div>
+        <!-- Tow details card (shown when tow selected) -->
+        <div id="towInfo" class="card" style="display:none;">
+          <div class="section-label" data-no="Dragdetaljer fra kapteinens logg" data-en="Tow details from captain's log">Dragdetaljer fra kapteinens logg</div>
+          <div class="grid-2" style="margin-bottom:8px;">
+            <div class="metric-card"><div class="metric-label">GPS Start</div><div class="metric-val" id="towGPSStart" style="font-size:12px;">—</div></div>
+            <div class="metric-card"><div class="metric-label">GPS End</div><div class="metric-val" id="towGPSEnd" style="font-size:12px;">—</div></div>
+          </div>
+          <div class="grid-2" style="margin-bottom:8px;">
+            <div class="metric-card"><div class="metric-label" data-no="Start" data-en="Start">Start</div><div class="metric-val" id="towTimeStart" style="font-size:12px;">—</div></div>
+            <div class="metric-card"><div class="metric-label" data-no="Slutt" data-en="End">Slutt</div><div class="metric-val" id="towTimeEnd" style="font-size:12px;">—</div></div>
+          </div>
+          <div class="grid-2">
+            <div class="metric-card"><div class="metric-label" data-no="Høster fyll %" data-en="Harvester fill %">Høster fyll %</div><div class="metric-val" id="towFillPct">—</div></div>
+            <div class="metric-card"><div class="metric-label" data-no="Total volum (l)" data-en="Total volume (l)">Total volum (l)</div><div class="metric-val" id="towTotalVol">—</div></div>
           </div>
         </div>
       </div>
@@ -483,7 +488,7 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
 
           <!-- BACI info (no subsampling) -->
           <div id="baciSampleInfo" style="display:none;">
-            <div class="info-box" data-no="BACI prøve — all fangst samles, ingen underprøve. Ekstraperingsfaktor = 1." data-en="BACI sample — all catch collected, no subsampling. Extrapolation factor = 1.">BACI prøve — all fangst samles, ingen underprøve. Ekstraperingsfaktor = 1.</div>
+            <div class="info-box" data-no="BACI prøve — all fangst samles, ingen underprøve. Ekstrapolering = 1." data-en="BACI sample — all catch collected, no subsampling. Extrapolation = 1.">BACI prøve — all fangst samles, ingen underprøve. Ekstrapolering = 1.</div>
           </div>
 
           <div class="field" style="margin-top:12px;">
@@ -933,22 +938,21 @@ function updateSampleSelects(){
   const isBaci=currentSession&&(currentSession.session_type==='baci'||currentSession.session_type==='control');
   const hasTransects=allTransects.length>0;
 
-  // All session types need a transect first
-  document.getElementById('noTransectWarn').style.display=hasTransects?'none':'block';
-  document.getElementById('sampleTransectPicker').style.display=hasTransects?'block':'none';
+  // Commercial: always show tow picker, no transect needed from user
+  document.getElementById('commercialTowPicker').style.display=isCommercial?'block':'none';
+  document.getElementById('sampleForm').style.display=isCommercial?'block':'none';
+  document.getElementById('subsampleFields').style.display=isCommercial?'block':'none';
 
-  // Show commercial tow picker only for commercial sessions with transects
-  document.getElementById('commercialTowPicker').style.display=(isCommercial&&hasTransects)?'block':'none';
+  // BACI: needs transect first
+  document.getElementById('noTransectWarn').style.display=(isBaci&&!hasTransects)?'block':'none';
+  document.getElementById('baciTransectPicker').style.display=(isBaci&&hasTransects)?'block':'none';
+  if(isBaci) document.getElementById('sampleForm').style.display=hasTransects?'block':'none';
 
-  // Show sample form only when transects exist
-  document.getElementById('sampleForm').style.display=hasTransects?'block':'none';
-
-  // Show/hide subsample vs BACI info
-  document.getElementById('subsampleFields').style.display=(isCommercial&&hasTransects)?'block':'none';
   const baciInfo=document.getElementById('baciSampleInfo');
   if(baciInfo) baciInfo.style.display=(isBaci&&hasTransects)?'block':'none';
+  if(isCommercial&&baciInfo) baciInfo.style.display='none';
 
-  // Populate transect select
+  // Populate transect select for BACI
   const tSel=document.getElementById('sampleTransectSelect');
   if(tSel) tSel.innerHTML=allTransects.map(t=>`<option value="${t.id}">${t.transect_code||'T'} ${t.baci_designation?'('+t.baci_designation+')':''}</option>`).join('');
 
@@ -985,10 +989,22 @@ function onCaptainTowSelect(){
   const fillPct=selectedTow.harvester_fill_pct||0;
   const totalVol=Math.round((fillPct/100)*HARVESTER_MAX_L);
   document.getElementById('towFillPct').textContent=fillPct+'%';
-  document.getElementById('towTotalVol').textContent=totalVol.toLocaleString();
-  document.getElementById('towGPS').textContent=selectedTow.lat_start?`${selectedTow.lat_start.toFixed(4)}, ${selectedTow.lon_start.toFixed(4)}`:'—';
-  document.getElementById('towHarvester').textContent=selectedTow.harvester||'—';
+  document.getElementById('towTotalVol').textContent=totalVol.toLocaleString()+' L';
+  document.getElementById('towGPSStart').textContent=selectedTow.lat_start?`${selectedTow.lat_start.toFixed(4)}°N, ${selectedTow.lon_start.toFixed(4)}°E`:'—';
+  document.getElementById('towGPSEnd').textContent=selectedTow.lat_end?`${selectedTow.lat_end.toFixed(4)}°N, ${selectedTow.lon_end.toFixed(4)}°E`:'—';
+  const fmtTime=(ts)=>{if(!ts)return'—';const d=new Date(ts);return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});};
+  document.getElementById('towTimeStart').textContent=fmtTime(selectedTow.start_time||selectedTow.created_at);
+  document.getElementById('towTimeEnd').textContent=fmtTime(selectedTow.end_time);
   document.getElementById('towInfo').style.display='block';
+  document.getElementById('manualTowNumber').value='';
+  calcSubsample();
+}
+
+function onManualTowInput(){
+  // When typing manually, clear the dropdown selection
+  document.getElementById('captainTowSelect').value='';
+  selectedTow=null;
+  document.getElementById('towInfo').style.display='none';
   calcSubsample();
 }
 
@@ -996,7 +1012,6 @@ function calcSubsample(){
   const baskets=parseInt(document.getElementById('basketsSubsample').value)||0;
   const subVol=baskets*BASKET_VOL_L;
   document.getElementById('calcSubVol').textContent=subVol.toLocaleString();
-  // Calculate extrapolation from selected tow or manual fill
   let totalVol=0;
   if(selectedTow){
     totalVol=Math.round((selectedTow.harvester_fill_pct/100)*HARVESTER_MAX_L);
@@ -1007,10 +1022,35 @@ function calcSubsample(){
 
 async function saveSample(){
   const isCommercial=currentSession&&currentSession.session_type==='commercial';
+  let transectId=null;
 
-  // Always require transect
-  const transectId=document.getElementById('sampleTransectSelect').value;
-  if(!transectId){showToast(L('Velg transekt','Select transect'),'error');return;}
+  if(isCommercial){
+    // Auto-create a transect from the captain's tow data
+    const manualTow=document.getElementById('manualTowNumber').value.trim();
+    if(!selectedTow&&!manualTow){showToast(L('Velg et drag eller skriv dragnummer','Select a tow or enter tow number'),'error');return;}
+
+    const towNum=selectedTow?selectedTow.tow_number:manualTow;
+    const tRow={
+      session_id:currentSession.id,
+      transect_code:'T'+towNum,
+      transect_type:'commercial',
+      lat_start:selectedTow?.lat_start||null,
+      lon_start:selectedTow?.lon_start||null,
+      lat_end:selectedTow?.lat_end||null,
+      lon_end:selectedTow?.lon_end||null,
+      start_time:selectedTow?.start_time||selectedTow?.created_at||null,
+      end_time:selectedTow?.end_time||null,
+      harvester_side:selectedTow?.harvester||null,
+    };
+    const{data:tData,error:tErr}=await sb.from('research_transect').insert(tRow).select().single();
+    if(tErr){showToast('Transect error: '+tErr.message,'error');return;}
+    allTransects.push(tData);
+    transectId=tData.id;
+  } else {
+    // BACI/Control: use selected transect
+    transectId=document.getElementById('sampleTransectSelect').value;
+    if(!transectId){showToast(L('Velg transekt','Select transect'),'error');return;}
+  }
 
   // Get tow reference for commercial
   let towRef=null, fillPct=0, totalVol=0, subVol=0, subFrac=0, extrapol=1;
