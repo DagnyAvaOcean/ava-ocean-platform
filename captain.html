@@ -489,13 +489,24 @@ function goToStartActivity(){
   label.textContent=typeLabels[currentActivityType]||currentActivityType;
   label.style.color=typeColors[currentActivityType]||'var(--muted)';
   const isDowntime=currentActivityType==='downtime_harvester'||currentActivityType==='downtime_factory';
-  document.getElementById('actGpsSection').style.display=currentActivityType==='fishing'?'block':'none';
+  document.getElementById('actGpsSection').style.display='block';
   document.getElementById('reasonSection').style.display=isDowntime?'block':'none';
   ['actFuelStart','actWaveHeight','actWindSpeed','actNotes','actReason'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   ['actSeaState','actWindDir','actVisibility'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.getElementById('gpsActStartDisplay').textContent='';
   document.getElementById('actLatStart').value='';
   document.getElementById('actLonStart').value='';
+
+  ['actLatStart','actLonStart'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el){
+    el.type='text';el.inputMode='decimal';el.style.display='block';el.style.width='100%';el.style.marginTop='6px';
+    el.style.background='var(--surface)';el.style.border='1.5px solid var(--border)';el.style.borderRadius='8px';
+    el.style.color='var(--text)';el.style.fontFamily='var(--font-body)';el.style.fontSize='15px';el.style.padding='13px 14px';
+    el.placeholder=id.includes('Lat')?(currentLang==='no'?'Breddegrad (f.eks. 74.123456)':'Latitude (e.g. 74.123456)'):(currentLang==='no'?'Lengdegrad (f.eks. 19.123456)':'Longitude (e.g. 19.123456)');
+  }
+});
+  
   goTo('screen-start-activity');
 }
 
