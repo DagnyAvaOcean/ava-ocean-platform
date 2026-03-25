@@ -214,6 +214,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;heigh
     <div class="section-label" data-no="Aktiviteter denne turen" data-en="This Trip's Activities">Aktiviteter denne turen</div>
     <div id="activityList"><div style="color:var(--muted);font-size:13px;" data-no="Ingen aktiviteter logget ennå." data-en="No activities logged yet.">Ingen aktiviteter logget ennå.</div></div>
     <hr class="divider">
+    <button class="btn btn-primary" onclick="goToDailyLog()" style="margin-top:4px;" data-no="📊 Daglig fangstlogg" data-en="📊 Daily Catch Log">📊 Daglig fangstlogg</button>
+    <hr class="divider">
     <button class="btn btn-warn" onclick="goTo('screen-close-trip')" style="margin-top:4px;" data-no="🏁 Avslutt tur og legg inn fangstvekt" data-en="🏁 Close Trip & Enter Catch Weight">🏁 Avslutt tur og legg inn fangstvekt</button>
     <button class="btn btn-secondary" onclick="goTo('screen-trip')" style="margin-top:8px;" data-no="← Bytt tur" data-en="← Change Trip">← Bytt tur</button>
   </div>
@@ -358,6 +360,21 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;heigh
       <div class="info-box" id="metricsNote" style="margin-top:8px;"></div>
     </div>
   </div>
+<!-- DAILY LOG -->
+  <div class="screen" id="screen-daily-log">
+    <div class="section-label" data-no="Daglig fangstlogg" data-en="Daily Catch Log">Daglig fangstlogg</div>
+    <div class="info-box" data-no="Logg daglig fangst. Antall høstinger hentes automatisk." data-en="Log daily catch. Tow count is calculated automatically.">Logg daglig fangst. Antall høstinger hentes automatisk.</div>
+    <div class="card">
+      <div class="field"><label data-no="Dato" data-en="Date">Dato</label><input type="date" id="dailyDate"></div>
+      <div class="field"><label data-no="Kg landet" data-en="Kg landed">Kg landet</label><input type="number" id="dailyKg" placeholder="f.eks. 850" inputmode="decimal" step="0.1"></div>
+      <div id="dailyTowCount" style="font-family:var(--font-head);font-weight:700;font-size:13px;color:var(--accent);margin:8px 0;"></div>
+      <div class="field"><label data-no="Notater (valgfritt)" data-en="Notes (optional)">Notater (valgfritt)</label><textarea id="dailyNotes" rows="2" placeholder="Observasjoner..."></textarea></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveDailyLog()" data-no="Lagre daglig logg" data-en="Save Daily Log">Lagre daglig logg</button>
+    <div id="dailyLogList" style="margin-top:16px;"></div>
+    <button class="btn btn-secondary" onclick="goTo('screen-main')" style="margin-top:16px;" data-no="← Tilbake" data-en="← Back">← Tilbake</button>
+  </div>
+  
 </div>
 <div class="toast" id="toast"></div>
 
@@ -720,7 +737,24 @@ async function loadDailyLog() {
   if(!data||!data.length){el.innerHTML=`<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px;">${no?'Ingen logger ennå.':'No entries yet.'}</div>`;return;}
   el.innerHTML=data.map(d=>`<div class="card" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:var(--font-head);font-weight:700;font-size:15px;color:var(--accent);">${d.log_date}</div><div style="font-size:12px;color:var(--muted);margin-top:3px;">${d.notes||''}</div></div><div style="font-family:var(--font-head);font-weight:700;font-size:22px;color:var(--text);">${d.kg_landed?.toLocaleString()} kg</div></div>`).join('');
 }
-
+async function goToDailyLog(){
+  document.getElementById('dailyDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('dailyKg').value='';
+  document.getElementById('dailyNotes').value='';
+  await loadDailyLog();
+  await updateDailyTowCount();
+  goTo('screen-daily-log');
+}
+async function updateDailyTowCount(){
+  const date=document.getElementById('dailyDate').value;
+  if(!date||!currentTrip){document.getElementById('dailyTowCount').textContent='';return;}
+  const{data}=await sb.from('tow_log').select('id,time_start').eq('trip_id',currentTrip.id);
+  const towsToday=(data||[]).filter(t=>t.time_start&&t.time_start.startsWith(date)).length;
+  const no=currentLang==='no';
+  document.getElementById('dailyTowCount').textContent=towsToday>0?`✓ ${towsToday} ${no?'høstinger logget denne dagen':'tows logged this day'}`:(no?'Ingen høstinger logget denne dagen':'No tows logged this day');
+}
+  
+  
 init();
 </script>
 </body>
