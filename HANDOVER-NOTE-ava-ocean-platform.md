@@ -1,277 +1,192 @@
 # Ava Ocean Platform — Handover Note
-## Date: 16 March 2026
-## Project: Ava Ocean Data Platform
+## Date: 26 March 2026
+## Session: dashboard.html drill-down + research-dashboard.html build
 
 ---
 
 ## Owner
-- **Dagny Elise Anastasiou** — Chief Impact Officer at Ava Ocean
-- PhD student at NTNU (Nærings-ph.d. program, Department of Biological Sciences Ålesund)
-- Focus: Environmental impact assessment of novel seabed harvesting technology in the Barents Sea
-- Supervisors: Dr Snorre Bakke (NTNU), Dr Fabian Zimmerman (HI), Øystein Tvedt (AO, industry mentor)
-- GitHub repo: `https://github.com/DagnyAvaOcean/ava-ocean-platform` (private)
+- **Dagny** — Chief Impact Officer at Ava Ocean
+- PhD student at NTNU (Nærings-ph.d. program) focused on seabed habitat impact assessment
+- GitHub repo: `https://github.com/DagnyAvaOcean/ava-ocean-platform`
 - Deployed via **Vercel** (auto-deploys from GitHub main branch)
 - Editing done **directly on GitHub** (pencil icon in browser)
-- Dagny uses a **Lenovo PC** (Windows) — use Ctrl shortcuts, not Cmd
-- Opens code files in **Notepad** to copy-paste content
-- Limited coding experience — all instructions must be step-by-step
+- Dagny has limited coding experience — all instructions must be step-by-step with exact commit messages
+- Works on **Lenovo PC (Windows)** — use Ctrl shortcuts, not Cmd
 
 ---
 
 ## Platform Overview
 
-The Ava Ocean Platform is a suite of mobile-optimised web apps for data collection during fishing operations on the **Ava Ray**, a precision scallop harvester operating in Arctic waters (Bjørnøya, Kveitehola, Concordia grounds in the Barents Sea).
+### Files in repo
+| File | Purpose |
+|---|---|
+| `index.html` | Landing page — links to all tools |
+| `captain.html` | Mobile data collection for captain at sea |
+| `research.html` | Mobile data collection for research sessions (BACI, control, commercial) |
+| `dashboard.html` | Operational dashboard — CPUE, activities, tow log, bycatch, factory, AI insights |
+| `research-dashboard.html` | PhD research dashboard — BACI, diversity, size distribution, damage index |
+| `factory.html` | Factory shift sample entry |
+| `api/ai.js` | Vercel serverless function for Claude AI (used by dashboard.html AI Insights tab) |
+| `vercel.json` | Vercel config |
 
-Each app is a **single HTML file** with inline CSS and JavaScript, using Supabase as backend. This architecture allows editing directly on GitHub and deploying via Vercel with zero build step.
+### Design system (shared across all files)
+- **Fonts**: ABCFavorit (bold headers) + ProtoGrotesk (body) — loaded via `@font-face` from `.woff2` files in repo root
+- **Colours**: `--deep:#2C262E` bg · `--accent:#D9FFAC` lime · `--warn:#FF8C69` · `--scallop:#E6D2C5` · `--research:#88C8FF` blue (research files only)
+- **Logo**: `ava-ocean-logo-mark-lime-purple-master.png` (icon only) and `ava-ocean-logo-lime-purple-master-with-text.png` (full logo, used on index)
 
-| File | Purpose | Accent colour | Status |
-|------|---------|---------------|--------|
-| `index.html` | Landing page with 4 app cards | — | Rebuilt 16 Mar, deployed |
-| `captain.html` | Captain's operational log (trips, activities, tows, bycatch) | Green `#A8E6CF` | Bug fixes 11–12 Mar, deployed |
-| `research.html` | PhD research data collection (BACI study, commercial sampling) | Blue `#88C8FF` | Built 16 Mar, deployed |
-| `factory.html` | Factory/processing log | Scallop/coral | Existing, untouched |
-| `dashboard.html` | Management dashboard (operational) | Lime `#D9FFAC` | HTML structure fixed 16 Mar |
-
----
-
-## Architecture
-
-### Supabase
-- **Project**: `hpfxkamqbsbaohrwbppa.supabase.co`
-- **Anon key**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwZnhrYW1xYnNiYW9ocndicHBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NjQyOTEsImV4cCI6MjA4ODA0MDI5MX0.coiX7bWx0CiiUmuU_pRMK8pSqe38-luT30lgatJBTz8`
-- **Accounts**: captain@avaocean.no, dagny@avaocean.no, management@avaocean.no
-
-### Captain data hierarchy
-`trip_registry → activity_log → tow_log → bycatch_report`
-
-Activity types (5): `fishing`, `steaming`, `wow`, `downtime_harvester`, `downtime_factory`
-
-Other captain tables: `factory_sample_log`, `daily_log`, `site_registry`
-
-### Research data hierarchy
-`research_session → research_transect → research_catch_sample → research_species_record / research_scallop_measurement`
-
-Supporting tables: `species_reference`, `fishing_ground`, `control_site`, `research_video_log`, `research_size_sample`, `research_photo_log`
-
-### Repo file structure
-```
-ava-ocean-platform/
-├── index.html
-├── captain.html
-├── research.html
-├── factory.html
-├── dashboard.html
-├── api/                                — Vercel serverless functions (AI proxy)
-├── vercel.json
-├── ABCFavorit-Bold.woff2               — Brand font (bold)
-├── protogroteskweb-light.woff2         — Brand font (light)
-├── ava-ocean-logo-mark-lime-purple-master.png
-├── ava-ocean-logo-lime-purple-master-with-text....png
-└── HANDOVER-NOTE-ava-ocean-platform.md
-```
+### Infrastructure
+- **Supabase**: `hpfxkamqbsbaohrwbppa.supabase.co`
+- **Accounts**: `captain@avaocean.no`, `dagny@avaocean.no`, `management@avaocean.no`
+- **AI tab**: only visible to `dagny@avaocean.no` and `management@avaocean.no`
 
 ---
 
-## 2026 Harvester Setup
+## Database Schema (key tables)
 
-The Ava Ray has been reconfigured for 2026 (different from 2023):
+### Operational tables
+- `trip_registry` → `site_registry(site_name)` — trips with departure/return dates, processed_meat_kg, trip_closed flag
+- `activity_log` → trip — 5 types: `fishing`, `steaming`, `wow`, `downtime_harvester`, `downtime_factory`
+- `tow_log` → activity, trip — harvester_fill_pct, GPS start/end, depth_m, speed_knots
+- `bycatch_report` → tow, trip — species counts by size (small/medium/large)
+- `daily_log` → trip — kg_landed per date (manually entered by captain)
+- `factory_sample_log` → trip — gram_per_muskel, andel_muskel_pct, pct_ho, pct_han, andel_skadet_pct, gj_snitt_cont_per_pound
+- `site_registry` — Bjørnøya, Concordia, Kveithola
 
-- **1 harvester** at the back of the vessel (2023 had 2 harvesters, one per side)
-- **3 nozzles** suck scallops into **3 rotating filter drums**
-- Scallops are pumped from drum bottoms into **1 large collection basket**
-- Collection basket at 100% fill = **28 cubic metres (28,000 litres)**
-- Small **sampling baskets** = **40 litres** each
-- No starboard/port harvester distinction for 2026
+### Research tables
+- `research_session` → trip — session_type (commercial/baci/control), session_date, sampling_occasion, completed_at
+- `research_transect` → session — baci_designation (impact/control), before_after, GPS, substrate_type, epifaunal_cover
+- `research_catch_sample` → transect, session — extrapolation_factor, subsample volumes
+- `research_species_record` → sample — catch_count, catch_weight_g, total_count_extrapolated, vulnerability, catch_category
+- `research_scallop_measurement` → sample — width_mm, height_mm, damage_index (0/1/2), recruitment_attached
+- `research_size_sample` → sample — measured_shells_weight_g, empty_shells_weight_g, scallop_weight_g, stone_weight_g, stone_count, total_sample_weight_g
+- `research_video_log` → session — video_type, GPS, depth, ROV fields
+- `research_photo_log` → session/sample
+- `control_site` — 30 control polygons (10 per site), columns: site_name, control_id, vertex_order, latitude, longitude, center_lat, center_lon
+- `species_reference` — common_name, scientific_name, vulnerability (A–F), catch_category, is_active
+- `fishing_ground` — fishing ground polygons
+- `daily_summary_log` — (separate from daily_log — check which is actively used)
 
-### Commercial sampling workflow
-1. Captain logs a tow in captain.html (GPS, times, harvester fill %)
-2. Researcher takes a subsample — X small baskets scooped from the collection basket
-3. Subsample volume = baskets × 40L (auto-calculated in research.html)
-4. Total volume = harvester fill % × 28,000L (pulled from captain's tow log)
-5. Extrapolation factor = total volume / subsample volume (auto-calculated)
-6. Captain's tow IS the transect for commercial sessions — research.html auto-creates a transect record from the tow data
-
-### BACI sampling workflow
-1. Researcher logs own transect independently (GPS, times, conditions)
-2. Collection bags draped over the harvester drums to capture all sorted fractions
-3. All catch collected — no subsampling needed, extrapolation factor = 1
-4. Species, scallop measurements, and environmental data recorded per transect
-
----
-
-## Study Sites
-
-Three Arctic scallop grounds south of Bjørnøya (Bear Island), Barents Sea:
-
-| Ground | Latitude range | Longitude range | Control sites |
-|--------|---------------|-----------------|---------------|
-| Bjørnøya Sør | 73.94–74.37°N | 17.80–20.31°E | CS-1 to CS-10 |
-| Kveitehola | 74.62–75.01°N | 18.46–20.40°E | CS-11 to CS-20 |
-| Concordia | 75.13–75.75°N | 17.36–19.89°E | CS-21 to CS-30 |
-
-- All boundary vertices and control site coordinates loaded into Supabase
-- Source data: government regulation KML files
+### Constants
+- Harvester width: 12m
+- Basket volume at 100%: 28,000 litres (28 m³)
+- Subsample basket: 40 litres per basket
+- HFO emission factor: 3.114 kg CO₂/litre
 
 ---
 
-## research.html — Feature Summary
+## What Was Built This Session
 
-### Session types
-- **Commercial** — subsampling from the captain's tows (auto-creates transect from tow)
-- **BACI** — Before-After Control-Impact experimental design (manual transect)
-- **Control** — control site sampling (manual transect)
+### 1. dashboard.html — Drill-down on Overview tab
+The Overview tab now has a full drill-down section below the existing stat cards and charts. No existing tabs were changed.
 
-### Tabs (6 total)
-1. **Transect** — GPS, times, substrate type (sand/gravel/shell/mud/rock/mixed), epifaunal cover (barren/sparse/moderate/dense), water temp, salinity, video checkbox (harvester camera / drone / both), sampling occasion, control site picker, BACI designation (impact/control, before/after)
-2. **Sample** — Commercial: pick captain's tow → shows GPS start/end, times, fill %, total volume. Auto-calculates subsample volume and extrapolation. BACI: pick transect, extrapolation = 1
-3. **Species** — Searchable dropdown from species_reference table, auto-fills vulnerability & catch category, count, weight (g), portion of individual (1.0 = whole, 0.5 = half), notes. "+ New species" button adds permanently to database
-4. **Scallop** — Width (mm), height (mm), growth, damage (0=none, 1=non-lethal, 2=lethal), recruitment (0/1). All fields Tab-navigable with tabindex. **Enter key saves and refocuses to width** for rapid sequential entry
-5. **ROV** — Underwater drone metadata (depth, visibility, heading, transect length)
-6. **Summary** — Live calculations: Shannon H', % target/bycatch, density, mean/median scallop size, % undersized (<65mm), % survival/lethal damage
+**How the drill-down works:**
+- **Trip cards** — all trips shown as clickable cards (code, site, dates, tow count, avg fill %)
+- **Date table** — click a trip → see each day with: tow count, avg fill %, kg landed, harvest hours, WOW/downtime
+- **Date detail** — click a date row → expands to show:
+  - 6 summary stat cards (tows, avg fill, kg, harvest time, fuel, avg g/meat)
+  - Full 17-column daily summary table (same as CPUE tab daily table, one row)
+  - Per-tow table with track/area/CPUE calculations
+- **Map** — all tows for selected trip coloured by fill % (red→amber→lime gradient). Selected date's tows highlight bright; other tows fade to 35% opacity
+- **Breadcrumb** — always shows where you are in the hierarchy; click to go back up
 
-### Key constants
-- 1 sampling basket = 40 litres
-- Harvester at 100% = 28,000 litres (28 m³)
+**Key functions added:**
+- `renderDrillOverview()` — renders trip cards
+- `drillSelectTrip(tripId)` — drills into a trip
+- `drillSelectDate(tripId, date)` — drills into a date
+- `renderDrillTowDetail(tripId, date)` — renders the 17-col table + tow table
+- `renderDrillMap(tripId, selectedDate)` — renders the fill-coloured map
+- `fillColor(pct)` — returns rgb colour for a fill % value (red→amber→lime)
+- State variables: `drillSelectedTripId`, `drillSelectedDate`, `drillMap` (separate Leaflet instance from the Tow Map tab)
 
----
+### 2. research-dashboard.html — New file, PhD research dashboard
+Completely new file. Same design system as dashboard.html but with blue research accent (`#88C8FF`). Full bilingual (NO/EN) with 149 translated elements.
 
-## Database Tables (research)
+**6 tabs:**
+1. **Oversikt** — 8 PhD key metrics, 3 charts, per-site summary table
+2. **BACI** — 2×2 Before/After × Impact/Control matrix, auto-calculated BACI effect (ΔImpact − ΔControl) with interpretation text, 3 charts, Leaflet map of control site polygons + impact transects
+3. **Diversitet** — Shannon H' per site, vulnerability breakdown, top 10 species, full species table; filterable by site via pill tabs
+4. **Størrelsesfordeling** — 10 stat cards (mean, median, SD, % undersized, recruit %, aspect ratio), size histogram (red bars below 55mm), before/after comparison, `research_size_sample` table
+5. **Skadeindeks** — damage 0/1/2 breakdown, visual bar charts per site, survival/lethal rates, trend over time
+6. **Bunndyr & bifangst** — bycatch-only species (excluding target), substrate + epifaunal cover from transects, frequency table
 
-All deployed to Supabase with RLS policies for authenticated users.
+**Key calculations:**
+- Shannon H' = −Σ(pi × ln(pi)) calculated from extrapolated counts
+- BACI effect = (H'_after_impact − H'_before_impact) − (H'_after_control − H'_before_control)
+- Size bins = 5mm width classes, coloured red if < 55mm (undersized threshold)
+- Damage survival = (damage_0 + damage_1) / total × 100
 
-| Table | Records | Purpose |
-|-------|---------|---------|
-| `species_reference` | ~40 species | Master species list (20 original + 20 additional commercial/benthic) |
-| `fishing_ground` | 157 vertices | Boundary polygons for 3 grounds |
-| `control_site` | 30 sites × 5 vertices | Control squares with pre-calculated centres |
-| `research_session` | — | Sessions (commercial/baci/control) |
-| `research_transect` | — | Transects with GPS, conditions, substrate |
-| `research_catch_sample` | — | Samples with subsample volumes, extrapolation |
-| `research_species_record` | — | Species records per sample |
-| `research_scallop_measurement` | — | Individual scallop measurements |
-| `research_video_log` | — | Video/ROV metadata |
-| `research_size_sample` | — | Size distribution samples |
-| `research_photo_log` | — | Photo documentation (table exists, UI removed) |
+**Data sources used:**
+- `research_session`, `research_transect`, `research_catch_sample`, `research_species_record`, `research_scallop_measurement`, `research_size_sample`, `control_site`, `species_reference`
 
-### Key column names in research_transect (watch for bugs)
-- GPS: `lat_start`, `lon_start`, `lat_end`, `lon_end`
-- Times: `time_start`, `time_end` (NOT start_time/end_time)
-- Harvester: `harvester` (NOT harvester_side)
-- Substrate: `substrate_type`, `epifaunal_cover`
-- Environmental: `water_temp_c`, `salinity_psu`
-
-### SQL files used
-- `research-tables-v2.sql` — main table creation, boundary data, control sites, 20 initial species
-- `additional-species.sql` — 20 more commercial/benthic species
+### 3. index.html — New card added
+Added a 5th card linking to `research-dashboard.html` with the same blue research styling. Fully bilingual.
 
 ---
 
-## captain.html — Fixes Completed (11–12 March)
-
-1. Translation system — centralized `getActivityLabel()` and `getActivityIcon()`
-2. Activity start/stop — all 5 activity types work, guard prevents double-start
-3. Manual GPS entry — visible text fields when GPS fails
-4. Tow saving and bycatch — graceful handling, tow list reloads after save
-5. Base64 images extracted — logos replaced with external PNG files
-6. Database constraint updated — `activity_log_activity_type_check` allows all 5 types
-
----
-
-## dashboard.html — Structure Fixed (16 March)
-
-Three HTML structural bugs were fixed:
-1. Missing `</div>` to close `section-cpue` (line ~389)
-2. Extra `</div>` closing `cpueSub-trip` that was never opened (line ~341, removed)
-3. Unclosed `<a>` tag in sidebar logo area (added `</a>`)
-4. Duplicate `</div><!-- end .main -->` at bottom (consolidated)
-
-### Dashboard features (existing)
-- 8 sections: Overview, CPUE & Emissions, Activities, Harvester Log, Bycatch, Tow Map, Factory, AI Insights
-- AI Insights powered by Claude API via `/api/ai` serverless function
-- Leaflet.js map with tow GPS tracks
-- Chart.js for all visualisations
-- Full bilingual NO/EN support
-- Mobile responsive with hamburger menu
-- CSV export for activities, tows, bycatch
-- Trip filter across all sections
-
----
-
-## index.html — Rebuilt (16 March)
-
-- 7KB (down from ~200KB+ with base64 fonts)
-- External font references
-- 4 cards: Captain (green), Factory (scallop), Dashboard (orange), Research (blue)
-- Bilingual NO/EN with localStorage persistence
-
----
-
-## How to Edit and Deploy
-
-### Edit a file on GitHub
-1. Go to repo → click the file → click pencil icon (✏️)
-2. Make changes
-3. Write a commit message → Commit to main
-4. Vercel auto-deploys in ~30–60 seconds
-
-### Run SQL in Supabase
-1. Go to app.supabase.com → SQL Editor → New query
-2. Paste SQL → Click Run
-
-### Replace a file from Claude output
-1. Download the file from Claude
-2. Open in Notepad → Ctrl+A → Ctrl+C
-3. GitHub → click the file → pencil icon → Ctrl+A → Ctrl+V
-4. Commit with a descriptive message
-
----
-
-## Pending Items
+## What Is Still Pending
 
 ### High priority
-- [ ] **Test commercial tow linking end-to-end** — create a trip + tow in captain.html, then create a commercial session in research.html and verify the tow picker shows the data and sample saves correctly
-- [ ] **Methodology document** — detailed writeup of what data goes where, sampling protocols, field procedures for the PhD
-- [ ] **Log 2023 data** — import historical fieldwork data to validate the platform (spreadsheet available)
+- **AI Insights tab in research-dashboard.html** — same pattern as dashboard.html AI tab (anomaly detection, trip summary, optimal conditions, natural language query) but adapted for research data (Shannon diversity trends, species composition, damage index patterns). Tomorrow's task.
 
-### Medium priority
-- [ ] **Research dashboard** — separate `research-dashboard.html` for PhD data visualisation (BACI results, Shannon diversity, size distributions, species composition, control vs impact)
-- [ ] **Digital caliper integration** — most USB calipers with data button emulate keyboard input, works with existing Tab/Enter navigation. Confirm model when purchased
-- [ ] **R automation scripts** — pull from Supabase, run Shannon diversity, BACI analysis, size distributions, CPUE, output publication-ready figures
-- [ ] **Full translation audit** — find all buttons/labels missing `data-no`/`data-en` attributes across all HTML files
-- [ ] **Clean up photo JS** — savePhotoLog() and related functions still in research.html but photo tab removed
+### Fangstreg CSV importer (waiting on them)
+- Fangstreg responded that a proper API is on their roadmap but not available yet
+- Workaround: scheduled CSV/XLSX export from their portal (Fangstrapport + Halrapport)
+- **Waiting for**: sample CSV from Fangstreg so we can see exact column names
+- **Plan when CSV arrives**:
+  1. Add `source` column to `daily_log` table in Supabase (`'manual'` or `'fangstreg'`)
+  2. Add `source = 'manual'` to `saveDailyLog()` in captain.html
+  3. Build CSV drag-and-drop importer in dashboard.html (Overview or dedicated panel)
+  4. Fangstreg always wins for kg_landed if both sources have same date
+- SQL for source column when ready: `ALTER TABLE daily_log ADD COLUMN source text DEFAULT 'manual';`
 
-### Future phases
-- [ ] **API integrations** — Fiskr (government catch reporting), Furuno GPS (NMEA), OceanSync weather station, YSI EXO2 sonde, fuel flow sensor
-- [ ] **PWA/offline mode** — service worker for Arctic operations without connectivity
-- [ ] **AI species detection** — Python CV model for ROV/drone footage
-- [ ] **File split** — separate monolithic HTML files into .html + .css + .js
+### captain.html known issues (from previous session, still unresolved)
+- Some HTML buttons/labels may still be missing `data-no` / `data-en` translation attributes — needs audit
+- Activity type logging: Supabase check constraint violation was fixed, but test end-to-end on deployed version
+- The `towSpeed` field does not exist in HTML (handled gracefully in JS, but could add it)
+
+### Data to add
+- 2023 historical fieldwork data needs logging to validate the platform
+- Control site data uploaded (30 polygons) but no actual research session data yet for 2026
 
 ---
 
-## Session Transcripts
+## How to Edit Files
 
-Full development session transcripts stored for context continuity:
+### Standard workflow
+1. Go to GitHub repo → click file → click pencil icon (top right)
+2. Make changes
+3. Scroll to bottom → "Commit changes" → commit to main branch
+4. Vercel auto-deploys in ~30–60 seconds
+5. Hard refresh browser (Ctrl+Shift+R) to see changes
 
-| Date | File | Topics |
-|------|------|--------|
-| 11 Mar | `2026-03-11-17-15-46-ava-ocean-captain-html-debug.txt` | captain.html debugging |
-| 12 Mar | `2026-03-12-22-09-02-ava-ocean-platform-bugfixes.txt` | Bug fixes |
-| 12 Mar | `2026-03-12-22-49-03-ava-ocean-platform-bugfixes-and-research-design.txt` | Research design |
-| 16 Mar | `2026-03-16-03-49-18-ava-ocean-research-platform-build.txt` | research.html build, SQL, index.html, harvester setup, dashboard fixes |
+### For large files (dashboard.html, research-dashboard.html)
+- These files are large — GitHub's web editor can be slow
+- Copy full file content from Claude → paste into GitHub editor → commit
+- Always test on deployed Vercel URL after committing, not just locally
 
-Transcript catalog: `/mnt/transcripts/journal.txt`
+---
+
+## Key Principles (for next developer or next session)
+
+- **All files are single HTML files** — no build tools, no framework, no separate CSS/JS files
+- **Supabase is the only backend** — all data in Supabase, accessed via the JS client
+- **Vercel serverless function** at `api/ai.js` handles Claude API calls (keeps API key server-side)
+- **Language switching**: dashboard.html and research-dashboard.html use a `setLang(lang)` function that calls `getElementById` for every translatable element — when adding new elements, always add them to `setLang()` too
+- **Chart.js**: all charts use `charts[id].destroy()` before re-creating — never create a chart without destroying first
+- **Leaflet maps**: each page has its own map instance variable — never initialise a map on a hidden element (causes sizing issues); always call `map.invalidateSize()` after showing
+- **Start new chats every 30–40 exchanges** to manage context window
 
 ---
 
 ## For a New Developer
 
-If handing this project to a software engineer:
+The platform is a set of standalone HTML files sharing a common design system and Supabase backend. There is no package.json, no build step, no node_modules. To get started:
 
-1. **Start here** — read this handover note
-2. **Architecture** — each page is a self-contained HTML file with inline CSS/JS, talking to Supabase. No build tools, no bundler, no framework
-3. **Deployment** — push to `main` branch on GitHub, Vercel auto-deploys
-4. **Database** — all tables in Supabase with RLS. Use the SQL Editor for schema changes
-5. **Session transcripts** — contain detailed reasoning for every design decision, available in `/mnt/transcripts/`
-6. **Key gotcha** — the research_transect table uses `time_start`/`time_end` (not `start_time`/`end_time`) and `harvester` (not `harvester_side`)
-7. **Testing** — test on mobile (the apps are used at sea on tablets in Arctic conditions)
-8. **User** — Dagny has limited coding experience. All changes should be deployable via GitHub's web editor
+1. Clone the GitHub repo
+2. Open any HTML file in a browser — it will connect to Supabase automatically (credentials are inline in each file — this is intentional for simplicity, the Supabase anon key is safe to expose)
+3. Log in with `dagny@avaocean.no` credentials (ask Dagny)
+4. To make changes: edit the file, commit to main, Vercel deploys automatically
+
+The Supabase project is `hpfxkamqbsbaohrwbppa.supabase.co`. All table schemas are visible in the Supabase dashboard under Table Editor → click a table → "Definition" tab.
+
+The AI features in dashboard.html call `/api/ai` which is a Vercel Edge Function in `api/ai.js`. This function proxies requests to the Anthropic Claude API. The API key is stored as a Vercel environment variable (`ANTHROPIC_API_KEY`) — never hardcoded.
