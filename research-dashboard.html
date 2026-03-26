@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ava Ocean — Forskningsdashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+@font-face { font-family: 'ABCFavorit'; src: url('ABCFavorit-Bold.woff2') format('woff2'); font-weight: 700; }
+@font-face { font-family: 'ProtoGrotesk'; src: url('protogroteskweb-light.woff2') format('woff2'); font-weight: 300; }
+
+:root {
+  --deep:#2C262E; --ocean:#332D35; --surface:#3C3540; --panel:#433A46; --border:#5c5060;
+  --accent:#D9FFAC; --warn:#FF8C69; --scallop:#E6D2C5;
+  --research:#88C8FF; --research2:#6BB5F0; --research-dim:rgba(136,200,255,0.08);
+  --impact:#FF8C69; --control:#88C8FF; --before:#E6D2C5; --after:#D9FFAC;
+  --text:#F0EAE6; --muted:#a8959e;
+  --font-head:'ABCFavorit',sans-serif; --font-body:'ProtoGrotesk','ABCFavorit',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-size:13px;min-height:100vh;font-weight:300;overflow-x:hidden;}
+
+/* ── Login ─────────────────────────────────── */
+#loginScreen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;}
+.login-logo{height:52px;margin-bottom:16px;}
+.lang-toggle{display:flex;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px;margin-bottom:28px;}
+.lang-btn{padding:5px 14px;border-radius:16px;border:none;font-family:var(--font-head);font-weight:700;font-size:12px;cursor:pointer;background:transparent;color:var(--muted);transition:all 0.15s;}
+.lang-btn.active{background:var(--research);color:var(--deep);}
+.login-card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:32px 28px;width:100%;max-width:380px;}
+.login-title{font-family:var(--font-head);font-weight:700;font-size:18px;margin-bottom:6px;}
+.login-desc{font-size:12px;color:var(--muted);margin-bottom:24px;}
+.login-field{margin-bottom:16px;}
+.login-field label{display:block;font-family:var(--font-head);font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+.login-field input{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:15px;padding:13px 14px;outline:none;transition:border-color 0.2s;}
+.login-field input:focus{border-color:var(--research);}
+.login-btn{width:100%;padding:16px;border-radius:10px;border:none;font-family:var(--font-head);font-weight:700;font-size:16px;cursor:pointer;background:var(--research);color:var(--deep);margin-top:8px;}
+.login-btn:disabled{opacity:0.5;pointer-events:none;}
+.login-error{color:var(--warn);font-size:12px;margin-top:12px;text-align:center;min-height:18px;}
+.login-note{font-size:11px;color:var(--muted);text-align:center;margin-top:16px;}
+.login-back{font-size:11px;color:var(--muted);text-align:center;margin-top:10px;}
+.login-back a{color:var(--research);text-decoration:none;font-family:var(--font-head);font-weight:700;}
+
+/* ── App shell ─────────────────────────────── */
+#app{display:none;min-height:100vh;}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:260px;background:var(--ocean);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;overflow-y:auto;}
+.main{margin-left:260px;padding:28px;overflow-x:hidden;}
+.logo-area{padding:22px 20px 16px;border-bottom:1px solid var(--border);}
+.logo-img{height:28px;display:block;}
+.logo-tagline{font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:6px;font-family:var(--font-head);}
+.badge-research{font-size:9px;padding:2px 8px;border-radius:10px;background:rgba(136,200,255,0.15);color:var(--research);border:1px solid rgba(136,200,255,0.3);font-family:var(--font-head);font-weight:700;letter-spacing:1px;text-transform:uppercase;display:inline-block;margin-top:6px;}
+.nav{padding:14px 0;flex:1;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 20px;color:var(--muted);cursor:pointer;font-family:var(--font-head);font-size:13px;transition:all 0.15s;border-left:3px solid transparent;}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,0.03);}
+.nav-item.active{color:var(--research);border-left-color:var(--research);background:rgba(136,200,255,0.05);}
+.nav-icon{font-size:15px;width:20px;text-align:center;}
+
+/* Filter bar */
+.filter-bar{padding:12px 16px;border-top:1px solid var(--border);}
+.filter-bar label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:5px;font-family:var(--font-head);font-weight:700;}
+.filter-bar select{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font-body);font-size:12px;padding:7px 10px;outline:none;margin-bottom:8px;-webkit-appearance:none;}
+
+.sidebar-footer{padding:10px 16px;border-top:1px solid var(--border);}
+.sidebar-lang{display:flex;gap:4px;margin-bottom:8px;}
+.sidebar-lang-btn{flex:1;padding:5px;border:1px solid var(--border);border-radius:6px;font-family:var(--font-head);font-weight:700;font-size:11px;cursor:pointer;background:transparent;color:var(--muted);text-align:center;transition:all 0.15s;}
+.sidebar-lang-btn.active{background:var(--research);color:var(--deep);border-color:var(--research);}
+.footer-row{display:flex;align-items:center;justify-content:space-between;}
+.user-email{font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;font-family:var(--font-head);}
+.signout-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:var(--font-head);font-size:10px;padding:5px 8px;border-radius:5px;cursor:pointer;font-weight:700;}
+.signout-btn:hover{color:var(--warn);border-color:var(--warn);}
+.status-bar{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);margin-bottom:8px;font-family:var(--font-head);}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+.status-dot.connected{background:var(--accent);box-shadow:0 0 0 2px rgba(217,255,172,0.2);}
+.status-dot.error{background:var(--warn);}
+
+/* ── Sections ──────────────────────────────── */
+.section{display:none;}.section.active{display:block;}
+.page-title{font-family:var(--font-head);font-weight:700;font-size:26px;margin-bottom:4px;letter-spacing:-0.3px;}
+.page-sub{color:var(--muted);font-size:12px;margin-bottom:28px;}
+.section-label{font-family:var(--font-head);font-weight:700;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--research);margin-bottom:14px;}
+
+/* ── Cards & grids ─────────────────────────── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:24px;}
+.stats-grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:24px;}
+.stats-grid-6{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:24px;}
+.stat-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px;}
+.stat-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-family:var(--font-head);font-weight:700;}
+.stat-val{font-family:var(--font-head);font-weight:700;font-size:30px;color:var(--research);line-height:1;}
+.stat-unit{font-size:11px;color:var(--muted);margin-top:4px;}
+.stat-val.accent{color:var(--accent);}
+.stat-val.warn{color:var(--warn);}
+.charts-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-bottom:24px;}
+.chart-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;min-width:0;}
+.chart-card.full{grid-column:1/-1;}
+.chart-title{font-family:var(--font-head);font-weight:700;font-size:11px;text-transform:uppercase;color:var(--text);margin-bottom:14px;letter-spacing:0.5px;}
+.chart-wrap{position:relative;height:220px;}
+.chart-wrap.tall{height:280px;}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:18px;}
+.divider{border:none;border-top:1px solid var(--border);margin:24px 0;}
+.empty{color:var(--muted);font-size:13px;padding:24px;text-align:center;}
+
+/* ── BACI specific ─────────────────────────── */
+.baci-legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;font-size:11px;font-family:var(--font-head);}
+.baci-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle;}
+.baci-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;}
+.baci-cell{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.baci-cell-label{font-family:var(--font-head);font-weight:700;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;}
+.baci-cell-label.impact{color:var(--impact);}
+.baci-cell-label.control{color:var(--control);}
+.baci-cell-label.before{color:var(--before);}
+.baci-cell-label.after{color:var(--after);}
+.baci-val{font-family:var(--font-head);font-weight:700;font-size:28px;line-height:1;}
+.baci-val.impact{color:var(--impact);}
+.baci-val.control{color:var(--control);}
+.baci-unit{font-size:11px;color:var(--muted);margin-top:3px;}
+.baci-note{font-size:11px;color:var(--muted);font-style:italic;}
+
+/* ── Site comparison pills ─────────────────── */
+.site-tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;}
+.site-tab{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--font-head);font-weight:700;font-size:11px;cursor:pointer;transition:all 0.15s;}
+.site-tab.active{background:rgba(136,200,255,0.1);color:var(--research);border-color:var(--research);}
+
+/* ── Size distribution ─────────────────────── */
+.size-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;}
+.size-stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;}
+.size-stat-label{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;font-family:var(--font-head);font-weight:700;}
+.size-stat-val{font-family:var(--font-head);font-weight:700;font-size:20px;color:var(--research);line-height:1;}
+.size-stat-unit{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* ── Damage index bars ─────────────────────── */
+.damage-bar-wrap{margin-bottom:20px;}
+.damage-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.damage-bar-label{font-family:var(--font-head);font-weight:700;font-size:11px;width:70px;flex-shrink:0;}
+.damage-bar-track{flex:1;height:18px;background:var(--surface);border-radius:9px;overflow:hidden;}
+.damage-bar-fill{height:100%;border-radius:9px;transition:width 0.4s ease;}
+.damage-bar-pct{font-family:var(--font-head);font-weight:700;font-size:11px;width:45px;text-align:right;flex-shrink:0;}
+.damage-bar-count{font-size:10px;color:var(--muted);width:60px;flex-shrink:0;}
+
+/* ── Species table ─────────────────────────── */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{text-align:left;padding:9px 12px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);font-family:var(--font-head);font-weight:700;white-space:nowrap;}
+td{padding:10px 12px;border-bottom:1px solid rgba(92,80,96,0.4);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(136,200,255,0.02);}
+.vuln-badge{display:inline-block;padding:2px 7px;border-radius:8px;font-size:10px;font-family:var(--font-head);font-weight:700;}
+.vuln-A{background:rgba(217,255,172,0.15);color:var(--accent);}
+.vuln-B{background:rgba(136,200,255,0.15);color:var(--research);}
+.vuln-C{background:rgba(230,210,197,0.15);color:var(--scallop);}
+.vuln-D{background:rgba(255,140,105,0.15);color:var(--warn);}
+.vuln-E,.vuln-F{background:rgba(92,80,96,0.2);color:var(--muted);}
+
+/* ── Map ───────────────────────────────────── */
+#baciMap{height:420px;border-radius:10px;border:1px solid var(--border);}
+.map-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--muted);font-family:var(--font-head);}
+
+/* ── Info pill ─────────────────────────────── */
+.info-pill{display:inline-block;background:rgba(136,200,255,0.06);border:1px solid rgba(136,200,255,0.15);border-radius:6px;padding:7px 14px;font-size:11px;color:var(--muted);margin-bottom:18px;font-family:var(--font-head);}
+.info-pill strong{color:var(--research);font-weight:700;}
+.info-box{background:rgba(136,200,255,0.04);border:1px solid rgba(136,200,255,0.12);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:16px;}
+
+/* ── Mobile ─────────────────────────────────── */
+.mobile-header{display:none;}
+@media(max-width:768px){
+  .sidebar{display:none!important;}
+  .mobile-header{display:flex;align-items:center;justify-content:space-between;position:fixed;top:0;left:0;right:0;height:52px;background:var(--ocean);border-bottom:2px solid var(--research);padding:0 16px;z-index:200;}
+  .mobile-logo{height:22px;}
+  .mobile-menu-btn{background:none;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 12px;font-size:18px;cursor:pointer;}
+  .mobile-nav{display:none;position:fixed;top:52px;left:0;right:0;background:var(--ocean);border-bottom:1px solid var(--border);z-index:199;padding:8px 0;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+  .mobile-nav.open{display:block;}
+  .mobile-nav-item{display:flex;align-items:center;gap:12px;padding:13px 20px;font-family:var(--font-head);font-weight:700;font-size:13px;color:var(--muted);cursor:pointer;border-left:3px solid transparent;}
+  .mobile-nav-item.active{color:var(--research);border-left-color:var(--research);}
+  .mobile-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:198;}
+  .mobile-overlay.open{display:block;}
+  .main{margin-left:0!important;padding:16px;padding-top:68px;width:100%;box-sizing:border-box;}
+  .stats-grid,.stats-grid-3{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+  .stats-grid-6{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .charts-grid{grid-template-columns:1fr;}
+  .chart-card.full{grid-column:span 1;}
+  .baci-grid{grid-template-columns:1fr 1fr;}
+  .size-stats{grid-template-columns:repeat(3,1fr);}
+  .page-title{font-size:20px;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <img class="login-logo" src="ava-ocean-logo-mark-lime-purple-master.png">
+  <div class="lang-toggle">
+    <button class="lang-btn active" onclick="setLang('no')">NO</button>
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+  </div>
+  <div class="login-card">
+    <div class="login-title" id="loginTitle">Forskningsdashboard</div>
+    <div class="login-desc" id="loginDesc">Ava Ocean — PhD miljøvurdering</div>
+    <div class="login-field"><label id="labelEmail">E-post</label><input type="email" id="loginEmail" autocomplete="email"></div>
+    <div class="login-field"><label id="labelPass">Passord</label><input type="password" id="loginPassword" autocomplete="current-password"></div>
+    <button class="login-btn" id="loginBtn" onclick="signIn()">Logg inn</button>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-note" id="loginNote">Kontakt Dagny for tilgang.</div>
+    <div class="login-back"><a href="index.html" id="backLink">← Tilbake til plattformen</a></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- Mobile header -->
+  <div class="mobile-header">
+    <img class="mobile-logo" src="ava-ocean-logo-mark-lime-purple-master.png">
+    <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+  </div>
+  <div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileMenu()"></div>
+  <nav class="mobile-nav" id="mobileNav">
+    <div class="mobile-nav-item active" onclick="mobileNavTo('overview')">📊 <span id="mn0">Oversikt</span></div>
+    <div class="mobile-nav-item" onclick="mobileNavTo('baci')">🔬 BACI</div>
+    <div class="mobile-nav-item" onclick="mobileNavTo('diversity')">🌿 <span id="mn2">Diversitet</span></div>
+    <div class="mobile-nav-item" onclick="mobileNavTo('sizedist')">📏 <span id="mn3">Størrelsesfordeling</span></div>
+    <div class="mobile-nav-item" onclick="mobileNavTo('damage')">⚠️ <span id="mn4">Skadeindeks</span></div>
+    <div class="mobile-nav-item" onclick="mobileNavTo('benthic')">🦀 <span id="mn5">Bunndyr & bifangst</span></div>
+  </nav>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo-area">
+      <a href="index.html"><img class="logo-img" src="ava-ocean-logo-mark-lime-purple-master.png"></a>
+      <div class="logo-tagline" id="sideTagline">PhD Forskningsplattform</div>
+      <div class="badge-research">Research</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-item active" id="nav-overview" onclick="showSection('overview',this)"><span class="nav-icon">📊</span><span id="navOverview">Oversikt</span></div>
+      <div class="nav-item" id="nav-baci" onclick="showSection('baci',this)"><span class="nav-icon">🔬</span><span id="navBaci">BACI</span></div>
+      <div class="nav-item" id="nav-diversity" onclick="showSection('diversity',this)"><span class="nav-icon">🌿</span><span id="navDiversity">Diversitet</span></div>
+      <div class="nav-item" id="nav-sizedist" onclick="showSection('sizedist',this)"><span class="nav-icon">📏</span><span id="navSizedist">Størrelsesfordeling</span></div>
+      <div class="nav-item" id="nav-damage" onclick="showSection('damage',this)"><span class="nav-icon">⚠️</span><span id="navDamage">Skadeindeks</span></div>
+      <div class="nav-item" id="nav-benthic" onclick="showSection('benthic',this)"><span class="nav-icon">🦀</span><span id="navBenthic">Bunndyr & bifangst</span></div>
+    </nav>
+    <div class="filter-bar">
+      <label id="filterSiteLabel">Filtrer etter felt</label>
+      <select id="siteFilter" onchange="onFilterChange()">
+        <option value="all">Alle felt</option>
+        <option value="Bjørnøya">Bjørnøya</option>
+        <option value="Concordia">Concordia</option>
+        <option value="Kveithola">Kveithola</option>
+      </select>
+      <label id="filterYearLabel">År</label>
+      <select id="yearFilter" onchange="onFilterChange()">
+        <option value="all">Alle år</option>
+        <option value="2023">2023</option>
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+        <option value="2026">2026</option>
+        <option value="2027">2027</option>
+        <option value="2028">2028</option>
+      </select>
+    </div>
+    <div class="sidebar-footer">
+      <div class="status-bar"><div class="status-dot" id="statusDot"></div><span id="statusText">Kobler til...</span></div>
+      <div class="sidebar-lang">
+        <button class="sidebar-lang-btn active" onclick="setLang('no')">NO</button>
+        <button class="sidebar-lang-btn" onclick="setLang('en')">EN</button>
+      </div>
+      <div class="footer-row">
+        <div class="user-email" id="userEmail">—</div>
+        <button class="signout-btn" onclick="signOut()" id="signoutBtn">Logg ut</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" style="margin-left:260px;width:calc(100vw - 260px);box-sizing:border-box;">
+
+    <!-- ═══ OVERVIEW ══════════════════════════ -->
+    <div class="section active" id="section-overview">
+      <div class="page-title" id="titleOverview">Oversikt</div>
+      <div class="page-sub" id="subOverview">Laster...</div>
+
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label" id="lblSessions">Totale økter</div><div class="stat-val" id="statSessions">—</div><div class="stat-unit" id="unitSessions">forskningsøkter</div></div>
+        <div class="stat-card"><div class="stat-label" id="lblSpeciesRec">Artsregistreringer</div><div class="stat-val" id="statSpecies">—</div><div class="stat-unit" id="unitSpecies">unike arter</div></div>
+        <div class="stat-card"><div class="stat-label" id="lblScallops">Skjell målt</div><div class="stat-val accent" id="statScallops">—</div><div class="stat-unit">individer</div></div>
+        <div class="stat-card"><div class="stat-label" id="lblShannon">Shannon H' (snitt)</div><div class="stat-val" id="statShannon">—</div><div class="stat-unit" id="unitShannon">diversitetsindeks</div></div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label" id="lblTransects">Transekter</div><div class="stat-val" id="statTransects">—</div><div class="stat-unit" id="unitTransects">loggede transekter</div></div>
+        <div class="stat-card"><div class="stat-label" id="lblDamage">Snitt skadeindeks</div><div class="stat-val warn" id="statDamageAvg">—</div><div class="stat-unit">0–2 skala</div></div>
+        <div class="stat-card"><div class="stat-label" id="lblSurvival">Overlevelsesrate</div><div class="stat-val accent" id="statSurvival">—</div><div class="stat-unit">% uten dødelig skade</div></div>
+        <div class="stat-card"><div class="stat-label" id="lblUndersized">% Undermåls</div><div class="stat-val" id="statUndersized">—</div><div class="stat-unit">&lt; 55mm</div></div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title" id="chartSessionTypeTitle">Økttype fordeling</div>
+          <div class="chart-wrap"><canvas id="chartSessionType"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title" id="chartSessionSiteTitle">Økter per felt</div>
+          <div class="chart-wrap"><canvas id="chartSessionSite"></canvas></div>
+        </div>
+        <div class="chart-card full">
+          <div class="chart-title" id="chartTimelineTitle">Antall skjell målt over tid</div>
+          <div class="chart-wrap"><canvas id="chartTimeline"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section-label" id="lblDataStatus">Datastatus</div>
+      <div class="info-pill"><strong id="pillBaciLabel">BACI-design:</strong> <span id="pillBaciText">3 feltstasjoner · 30 kontrollpunkter · 3 feltsesonger (2026–2028)</span></div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th id="thSite">Felt</th>
+              <th id="thSessions">Økter</th>
+              <th id="thTransects">Transekter</th>
+              <th id="thSamples">Prøver</th>
+              <th id="thSpeciesRec">Artsreg.</th>
+              <th id="thScallops">Skjell</th>
+              <th id="thMeanSize">Snitt størrelse</th>
+              <th id="thShannon">Shannon H'</th>
+            </tr></thead>
+            <tbody id="overviewTableBody"><tr><td colspan="8" class="empty">Laster...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ BACI ═══════════════════════════════ -->
+    <div class="section" id="section-baci">
+      <div class="page-title" id="titleBaci">BACI-analyse</div>
+      <div class="page-sub" id="subBaci">Before-After Control-Impact design — sammenligner påvirkede og kontrollerte områder</div>
+
+      <div class="info-box" id="baciInfoBox">BACI-designet sammenligner endringer i påvirkede (impact) områder med endringer i kontrollområder (control) over tid. En statistisk effekt av høsting vil vises som en interaksjon mellom Before/After og Impact/Control.</div>
+
+      <div class="baci-legend">
+        <span><span class="baci-dot" style="background:var(--impact);"></span><span id="legImpact">Påvirket</span></span>
+        <span><span class="baci-dot" style="background:var(--control);"></span><span id="legControl">Kontroll</span></span>
+        <span><span class="baci-dot" style="background:var(--before);border:1px solid var(--border);"></span><span id="legBefore">Før</span></span>
+        <span><span class="baci-dot" style="background:var(--after);"></span><span id="legAfter">Etter</span></span>
+      </div>
+
+      <!-- 2×2 BACI summary cells -->
+      <div class="baci-grid" style="margin-bottom:20px;">
+        <div class="baci-cell">
+          <div class="baci-cell-label before">Før høsting — Påvirket</div>
+          <div class="baci-val impact" id="baciBI_shannon">—</div>
+          <div class="baci-unit">Shannon H'</div>
+          <div style="margin-top:8px;font-size:12px;"><span id="baciBI_n">—</span> <span class="baci-note" id="baciBI_note">prøver</span></div>
+        </div>
+        <div class="baci-cell">
+          <div class="baci-cell-label before">Før høsting — Kontroll</div>
+          <div class="baci-val control" id="baciBC_shannon">—</div>
+          <div class="baci-unit">Shannon H'</div>
+          <div style="margin-top:8px;font-size:12px;"><span id="baciBC_n">—</span> <span class="baci-note" id="baciBC_note">prøver</span></div>
+        </div>
+        <div class="baci-cell">
+          <div class="baci-cell-label after">Etter høsting — Påvirket</div>
+          <div class="baci-val impact" id="baciAI_shannon">—</div>
+          <div class="baci-unit">Shannon H'</div>
+          <div style="margin-top:8px;font-size:12px;"><span id="baciAI_n">—</span> <span class="baci-note" id="baciAI_note">prøver</span></div>
+        </div>
+        <div class="baci-cell">
+          <div class="baci-cell-label after">Etter høsting — Kontroll</div>
+          <div class="baci-val control" id="baciAC_shannon">—</div>
+          <div class="baci-unit">Shannon H'</div>
+          <div style="margin-top:8px;font-size:12px;"><span id="baciAC_n">—</span> <span class="baci-note" id="baciAC_note">prøver</span></div>
+        </div>
+      </div>
+
+      <!-- BACI interaction score -->
+      <div class="card" style="margin-bottom:20px;" id="baciDeltaCard">
+        <div class="section-label">BACI Δ — Estimert effekt</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+          <div>
+            <div class="stat-label" id="lblDeltaShannon">ΔShannon (Impact)</div>
+            <div style="font-family:var(--font-head);font-weight:700;font-size:24px;color:var(--research);" id="baciDeltaShannon">—</div>
+            <div style="font-size:11px;color:var(--muted);" id="baciDeltaShannonNote">(Etter−Før i påvirket)</div>
+          </div>
+          <div>
+            <div class="stat-label" id="lblDeltaControl">ΔShannon (Kontroll)</div>
+            <div style="font-family:var(--font-head);font-weight:700;font-size:24px;color:var(--research);" id="baciDeltaControl">—</div>
+            <div style="font-size:11px;color:var(--muted);" id="baciDeltaControlNote">(Etter−Før i kontroll)</div>
+          </div>
+          <div>
+            <div class="stat-label" id="lblBaciEffect">BACI-effekt</div>
+            <div style="font-family:var(--font-head);font-weight:700;font-size:24px;" id="baciEffect">—</div>
+            <div style="font-size:11px;color:var(--muted);" id="baciEffectNote">(ΔImpact − ΔKontroll)</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;font-size:11px;color:var(--muted);" id="baciInterpretation">Legg til prøvedata for å beregne BACI-effekten.</div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title" id="baciChartShannonTitle">Shannon H' — Påvirket vs Kontroll</div>
+          <div class="chart-wrap"><canvas id="chartBaciShannon"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title" id="baciChartSpeciesTitle">Artsrikhet per BACI-gruppe</div>
+          <div class="chart-wrap"><canvas id="chartBaciSpecies"></canvas></div>
+        </div>
+        <div class="chart-card full">
+          <div class="chart-title" id="baciChartTimeTitle">Shannon H' over tid — per gruppe</div>
+          <div class="chart-wrap tall"><canvas id="chartBaciTime"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Map of control sites + tow tracks -->
+      <div class="section-label" id="baciMapLabel">Kartoversikt — kontrollstasjoner & transekter</div>
+      <div id="baciMap"></div>
+      <div class="map-legend">
+        <div><span class="baci-dot" style="background:var(--impact);"></span><span id="mapLegImpact">Påvirket transekt</span></div>
+        <div><span class="baci-dot" style="background:var(--control);"></span><span id="mapLegControl">Kontrollstasjon</span></div>
+        <div><span class="baci-dot" style="background:var(--after);"></span><span id="mapLegAfter">Etter høsting</span></div>
+      </div>
+    </div>
+
+    <!-- ═══ DIVERSITY ══════════════════════════ -->
+    <div class="section" id="section-diversity">
+      <div class="page-title" id="titleDiversity">Diversitet</div>
+      <div class="page-sub" id="subDiversity">Shannon H', artsrikhet og sårbarhet per felt</div>
+
+      <div class="site-tabs" id="diversitySiteTabs">
+        <button class="site-tab active" onclick="filterDiversitySite('all',this)" id="divTabAll">Alle felt</button>
+        <button class="site-tab" onclick="filterDiversitySite('Bjørnøya',this)">Bjørnøya</button>
+        <button class="site-tab" onclick="filterDiversitySite('Concordia',this)">Concordia</button>
+        <button class="site-tab" onclick="filterDiversitySite('Kveithola',this)">Kveithola</button>
+      </div>
+
+      <div class="stats-grid-3">
+        <div class="stat-card"><div class="stat-label" id="lblDivUnique">Unike arter</div><div class="stat-val" id="divStatUnique">—</div></div>
+        <div class="stat-card"><div class="stat-label">Shannon H'</div><div class="stat-val" id="divStatShannon">—</div></div>
+        <div class="stat-card"><div class="stat-label" id="lblDivTotal">Totalt antall</div><div class="stat-val" id="divStatTotal">—</div><div class="stat-unit" id="unitDivTotal">ekstrapolert</div></div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title" id="divChartShannonTitle">Shannon H' per felt</div>
+          <div class="chart-wrap"><canvas id="chartDivShannon"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title" id="divChartVulnTitle">Fordeling etter sårbarhet</div>
+          <div class="chart-wrap"><canvas id="chartDivVuln"></canvas></div>
+        </div>
+        <div class="chart-card full">
+          <div class="chart-title" id="divChartTopTitle">Topp 10 arter etter antall (ekstrapolert)</div>
+          <div class="chart-wrap tall"><canvas id="chartDivTop"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section-label" id="lblDivTable">Artsoversikt</div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th id="dthSpecies">Art</th>
+              <th id="dthSci">Vitenskapelig</th>
+              <th id="dthVuln">Sårbarhet</th>
+              <th id="dthCat">Kategori</th>
+              <th id="dthCount">Antall (ekstr.)</th>
+              <th id="dthWeight">Vekt (g)</th>
+              <th id="dthSessions">Økter</th>
+            </tr></thead>
+            <tbody id="diversityTableBody"><tr><td colspan="7" class="empty">Laster...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SIZE DISTRIBUTION ═════════════════ -->
+    <div class="section" id="section-sizedist">
+      <div class="page-title" id="titleSizedist">Størrelsesfordeling</div>
+      <div class="page-sub" id="subSizedist">Skjellmålinger — bredde og høyde i mm</div>
+
+      <div class="site-tabs">
+        <button class="site-tab active" onclick="filterSizeSite('all',this)">Alle felt</button>
+        <button class="site-tab" onclick="filterSizeSite('Bjørnøya',this)">Bjørnøya</button>
+        <button class="site-tab" onclick="filterSizeSite('Concordia',this)">Concordia</button>
+        <button class="site-tab" onclick="filterSizeSite('Kveithola',this)">Kveithola</button>
+      </div>
+
+      <div class="size-stats" id="sizeStatCards">
+        <div class="size-stat"><div class="size-stat-label" id="sLblN">N</div><div class="size-stat-val" id="sStatN">—</div><div class="size-stat-unit" id="sUnitN">skjell</div></div>
+        <div class="size-stat"><div class="size-stat-label" id="sLblMean">Snitt</div><div class="size-stat-val" id="sStatMean">—</div><div class="size-stat-unit">mm</div></div>
+        <div class="size-stat"><div class="size-stat-label" id="sLblMedian">Median</div><div class="size-stat-val" id="sStatMedian">—</div><div class="size-stat-unit">mm</div></div>
+        <div class="size-stat"><div class="size-stat-label" id="sLblMin">Min</div><div class="size-stat-val" id="sStatMin">—</div><div class="size-stat-unit">mm</div></div>
+        <div class="size-stat"><div class="size-stat-label" id="sLblMax">Maks</div><div class="size-stat-val" id="sStatMax">—</div><div class="size-stat-unit">mm</div></div>
+      </div>
+      <div class="size-stats">
+        <div class="size-stat"><div class="size-stat-label" id="sLblUndersized">% Undermåls</div><div class="size-stat-val warn" id="sStatUndersized">—</div><div class="size-stat-unit">&lt; 55mm</div></div>
+        <div class="size-stat"><div class="size-stat-label" id="sLblSD">Std.avvik</div><div class="size-stat-val" id="sStatSD">—</div><div class="size-stat-unit">mm</div></div>
+        <div class="size-stat"><div class="size-stat-label" id="sLblRecruit">% Rekrutter</div><div class="size-stat-val accent" id="sStatRecruit">—</div><div class="size-stat-unit">attached</div></div>
+        <div class="size-stat"><div class="size-stat-label" id="sLblMeanH">Snitt høyde</div><div class="size-stat-val" id="sStatMeanH">—</div><div class="size-stat-unit">mm</div></div>
+        <div class="size-stat"><div class="size-stat-label" id="sLblAspect">Form-ratio</div><div class="size-stat-val" id="sStatAspect">—</div><div class="size-stat-unit">H/W</div></div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card full">
+          <div class="chart-title" id="sizeChartDistTitle">Størrelsesfordeling — bredde (mm)</div>
+          <div class="chart-wrap tall"><canvas id="chartSizeDist"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title" id="sizeChartSiteTitle">Snitt størrelse per felt</div>
+          <div class="chart-wrap"><canvas id="chartSizeSite"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title" id="sizeChartBATitle">Størrelse Før vs Etter</div>
+          <div class="chart-wrap"><canvas id="chartSizeBA"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Size sample summary table -->
+      <div class="section-label" id="lblSizeSampleTable">Prøvesammendrag (research_size_sample)</div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th id="stSample">Prøve-ID</th>
+              <th id="stShellW">Skjellvekt (g)</th>
+              <th id="stEmptyW">Tomme skall (g)</th>
+              <th id="stScallopW">Skjell+muskel (g)</th>
+              <th id="stStoneW">Stein (g)</th>
+              <th id="stStoneN">Stein (n)</th>
+              <th id="stTotalW">Total (g)</th>
+            </tr></thead>
+            <tbody id="sizeSampleTableBody"><tr><td colspan="7" class="empty">Laster...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ DAMAGE INDEX ═══════════════════════ -->
+    <div class="section" id="section-damage">
+      <div class="page-title" id="titleDamage">Skadeindeks</div>
+      <div class="page-sub" id="subDamage">Overlevelsesrate og skadeklassifisering for sortert bifangst</div>
+
+      <div class="info-pill"><strong id="pillDamageLabel">Skadeindeks:</strong> <span id="pillDamageText">0 = ingen skade · 1 = ikke-dødelig / overlevbar · 2 = dødelig</span></div>
+
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label" id="dLblTotal">Totalt målt</div><div class="stat-val" id="dStatTotal">—</div><div class="stat-unit">skjell</div></div>
+        <div class="stat-card"><div class="stat-label" id="dLblD0">Skade 0</div><div class="stat-val accent" id="dStatD0">—</div><div class="stat-unit" id="dUnitD0">ingen skade</div></div>
+        <div class="stat-card"><div class="stat-label" id="dLblD1">Skade 1</div><div class="stat-val" id="dStatD1">—</div><div class="stat-unit" id="dUnitD1">overlevbar</div></div>
+        <div class="stat-card"><div class="stat-label" id="dLblD2">Skade 2</div><div class="stat-val warn" id="dStatD2">—</div><div class="stat-unit" id="dUnitD2">dødelig</div></div>
+      </div>
+
+      <div class="stats-grid-3">
+        <div class="stat-card"><div class="stat-label" id="dLblSurvival">% Overlever</div><div class="stat-val accent" id="dStatSurvival">—</div><div class="stat-unit">(dmg 0+1)</div></div>
+        <div class="stat-card"><div class="stat-label" id="dLblLethal">% Dødelig</div><div class="stat-val warn" id="dStatLethal">—</div><div class="stat-unit">(dmg 2)</div></div>
+        <div class="stat-card"><div class="stat-label" id="dLblAvgDamage">Snitt skadeindeks</div><div class="stat-val" id="dStatAvg">—</div><div class="stat-unit">0–2</div></div>
+      </div>
+
+      <!-- Damage bars per site -->
+      <div class="section-label" id="dLblBySite">Skade per felt</div>
+      <div id="damageBySiteContainer"></div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title" id="dmgChartOverallTitle">Skadefordeling totalt</div>
+          <div class="chart-wrap"><canvas id="chartDamageOverall"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title" id="dmgChartSiteTitle">Skade % per felt</div>
+          <div class="chart-wrap"><canvas id="chartDamageSite"></canvas></div>
+        </div>
+        <div class="chart-card full">
+          <div class="chart-title" id="dmgChartTimeTitle">Skadeindeks over tid</div>
+          <div class="chart-wrap"><canvas id="chartDamageTime"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ BENTHIC & BYCATCH ══════════════════ -->
+    <div class="section" id="section-benthic">
+      <div class="page-title" id="titleBenthic">Bunndyr & bifangst</div>
+      <div class="page-sub" id="subBenthic">Artssammensetning per felt, økttype og sårbarhet</div>
+
+      <div class="site-tabs">
+        <button class="site-tab active" onclick="filterBenthicSite('all',this)">Alle felt</button>
+        <button class="site-tab" onclick="filterBenthicSite('Bjørnøya',this)">Bjørnøya</button>
+        <button class="site-tab" onclick="filterBenthicSite('Concordia',this)">Concordia</button>
+        <button class="site-tab" onclick="filterBenthicSite('Kveithola',this)">Kveithola</button>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title" id="benChartCatTitle">Fordeling etter kategori</div>
+          <div class="chart-wrap"><canvas id="chartBenthicCat"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title" id="benChartVulnTitle">Fordeling etter sårbarhet</div>
+          <div class="chart-wrap"><canvas id="chartBenthicVuln"></canvas></div>
+        </div>
+        <div class="chart-card full">
+          <div class="chart-title" id="benChartTopTitle">Topp bifangstarter (bentisk + kommersiell)</div>
+          <div class="chart-wrap tall"><canvas id="chartBenthicTop"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Substrate breakdown -->
+      <div class="section-label" id="lblSubstrate">Substrat og epifauna</div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title" id="benChartSubstrateTitle">Substrattype</div>
+          <div class="chart-wrap"><canvas id="chartSubstrate"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title" id="benChartEpiTitle">Epifauna-dekke</div>
+          <div class="chart-wrap"><canvas id="chartEpifaunal"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section-label" id="lblBenthicTable">Bentisk og bifangst — detaljert</div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th id="bthSpecies">Art</th>
+              <th id="bthSci">Vitenskapelig</th>
+              <th id="bthVuln">Sårbarhet</th>
+              <th id="bthCat">Kategori</th>
+              <th id="bthCount">Antall (ekstr.)</th>
+              <th id="bthWeight">Vekt (g)</th>
+              <th id="bthFreq">Frekvens</th>
+            </tr></thead>
+            <tbody id="benthicTableBody"><tr><td colspan="7" class="empty">Laster...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end .main -->
+</div><!-- end #app -->
+
+<script>
+const SUPABASE_URL='https://hpfxkamqbsbaohrwbppa.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwZnhrYW1xYnNiYW9ocndicHBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NjQyOTEsImV4cCI6MjA4ODA0MDI5MX0.coiX7bWx0CiiUmuU_pRMK8pSqe38-luT30lgatJBTz8';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentLang = 'no';
+let charts = {};
+let baciMapInstance = null;
+
+// Raw data
+let allSessions=[], allTransects=[], allSamples=[], allSpeciesRecords=[], allScallops=[], allSizeSamples=[], allSpeciesRef=[], allControlSites=[], allTrips=[];
+
+// Filter state
+let filterSite = 'all', filterYear = 'all', divSiteFilter = 'all', sizeSiteFilter = 'all', benthicSiteFilter = 'all';
+
+// ═══════════════════════════════════════════════════
+// TRANSLATIONS
+// ═══════════════════════════════════════════════════
+const T = {
+  no: {
+    loginTitle:'Forskningsdashboard', loginDesc:'Ava Ocean — PhD miljøvurdering',
+    signIn:'Logg inn', signingIn:'Logger inn...', signOut:'Logg ut',
+    wrongCreds:'Feil e-post eller passord.', enterCreds:'Fyll inn e-post og passord.',
+    contactDagny:'Kontakt Dagny for tilgang.', backHome:'← Tilbake til plattformen',
+    overview:'Oversikt', baci:'BACI', diversity:'Diversitet', sizedist:'Størrelsesfordeling',
+    damage:'Skadeindeks', benthic:'Bunndyr & bifangst',
+    allSites:'Alle felt', connected:'Tilkoblet', error:'Feil', connecting:'Kobler til...',
+    filterSite:'Filtrer etter felt', filterYear:'År',
+    sessions:'Forskningsøkter', species:'Unike arter', scallops:'Skjell målt',
+    transects:'Transekter',
+    impact:'Påvirket', control:'Kontroll', before:'Før', after:'Etter',
+    samples:'prøver', noData:'Ingen data ennå.',
+    researchPlatform:'PhD Forskningsplattform',
+  },
+  en: {
+    loginTitle:'Research Dashboard', loginDesc:'Ava Ocean — PhD environmental assessment',
+    signIn:'Sign In', signingIn:'Signing in...', signOut:'Sign out',
+    wrongCreds:'Incorrect email or password.', enterCreds:'Please enter email and password.',
+    contactDagny:'Contact Dagny if you need access.', backHome:'← Back to platform home',
+    overview:'Overview', baci:'BACI', diversity:'Diversity', sizedist:'Size Distribution',
+    damage:'Damage Index', benthic:'Benthic & Bycatch',
+    allSites:'All sites', connected:'Connected', error:'Error', connecting:'Connecting...',
+    filterSite:'Filter by site', filterYear:'Year',
+    sessions:'Research sessions', species:'Unique species', scallops:'Scallops measured',
+    transects:'Transects',
+    impact:'Impact', control:'Control', before:'Before', after:'After',
+    samples:'samples', noData:'No data yet.',
+    researchPlatform:'PhD Research Platform',
+  }
+};
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('ava_lang', lang);
+  const no = lang === 'no';
+  document.querySelectorAll('.lang-btn,.sidebar-lang-btn').forEach(b => b.classList.toggle('active', b.textContent === lang.toUpperCase()));
+  const s = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
+  const t = T[lang];
+
+  // ── Login ──
+  s('loginTitle', t.loginTitle); s('loginDesc', t.loginDesc);
+  s('loginBtn', t.signIn); s('loginNote', t.contactDagny); s('backLink', t.backHome);
+
+  // ── Sidebar ──
+  s('signoutBtn', t.signOut);
+  s('sideTagline', t.researchPlatform);
+  s('navOverview', t.overview); s('navBaci', t.baci); s('navDiversity', no?'Diversitet':'Diversity');
+  s('navSizedist', no?'Størrelsesfordeling':'Size Distribution');
+  s('navDamage', no?'Skadeindeks':'Damage Index');
+  s('navBenthic', no?'Bunndyr & bifangst':'Benthic & Bycatch');
+  s('filterSiteLabel', no?'Filtrer etter felt':'Filter by site');
+  s('filterYearLabel', no?'År':'Year');
+  s('statusText', document.getElementById('statusDot')?.classList.contains('connected') ? t.connected : document.getElementById('statusDot')?.classList.contains('error') ? t.error : t.connecting);
+  const sf = document.getElementById('siteFilter'); if(sf&&sf.options[0]) sf.options[0].textContent = no?'Alle felt':'All sites';
+
+  // ── Mobile nav ──
+  s('mn0', t.overview); s('mn2', no?'Diversitet':'Diversity');
+  s('mn3', no?'Størrelsesfordeling':'Size Distribution');
+  s('mn4', no?'Skadeindeks':'Damage Index');
+  s('mn5', no?'Bunndyr & bifangst':'Benthic & Bycatch');
+
+  // ── Page titles & subs ──
+  s('titleOverview', t.overview); s('titleBaci', 'BACI');
+  s('titleDiversity', no?'Diversitet':'Diversity');
+  s('titleSizedist', no?'Størrelsesfordeling':'Size Distribution');
+  s('titleDamage', no?'Skadeindeks':'Damage Index');
+  s('titleBenthic', no?'Bunndyr & bifangst':'Benthic & Bycatch');
+  s('subBaci', no?'Before-After Control-Impact design — sammenligner påvirkede og kontrollerte områder':'Before-After Control-Impact design — comparing impacted and control areas');
+  s('subDiversity', no?'Shannon H\', artsrikhet og sårbarhet per felt':'Shannon H\', species richness and vulnerability by site');
+  s('subSizedist', no?'Skjellmålinger — bredde og høyde i mm':'Scallop measurements — width and height in mm');
+  s('subDamage', no?'Overlevelsesrate og skadeklassifisering for sortert bifangst':'Survival rate and damage classification for sorted bycatch');
+  s('subBenthic', no?'Artssammensetning per felt, økttype og sårbarhet':'Species composition by site, session type and vulnerability');
+
+  // ── Overview stat labels ──
+  s('lblSessions', no?'Totale økter':'Total Sessions');
+  s('unitSessions', no?'forskningsøkter':'research sessions');
+  s('lblSpeciesRec', no?'Artsregistreringer':'Species Records');
+  s('unitSpecies', no?'unike arter':'unique species');
+  s('lblScallops', no?'Skjell målt':'Scallops Measured');
+  s('lblShannon', 'Shannon H\' (snitt)');
+  s('unitShannon', no?'diversitetsindeks':'diversity index');
+  s('lblTransects', no?'Transekter':'Transects');
+  s('unitTransects', no?'loggede transekter':'logged transects');
+  s('lblDamage', no?'Snitt skadeindeks':'Avg Damage Index');
+  s('lblSurvival', no?'Overlevelsesrate':'Survival Rate');
+  s('lblUndersized', no?'% Undermåls':'% Undersized');
+  s('lblDataStatus', no?'Datastatus':'Data Status');
+  s('pillBaciLabel', no?'BACI-design:':'BACI design:');
+  s('pillBaciText', no?'3 feltstasjoner · 30 kontrollpunkter · 3 feltsesonger (2026–2028)':'3 field stations · 30 control points · 3 field seasons (2026–2028)');
+
+  // ── Overview table headers ──
+  s('thSite', no?'Felt':'Site');
+  s('thSessions', no?'Økter':'Sessions');
+  s('thTransects', no?'Transekter':'Transects');
+  s('thSamples', no?'Prøver':'Samples');
+  s('thSpeciesRec', no?'Artsreg.':'Species');
+  s('thScallops', no?'Skjell':'Scallops');
+  s('thMeanSize', no?'Snitt størrelse':'Mean size');
+  s('thShannon', 'Shannon H\'');
+
+  // ── Overview chart titles ──
+  s('chartSessionTypeTitle', no?'Økttype fordeling':'Session type breakdown');
+  s('chartSessionSiteTitle', no?'Økter per felt':'Sessions by site');
+  s('chartTimelineTitle', no?'Antall skjell målt over tid':'Scallops measured over time');
+
+  // ── BACI ──
+  s('baciInfoBox', no?'BACI-designet sammenligner endringer i påvirkede (impact) områder med endringer i kontrollområder (control) over tid. En statistisk effekt av høsting vil vises som en interaksjon mellom Before/After og Impact/Control.':'The BACI design compares changes in impacted areas with changes in control areas over time. A statistical effect of harvesting will appear as an interaction between Before/After and Impact/Control.');
+  s('legImpact', no?'Påvirket':'Impact'); s('legControl', no?'Kontroll':'Control');
+  s('legBefore', no?'Før':'Before'); s('legAfter', no?'Etter':'After');
+  s('baciBI_note', no?'prøver':'samples'); s('baciBC_note', no?'prøver':'samples');
+  s('baciAI_note', no?'prøver':'samples'); s('baciAC_note', no?'prøver':'samples');
+  s('lblDeltaShannon', no?'ΔShannon (Påvirket)':'ΔShannon (Impact)');
+  s('baciDeltaShannonNote', no?'(Etter−Før i påvirket)':'(After−Before in impact)');
+  s('lblDeltaControl', no?'ΔShannon (Kontroll)':'ΔShannon (Control)');
+  s('baciDeltaControlNote', no?'(Etter−Før i kontroll)':'(After−Before in control)');
+  s('lblBaciEffect', no?'BACI-effekt':'BACI effect');
+  s('baciEffectNote', no?'(ΔPåvirket − ΔKontroll)':'(ΔImpact − ΔControl)');
+  s('baciChartShannonTitle', no?'Shannon H\' — Påvirket vs Kontroll':'Shannon H\' — Impact vs Control');
+  s('baciChartSpeciesTitle', no?'Artsrikhet per BACI-gruppe':'Species richness by BACI group');
+  s('baciChartTimeTitle', no?'Shannon H\' over tid — per gruppe':'Shannon H\' over time — by group');
+  s('baciMapLabel', no?'Kartoversikt — kontrollstasjoner & transekter':'Map — control stations & transects');
+  s('mapLegImpact', no?'Påvirket transekt':'Impact transect');
+  s('mapLegControl', no?'Kontrollstasjon':'Control station');
+  s('mapLegAfter', no?'Etter høsting':'After harvesting');
+
+  // ── Diversity ──
+  s('divTabAll', no?'Alle felt':'All sites');
+  s('lblDivUnique', no?'Unike arter':'Unique species');
+  s('lblDivTotal', no?'Totalt antall':'Total count');
+  s('unitDivTotal', no?'ekstrapolert':'extrapolated');
+  s('divChartShannonTitle', no?'Shannon H\' per felt':'Shannon H\' by site');
+  s('divChartVulnTitle', no?'Fordeling etter sårbarhet':'By vulnerability class');
+  s('divChartTopTitle', no?'Topp 10 arter etter antall (ekstrapolert)':'Top 10 species by count (extrapolated)');
+  s('lblDivTable', no?'Artsoversikt':'Species overview');
+  s('dthSpecies', no?'Art':'Species'); s('dthSci', no?'Vitenskapelig':'Scientific');
+  s('dthVuln', no?'Sårbarhet':'Vulnerability'); s('dthCat', no?'Kategori':'Category');
+  s('dthCount', no?'Antall (ekstr.)':'Count (extrap.)'); s('dthWeight', no?'Vekt (g)':'Weight (g)');
+  s('dthSessions', no?'Økter':'Sessions');
+
+  // ── Size distribution ──
+  s('sLblN', 'N'); s('sUnitN', no?'skjell':'scallops');
+  s('sLblMean', no?'Snitt':'Mean'); s('sLblMedian', 'Median');
+  s('sLblMin', 'Min'); s('sLblMax', no?'Maks':'Max');
+  s('sLblUndersized', no?'% Undermåls':'% Undersized');
+  s('sLblSD', no?'Std.avvik':'Std.dev');
+  s('sLblRecruit', no?'% Rekrutter':'% Recruits');
+  s('sLblMeanH', no?'Snitt høyde':'Mean height');
+  s('sLblAspect', no?'Form-ratio':'Aspect ratio');
+  s('sizeChartDistTitle', no?'Størrelsesfordeling — bredde (mm)':'Size distribution — width (mm)');
+  s('sizeChartSiteTitle', no?'Snitt størrelse per felt':'Mean size by site');
+  s('sizeChartBATitle', no?'Størrelse Før vs Etter':'Size Before vs After');
+  s('lblSizeSampleTable', no?'Prøvesammendrag (research_size_sample)':'Sample summary (research_size_sample)');
+  s('stSample', no?'Prøve-ID':'Sample ID');
+  s('stShellW', no?'Skjellvekt (g)':'Shell weight (g)');
+  s('stEmptyW', no?'Tomme skall (g)':'Empty shells (g)');
+  s('stScallopW', no?'Skjell+muskel (g)':'Scallop+meat (g)');
+  s('stStoneW', no?'Stein (g)':'Stone (g)');
+  s('stStoneN', no?'Stein (n)':'Stone (n)');
+  s('stTotalW', no?'Total (g)':'Total (g)');
+
+  // ── Damage index ──
+  s('pillDamageLabel', no?'Skadeindeks:':'Damage index:');
+  s('pillDamageText', no?'0 = ingen skade · 1 = ikke-dødelig / overlevbar · 2 = dødelig':'0 = no damage · 1 = non-lethal / survivable · 2 = lethal');
+  s('dLblTotal', no?'Totalt målt':'Total measured');
+  s('dLblD0', no?'Skade 0':'Damage 0'); s('dUnitD0', no?'ingen skade':'no damage');
+  s('dLblD1', no?'Skade 1':'Damage 1'); s('dUnitD1', no?'overlevbar':'survivable');
+  s('dLblD2', no?'Skade 2':'Damage 2'); s('dUnitD2', no?'dødelig':'lethal');
+  s('dLblSurvival', no?'% Overlever':'% Survive');
+  s('dLblLethal', no?'% Dødelig':'% Lethal');
+  s('dLblAvgDamage', no?'Snitt skadeindeks':'Avg damage index');
+  s('dLblBySite', no?'Skade per felt':'Damage by site');
+  s('dmgChartOverallTitle', no?'Skadefordeling totalt':'Overall damage distribution');
+  s('dmgChartSiteTitle', no?'Skade % per felt':'Damage % by site');
+  s('dmgChartTimeTitle', no?'Skadeindeks over tid':'Damage index over time');
+
+  // ── Benthic ──
+  s('benChartCatTitle', no?'Fordeling etter kategori':'By catch category');
+  s('benChartVulnTitle', no?'Fordeling etter sårbarhet':'By vulnerability class');
+  s('benChartTopTitle', no?'Topp bifangstarter (bentisk + kommersiell)':'Top bycatch species (benthic + commercial)');
+  s('lblSubstrate', no?'Substrat og epifauna':'Substrate and epifauna');
+  s('benChartSubstrateTitle', no?'Substrattype':'Substrate type');
+  s('benChartEpiTitle', no?'Epifauna-dekke':'Epifaunal cover');
+  s('lblBenthicTable', no?'Bentisk og bifangst — detaljert':'Benthic and bycatch — detailed');
+  s('bthSpecies', no?'Art':'Species'); s('bthSci', no?'Vitenskapelig':'Scientific');
+  s('bthVuln', no?'Sårbarhet':'Vulnerability'); s('bthCat', no?'Kategori':'Category');
+  s('bthCount', no?'Antall (ekstr.)':'Count (extrap.)'); s('bthWeight', no?'Vekt (g)':'Weight (g)');
+  s('bthFreq', no?'Frekvens':'Frequency');
+
+  // ── Re-render dynamic content ──
+  if(allSessions.length) renderAll();
+}
+function initLang() { const s = localStorage.getItem('ava_lang') || 'no'; if(s !== 'no') setLang(s); }
+const no = () => currentLang === 'no';
+const L = (n, e) => no() ? n : e;
+
+// ═══════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════
+async function init() {
+  initLang();
+  const { data: { session } } = await sb.auth.getSession();
+  if(session) showApp(session.user);
+  sb.auth.onAuthStateChange((ev, s) => { if(s) showApp(s.user); else showLogin(); });
+}
+function showLogin() { document.getElementById('loginScreen').style.display='flex'; document.getElementById('app').style.display='none'; }
+async function showApp(user) {
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('userEmail').textContent = user?.email || '—';
+  await loadAll();
+}
+async function signIn() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const btn = document.getElementById('loginBtn'), errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+  if(!email || !password) { errEl.textContent = T[currentLang].enterCreds; return; }
+  btn.disabled = true; btn.textContent = T[currentLang].signingIn;
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if(error) { errEl.textContent = T[currentLang].wrongCreds; btn.disabled = false; btn.textContent = T[currentLang].signIn; }
+}
+async function signOut() { await sb.auth.signOut(); showLogin(); }
+function setStatus(s) {
+  document.getElementById('statusDot').className = 'status-dot ' + s;
+  document.getElementById('statusText').textContent = s === 'connected' ? T[currentLang].connected : s === 'error' ? T[currentLang].error : T[currentLang].connecting;
+}
+
+// ═══════════════════════════════════════════════════
+// DATA LOADING
+// ═══════════════════════════════════════════════════
+async function loadAll() {
+  try {
+    setStatus('connecting');
+    const [sessions, trips, transects, samples, speciesRec, scallops, sizeSamples, speciesRef, controlSites] = await Promise.all([
+      sb.from('research_session').select('*,trip_registry(trip_code,trip_date,site_registry(site_name))').order('created_at', { ascending: true }),
+      sb.from('trip_registry').select('*,site_registry(site_name)').order('trip_date', { ascending: false }),
+      sb.from('research_transect').select('*,research_session(session_type,session_date,trip_registry(site_registry(site_name)))').order('created_at', { ascending: true }),
+      sb.from('research_catch_sample').select('*').order('created_at', { ascending: true }),
+      sb.from('research_species_record').select('*,species_reference(common_name,scientific_name,vulnerability,catch_category),research_catch_sample(extrapolation_factor,research_session(trip_registry(site_registry(site_name))))').order('created_at', { ascending: true }),
+      sb.from('research_scallop_measurement').select('*,research_catch_sample(research_session(session_date,trip_registry(site_registry(site_name))),research_transect(baci_designation,before_after))').order('created_at', { ascending: true }),
+      sb.from('research_size_sample').select('*,research_catch_sample(sample_code,research_session(trip_registry(site_registry(site_name))))').order('created_at', { ascending: true }),
+      sb.from('species_reference').select('*').eq('is_active', true).order('common_name'),
+      sb.from('control_site').select('*').order('control_id').order('vertex_order'),
+    ]);
+    allSessions = sessions.data || [];
+    allTrips = trips.data || [];
+    allTransects = transects.data || [];
+    allSamples = samples.data || [];
+    allSpeciesRecords = speciesRec.data || [];
+    allScallops = scallops.data || [];
+    allSizeSamples = sizeSamples.data || [];
+    allSpeciesRef = speciesRef.data || [];
+    allControlSites = controlSites.data || [];
+    setStatus('connected');
+    renderAll();
+  } catch(e) {
+    setStatus('error');
+    console.error(e);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// FILTERS
+// ═══════════════════════════════════════════════════
+function onFilterChange() {
+  filterSite = document.getElementById('siteFilter').value;
+  filterYear = document.getElementById('yearFilter').value;
+  renderAll();
+}
+
+function getFilteredSessions() {
+  return allSessions.filter(s => {
+    const site = s.trip_registry?.site_registry?.site_name;
+    const year = s.session_date?.slice(0,4) || s.trip_registry?.trip_date?.slice(0,4);
+    if(filterSite !== 'all' && site !== filterSite) return false;
+    if(filterYear !== 'all' && year !== filterYear) return false;
+    return true;
+  });
+}
+
+function getFilteredSpeciesRecords(siteOverride) {
+  const site = siteOverride || filterSite;
+  const sessions = getFilteredSessions().map(s => s.id);
+  return allSpeciesRecords.filter(r => {
+    const recSite = r.research_catch_sample?.research_session?.trip_registry?.site_registry?.site_name;
+    if(site !== 'all' && recSite !== site) return false;
+    // Year filter via session
+    const sampleSessionId = r.research_catch_sample?.session_id;
+    if(filterYear !== 'all') {
+      const sess = allSessions.find(s => s.id === sampleSessionId);
+      const year = sess?.session_date?.slice(0,4);
+      if(year !== filterYear) return false;
+    }
+    return true;
+  });
+}
+
+function getFilteredScallops(siteOverride) {
+  const site = siteOverride || filterSite;
+  return allScallops.filter(s => {
+    const scSite = s.research_catch_sample?.research_session?.trip_registry?.site_registry?.site_name;
+    if(site !== 'all' && scSite !== site) return false;
+    if(filterYear !== 'all') {
+      const year = s.research_catch_sample?.research_session?.session_date?.slice(0,4);
+      if(year !== filterYear) return false;
+    }
+    return true;
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// CALCULATIONS
+// ═══════════════════════════════════════════════════
+function calcShannon(records) {
+  const counts = {};
+  let total = 0;
+  records.forEach(r => {
+    const key = r.species_ref_id || r.custom_species_name || 'unknown';
+    const n = r.total_count_extrapolated || r.catch_count || 0;
+    counts[key] = (counts[key] || 0) + n;
+    total += n;
+  });
+  if(total === 0 || Object.keys(counts).length === 0) return null;
+  let H = 0;
+  Object.values(counts).forEach(n => { if(n > 0) { const p = n / total; H -= p * Math.log(p); } });
+  return H;
+}
+
+function calcShannonFromCounts(countsObj, total) {
+  if(total === 0) return null;
+  let H = 0;
+  Object.values(countsObj).forEach(n => { if(n > 0) { const p = n/total; H -= p * Math.log(p); } });
+  return H;
+}
+
+function sizeStats(scallops) {
+  const widths = scallops.filter(s => s.width_mm != null).map(s => s.width_mm);
+  if(!widths.length) return { n:0, mean:null, median:null, min:null, max:null, sd:null };
+  widths.sort((a,b) => a-b);
+  const n = widths.length;
+  const mean = widths.reduce((a,b) => a+b, 0) / n;
+  const median = widths[Math.floor(n/2)];
+  const min = widths[0], max = widths[n-1];
+  const variance = widths.reduce((a,b) => a + (b-mean)**2, 0) / n;
+  const sd = Math.sqrt(variance);
+  return { n, mean, median, min, max, sd };
+}
+
+function binSizes(scallops, binWidth=5) {
+  const widths = scallops.filter(s => s.width_mm != null).map(s => s.width_mm);
+  if(!widths.length) return { labels:[], counts:[] };
+  const min = Math.floor(Math.min(...widths) / binWidth) * binWidth;
+  const max = Math.ceil(Math.max(...widths) / binWidth) * binWidth;
+  const bins = {};
+  for(let b = min; b <= max; b += binWidth) bins[b] = 0;
+  widths.forEach(w => { const bin = Math.floor(w / binWidth) * binWidth; bins[bin] = (bins[bin] || 0) + 1; });
+  return { labels: Object.keys(bins).map(b => b+'-'+(parseInt(b)+binWidth)), counts: Object.values(bins) };
+}
+
+// ═══════════════════════════════════════════════════
+// CHART HELPERS
+// ═══════════════════════════════════════════════════
+const chartDefaults = {
+  plugins: { legend: { labels: { color:'#a8959e', font:{ family:'ABCFavorit', size:11 } } } },
+  scales: {
+    x: { ticks: { color:'#a8959e', font:{ family:'ABCFavorit', size:10 } }, grid: { color:'#5c5060' } },
+    y: { ticks: { color:'#a8959e', font:{ family:'ABCFavorit', size:10 } }, grid: { color:'#5c5060' } }
+  }
+};
+function makeChart(id, type, data, options={}) {
+  if(charts[id]) charts[id].destroy();
+  const ctx = document.getElementById(id)?.getContext('2d');
+  if(!ctx) return;
+  charts[id] = new Chart(ctx, { type, data, options: { ...chartDefaults, ...options, responsive:true, maintainAspectRatio:false } });
+}
+function noScalesOpts() {
+  return { plugins:{ legend:{ labels:{ color:'#a8959e', font:{ family:'ABCFavorit', size:11 } } } }, scales:{} };
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER ALL
+// ═══════════════════════════════════════════════════
+function renderAll() {
+  renderOverview();
+  renderBaci();
+  renderDiversity();
+  renderSizeDist();
+  renderDamage();
+  renderBenthic();
+}
+
+// ═══════════════════════════════════════════════════
+// OVERVIEW
+// ═══════════════════════════════════════════════════
+function renderOverview() {
+  const sessions = getFilteredSessions();
+  const specRec = getFilteredSpeciesRecords();
+  const scallops = getFilteredScallops();
+  const transects = allTransects.filter(t => sessions.map(s=>s.id).includes(t.session_id));
+
+  // Unique species
+  const uniqueSpecies = new Set(specRec.map(r => r.species_ref_id || r.custom_species_name)).size;
+  // Shannon
+  const H = calcShannon(specRec);
+  // Undersized
+  const widths = scallops.filter(s=>s.width_mm!=null).map(s=>s.width_mm);
+  const pctUndersized = widths.length ? ((widths.filter(w=>w<55).length/widths.length)*100).toFixed(1) : '—';
+  // Damage
+  const dmg = scallops.filter(s=>s.damage_index!=null);
+  const avgDmg = dmg.length ? (dmg.reduce((a,s)=>a+s.damage_index,0)/dmg.length).toFixed(2) : '—';
+  const survival = dmg.length ? (((dmg.filter(s=>s.damage_index<2).length)/dmg.length)*100).toFixed(1) : '—';
+
+  const set = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
+  set('statSessions', sessions.length);
+  set('statSpecies', uniqueSpecies);
+  set('statScallops', scallops.length);
+  set('statShannon', H ? H.toFixed(3) : '—');
+  set('statTransects', transects.length);
+  set('statDamageAvg', avgDmg);
+  set('statSurvival', survival !== '—' ? survival + '%' : '—');
+  set('statUndersized', pctUndersized !== '—' ? pctUndersized + '%' : '—');
+  set('subOverview', `${sessions.length} ${L('forskningsøkter','research sessions')} · ${scallops.length} ${L('skjell','scallops')} · ${L('Oppdatert','Updated')} ${new Date().toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'})}`);
+
+  // Session type chart
+  const typeCounts = { commercial:0, baci:0, control:0 };
+  sessions.forEach(s => { if(typeCounts[s.session_type] !== undefined) typeCounts[s.session_type]++; });
+  makeChart('chartSessionType', 'doughnut', {
+    labels: [L('Kommersiell','Commercial'), 'BACI', L('Kontroll','Control')],
+    datasets: [{ data: [typeCounts.commercial, typeCounts.baci, typeCounts.control], backgroundColor: ['rgba(217,255,172,0.75)','rgba(136,200,255,0.75)','rgba(230,210,197,0.75)'], borderColor:['#D9FFAC','#88C8FF','#E6D2C5'], borderWidth:1 }]
+  }, noScalesOpts());
+
+  // Sessions per site
+  const siteCounts = {};
+  sessions.forEach(s => { const site = s.trip_registry?.site_registry?.site_name || L('Ukjent','Unknown'); siteCounts[site] = (siteCounts[site]||0)+1; });
+  const siteKeys = Object.keys(siteCounts);
+  const siteColors = ['rgba(136,200,255,0.7)','rgba(217,255,172,0.7)','rgba(230,210,197,0.7)'];
+  makeChart('chartSessionSite', 'bar', {
+    labels: siteKeys, datasets: [{ data: siteKeys.map(k=>siteCounts[k]), backgroundColor: siteColors, borderRadius: 4 }]
+  }, { ...chartDefaults, plugins: { legend: { display: false } } });
+
+  // Timeline: scallops measured per month
+  const monthCounts = {};
+  scallops.forEach(s => {
+    const date = s.research_catch_sample?.research_session?.session_date || s.created_at?.slice(0,10);
+    if(!date) return;
+    const m = date.slice(0,7);
+    monthCounts[m] = (monthCounts[m]||0) + 1;
+  });
+  const months = Object.keys(monthCounts).sort();
+  makeChart('chartTimeline', 'line', {
+    labels: months,
+    datasets: [{ label: L('Skjell målt','Scallops measured'), data: months.map(m=>monthCounts[m]), borderColor:'#88C8FF', backgroundColor:'rgba(136,200,255,0.1)', tension:0.3, pointRadius:4, pointBackgroundColor:'#88C8FF' }]
+  }, { ...chartDefaults, plugins:{ legend:{ display:false } } });
+
+  // Overview table by site
+  const sites = ['Bjørnøya','Concordia','Kveithola'];
+  const tbody = document.getElementById('overviewTableBody');
+  tbody.innerHTML = sites.map(site => {
+    const siteSessions = allSessions.filter(s => s.trip_registry?.site_registry?.site_name === site);
+    const siteTransects = allTransects.filter(t => siteSessions.map(ss=>ss.id).includes(t.session_id));
+    const siteSamples = allSamples.filter(s => siteSessions.map(ss=>ss.id).includes(s.session_id));
+    const siteSpecRec = allSpeciesRecords.filter(r => r.research_catch_sample?.research_session?.trip_registry?.site_registry?.site_name === site);
+    const siteScallops = allScallops.filter(s => s.research_catch_sample?.research_session?.trip_registry?.site_registry?.site_name === site);
+    const H_site = calcShannon(siteSpecRec);
+    const widths_site = siteScallops.filter(s=>s.width_mm!=null).map(s=>s.width_mm);
+    const meanSize = widths_site.length ? (widths_site.reduce((a,b)=>a+b,0)/widths_site.length).toFixed(1) : '—';
+    const uniqueSp = new Set(siteSpecRec.map(r=>r.species_ref_id||r.custom_species_name)).size;
+    return `<tr>
+      <td><strong>${site}</strong></td>
+      <td>${siteSessions.length}</td>
+      <td>${siteTransects.length}</td>
+      <td>${siteSamples.length}</td>
+      <td>${uniqueSp}</td>
+      <td style="color:var(--research)">${siteScallops.length}</td>
+      <td>${meanSize} mm</td>
+      <td><strong style="color:var(--research)">${H_site ? H_site.toFixed(3) : '—'}</strong></td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════
+// BACI
+// ═══════════════════════════════════════════════════
+function renderBaci() {
+  const sessions = getFilteredSessions();
+  const sessionIds = sessions.map(s => s.id);
+
+  // Get transects with BACI designation
+  const baciTransects = allTransects.filter(t => sessionIds.includes(t.session_id) && t.baci_designation);
+
+  // Group species records by BACI quadrant
+  function getBaciGroup(designation, beforeAfter) {
+    const transectIds = baciTransects
+      .filter(t => t.baci_designation === designation && t.before_after === beforeAfter)
+      .map(t => t.id);
+    const sampleIds = allSamples.filter(s => transectIds.includes(s.transect_id)).map(s => s.id);
+    return allSpeciesRecords.filter(r => sampleIds.includes(r.sample_id));
+  }
+
+  const groups = {
+    BI: getBaciGroup('impact','before'),
+    BC: getBaciGroup('control','before'),
+    AI: getBaciGroup('impact','after'),
+    AC: getBaciGroup('control','after'),
+  };
+
+  const fmt = (H, n, prefix) => {
+    const set = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
+    set(`baci${prefix}_shannon`, H ? H.toFixed(3) : '—');
+    set(`baci${prefix}_n`, n);
+  };
+
+  const H_BI = calcShannon(groups.BI), n_BI = new Set(groups.BI.map(r=>r.sample_id)).size;
+  const H_BC = calcShannon(groups.BC), n_BC = new Set(groups.BC.map(r=>r.sample_id)).size;
+  const H_AI = calcShannon(groups.AI), n_AI = new Set(groups.AI.map(r=>r.sample_id)).size;
+  const H_AC = calcShannon(groups.AC), n_AC = new Set(groups.AC.map(r=>r.sample_id)).size;
+
+  fmt(H_BI, n_BI, 'BI'); fmt(H_BC, n_BC, 'BC');
+  fmt(H_AI, n_AI, 'AI'); fmt(H_AC, n_AC, 'AC');
+
+  // Delta calculations
+  const set = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
+  const deltaImpact = (H_AI != null && H_BI != null) ? (H_AI - H_BI) : null;
+  const deltaControl = (H_AC != null && H_BC != null) ? (H_AC - H_BC) : null;
+  const baciEffect = (deltaImpact != null && deltaControl != null) ? (deltaImpact - deltaControl) : null;
+
+  set('baciDeltaShannon', deltaImpact != null ? (deltaImpact >= 0 ? '+' : '') + deltaImpact.toFixed(3) : '—');
+  set('baciDeltaControl', deltaControl != null ? (deltaControl >= 0 ? '+' : '') + deltaControl.toFixed(3) : '—');
+  if(baciEffect != null) {
+    const el = document.getElementById('baciEffect');
+    if(el) {
+      el.textContent = (baciEffect >= 0 ? '+' : '') + baciEffect.toFixed(3);
+      el.style.color = baciEffect < -0.1 ? 'var(--warn)' : baciEffect > 0.1 ? 'var(--accent)' : 'var(--research)';
+    }
+    const interp = document.getElementById('baciInterpretation');
+    if(interp) {
+      if(Math.abs(baciEffect) < 0.05) interp.textContent = L('BACI-effekt nær null. Ingen statistisk påviselig effekt av høsting på diversitet.','BACI effect near zero. No statistically detectable effect of harvesting on diversity.');
+      else if(baciEffect < 0) interp.textContent = L('Negativ BACI-effekt: Diversiteten har falt mer i påvirkede områder enn i kontrollområder etter høsting.','Negative BACI effect: Diversity has declined more in impact areas than control areas after harvesting.');
+      else interp.textContent = L('Positiv BACI-effekt: Diversiteten har økt mer i påvirkede områder. Kan indikere selektiv begunstigelse av noen arter.','Positive BACI effect: Diversity has increased more in impact areas. May indicate selective favouring of some species.');
+    }
+  } else {
+    set('baciInterpretation', L('Legg til prøvedata med BACI-designasjon for å beregne effekten.','Add sample data with BACI designation to calculate the effect.'));
+  }
+
+  // BACI Shannon chart (grouped bar: Before/After × Impact/Control)
+  makeChart('chartBaciShannon', 'bar', {
+    labels: [L('Påvirket','Impact'), L('Kontroll','Control')],
+    datasets: [
+      { label: L('Før','Before'), data: [H_BI, H_BC], backgroundColor: 'rgba(230,210,197,0.7)', borderColor:'#E6D2C5', borderWidth:1, borderRadius:4 },
+      { label: L('Etter','After'), data: [H_AI, H_AC], backgroundColor: 'rgba(217,255,172,0.7)', borderColor:'#D9FFAC', borderWidth:1, borderRadius:4 },
+    ]
+  }, chartDefaults);
+
+  // BACI species richness
+  const richness = (recs) => new Set(recs.map(r=>r.species_ref_id||r.custom_species_name)).size;
+  makeChart('chartBaciSpecies', 'bar', {
+    labels: [L('Påvirket-Før','Impact-Before'), L('Kontroll-Før','Control-Before'), L('Påvirket-Etter','Impact-After'), L('Kontroll-Etter','Control-After')],
+    datasets: [{ data: [richness(groups.BI), richness(groups.BC), richness(groups.AI), richness(groups.AC)], backgroundColor:['rgba(255,140,105,0.6)','rgba(136,200,255,0.6)','rgba(255,140,105,0.9)','rgba(136,200,255,0.9)'], borderRadius:4 }]
+  }, { ...chartDefaults, plugins:{ legend:{ display:false } } });
+
+  // BACI over time (Shannon per session, grouped by BACI type)
+  const impactOverTime = [], controlOverTime = [];
+  sessions.forEach(s => {
+    const sTransects = baciTransects.filter(t => t.session_id === s.id);
+    const impactTrans = sTransects.filter(t => t.baci_designation === 'impact').map(t=>t.id);
+    const controlTrans = sTransects.filter(t => t.baci_designation === 'control').map(t=>t.id);
+    const impactSamples = allSamples.filter(sm=>impactTrans.includes(sm.transect_id)).map(sm=>sm.id);
+    const controlSamples = allSamples.filter(sm=>controlTrans.includes(sm.transect_id)).map(sm=>sm.id);
+    const impactRecs = allSpeciesRecords.filter(r=>impactSamples.includes(r.sample_id));
+    const controlRecs = allSpeciesRecords.filter(r=>controlSamples.includes(r.sample_id));
+    const H_i = calcShannon(impactRecs), H_c = calcShannon(controlRecs);
+    if(H_i != null) impactOverTime.push({ x: s.session_date || s.created_at?.slice(0,10), y: H_i });
+    if(H_c != null) controlOverTime.push({ x: s.session_date || s.created_at?.slice(0,10), y: H_c });
+  });
+  const allDates = [...new Set([...impactOverTime.map(p=>p.x),...controlOverTime.map(p=>p.x)])].sort();
+  makeChart('chartBaciTime', 'line', {
+    labels: allDates,
+    datasets: [
+      { label: L('Påvirket','Impact'), data: allDates.map(d=>{ const p=impactOverTime.find(p=>p.x===d); return p?p.y:null; }), borderColor:'#FF8C69', backgroundColor:'rgba(255,140,105,0.1)', tension:0.3, pointRadius:5, pointBackgroundColor:'#FF8C69', spanGaps:true },
+      { label: L('Kontroll','Control'), data: allDates.map(d=>{ const p=controlOverTime.find(p=>p.x===d); return p?p.y:null; }), borderColor:'#88C8FF', backgroundColor:'rgba(136,200,255,0.1)', tension:0.3, pointRadius:5, pointBackgroundColor:'#88C8FF', spanGaps:true },
+    ]
+  }, chartDefaults);
+
+  // BACI Map
+  renderBaciMap();
+}
+
+function renderBaciMap() {
+  const mapEl = document.getElementById('baciMap');
+  if(!mapEl) return;
+
+  if(!baciMapInstance) {
+    const center = [74.5, 19.0];
+    baciMapInstance = L.map('baciMap').setView(center, 5);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution:'© OpenStreetMap © CARTO', maxZoom:18 }).addTo(baciMapInstance);
+  } else {
+    baciMapInstance.eachLayer(l => { if(!(l instanceof L.TileLayer)) baciMapInstance.removeLayer(l); });
+  }
+
+  const bounds = [];
+
+  // Draw control site polygons
+  const grouped = {};
+  allControlSites.forEach(c => {
+    if(!grouped[c.control_id]) grouped[c.control_id] = { site:c.site_name, vertices:[], center:[c.center_lat,c.center_lon] };
+    if(c.latitude && c.longitude) grouped[c.control_id].vertices.push([c.latitude, c.longitude]);
+  });
+  Object.values(grouped).forEach(cs => {
+    if(cs.vertices.length > 0) {
+      L.polygon(cs.vertices, { color:'#88C8FF', weight:2, fillOpacity:0.1, fillColor:'#88C8FF' })
+        .bindPopup(`<b>${L('Kontrollstasjon','Control site')} CS-${cs.site}</b>`)
+        .addTo(baciMapInstance);
+      cs.vertices.forEach(v => bounds.push(v));
+    }
+    if(cs.center[0] && cs.center[1]) {
+      L.circleMarker(cs.center, { radius:5, fillColor:'#88C8FF', color:'#88C8FF', weight:1, fillOpacity:0.8 }).addTo(baciMapInstance);
+      bounds.push(cs.center);
+    }
+  });
+
+  // Draw impact transects
+  allTransects.filter(t => t.baci_designation === 'impact' && t.lat_start && t.lon_start).forEach(t => {
+    const color = t.before_after === 'after' ? '#D9FFAC' : '#FF8C69';
+    L.circleMarker([t.lat_start, t.lon_start], { radius:6, fillColor:color, color:color, weight:1, fillOpacity:0.9 })
+      .bindPopup(`<b>${t.transect_code||'—'}</b><br>${t.baci_designation} · ${t.before_after||''}`)
+      .addTo(baciMapInstance);
+    if(t.lat_end && t.lon_end) {
+      L.polyline([[t.lat_start,t.lon_start],[t.lat_end,t.lon_end]], { color, weight:2, opacity:0.7 }).addTo(baciMapInstance);
+    }
+    bounds.push([t.lat_start, t.lon_start]);
+  });
+
+  if(bounds.length > 1) {
+    try { baciMapInstance.fitBounds(bounds, { padding:[40,40] }); } catch(e) {}
+  }
+  setTimeout(() => baciMapInstance.invalidateSize(), 150);
+}
+
+// ═══════════════════════════════════════════════════
+// DIVERSITY
+// ═══════════════════════════════════════════════════
+function filterDiversitySite(site, el) {
+  divSiteFilter = site;
+  document.querySelectorAll('#section-diversity .site-tab').forEach(b => b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderDiversity();
+}
+
+function renderDiversity() {
+  const specRec = getFilteredSpeciesRecords(divSiteFilter);
+  const set = (id, v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+
+  const uniqueSpecies = new Set(specRec.map(r=>r.species_ref_id||r.custom_species_name)).size;
+  const H = calcShannon(specRec);
+  const totalCount = specRec.reduce((a,r)=>a+(r.total_count_extrapolated||r.catch_count||0),0);
+  set('divStatUnique', uniqueSpecies);
+  set('divStatShannon', H ? H.toFixed(3) : '—');
+  set('divStatTotal', Math.round(totalCount).toLocaleString());
+
+  // Shannon per site bar
+  const sites = ['Bjørnøya','Concordia','Kveithola'];
+  const shannonPerSite = sites.map(s => {
+    const recs = allSpeciesRecords.filter(r => r.research_catch_sample?.research_session?.trip_registry?.site_registry?.site_name === s);
+    return calcShannon(recs);
+  });
+  makeChart('chartDivShannon', 'bar', {
+    labels: sites,
+    datasets: [{ data: shannonPerSite, backgroundColor:['rgba(136,200,255,0.7)','rgba(217,255,172,0.7)','rgba(230,210,197,0.7)'], borderRadius:4 }]
+  }, { ...chartDefaults, plugins:{ legend:{ display:false } } });
+
+  // Vulnerability breakdown
+  const vulnCounts = {};
+  specRec.forEach(r => {
+    const v = r.vulnerability || r.species_reference?.vulnerability || L('Ukjent','Unknown');
+    vulnCounts[v] = (vulnCounts[v]||0) + (r.total_count_extrapolated||r.catch_count||0);
+  });
+  const vulnColors = { A:'rgba(217,255,172,0.75)', B:'rgba(136,200,255,0.75)', C:'rgba(230,210,197,0.75)', D:'rgba(255,140,105,0.75)', E:'rgba(168,149,158,0.5)', F:'rgba(92,80,96,0.5)' };
+  const vKeys = Object.keys(vulnCounts).sort();
+  makeChart('chartDivVuln', 'doughnut', {
+    labels: vKeys,
+    datasets: [{ data: vKeys.map(k=>Math.round(vulnCounts[k])), backgroundColor: vKeys.map(k=>vulnColors[k]||'rgba(136,200,255,0.5)'), borderWidth:1 }]
+  }, noScalesOpts());
+
+  // Top 10 species
+  const spCounts = {};
+  specRec.forEach(r => {
+    const name = r.species_reference?.common_name || r.custom_species_name || L('Ukjent','Unknown');
+    spCounts[name] = (spCounts[name]||0) + (r.total_count_extrapolated||r.catch_count||0);
+  });
+  const top10 = Object.entries(spCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  makeChart('chartDivTop', 'bar', {
+    labels: top10.map(e=>e[0]),
+    datasets: [{ data: top10.map(e=>Math.round(e[1])), backgroundColor:'rgba(136,200,255,0.65)', borderRadius:4 }]
+  }, { ...chartDefaults, indexAxis:'y', plugins:{ legend:{ display:false } } });
+
+  // Species table
+  const spDetails = {};
+  specRec.forEach(r => {
+    const key = r.species_ref_id || r.custom_species_name || 'unknown';
+    const name = r.species_reference?.common_name || r.custom_species_name || '—';
+    const sci = r.species_reference?.scientific_name || '—';
+    const vuln = r.vulnerability || r.species_reference?.vulnerability || '—';
+    const cat = r.catch_category || r.species_reference?.catch_category || '—';
+    if(!spDetails[key]) spDetails[key] = { name, sci, vuln, cat, count:0, weight:0, sessions:new Set() };
+    spDetails[key].count += r.total_count_extrapolated || r.catch_count || 0;
+    spDetails[key].weight += r.total_weight_extrapolated_g || r.catch_weight_g || 0;
+    if(r.sample_id) spDetails[key].sessions.add(r.sample_id);
+  });
+  const sortedSpecies = Object.values(spDetails).sort((a,b)=>b.count-a.count);
+  document.getElementById('diversityTableBody').innerHTML = sortedSpecies.length ?
+    sortedSpecies.map(s => `<tr>
+      <td><strong>${s.name}</strong></td>
+      <td><em style="color:var(--muted);font-size:11px;">${s.sci}</em></td>
+      <td>${s.vuln !== '—' ? `<span class="vuln-badge vuln-${s.vuln}">${s.vuln}</span>` : '—'}</td>
+      <td style="color:var(--muted);font-size:11px;">${formatCat(s.cat)}</td>
+      <td><strong style="color:var(--research)">${Math.round(s.count).toLocaleString()}</strong></td>
+      <td>${s.weight>0?Math.round(s.weight).toLocaleString()+'g':'—'}</td>
+      <td>${s.sessions.size}</td>
+    </tr>`).join('') :
+    `<tr><td colspan="7" class="empty">${T[currentLang].noData}</td></tr>`;
+}
+
+function formatCat(cat) {
+  const map = { target: L('Målart','Target'), commercial_bycatch: L('Komm.','Comm.'), benthic_bycatch: L('Bentisk','Benthic'), undersized_target: L('Undermåls','Undersized') };
+  return map[cat] || cat;
+}
+
+// ═══════════════════════════════════════════════════
+// SIZE DISTRIBUTION
+// ═══════════════════════════════════════════════════
+function filterSizeSite(site, el) {
+  sizeSiteFilter = site;
+  document.querySelectorAll('#section-sizedist .site-tab').forEach(b => b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderSizeDist();
+}
+
+function renderSizeDist() {
+  const scallops = getFilteredScallops(sizeSiteFilter);
+  const set = (id, v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+  const stats = sizeStats(scallops);
+  set('sStatN', stats.n);
+  set('sStatMean', stats.mean ? stats.mean.toFixed(1) : '—');
+  set('sStatMedian', stats.median ? stats.median.toFixed(1) : '—');
+  set('sStatMin', stats.min ? stats.min.toFixed(1) : '—');
+  set('sStatMax', stats.max ? stats.max.toFixed(1) : '—');
+  set('sStatSD', stats.sd ? stats.sd.toFixed(1) : '—');
+
+  const widths = scallops.filter(s=>s.width_mm!=null).map(s=>s.width_mm);
+  const pctUndersized = widths.length ? ((widths.filter(w=>w<55).length/widths.length)*100).toFixed(1) : '—';
+  set('sStatUndersized', pctUndersized !== '—' ? pctUndersized + '%' : '—');
+
+  const recruitCount = scallops.filter(s=>s.recruitment_attached===true).length;
+  set('sStatRecruit', scallops.length ? ((recruitCount/scallops.length)*100).toFixed(1)+'%' : '—');
+
+  const heights = scallops.filter(s=>s.height_mm!=null).map(s=>s.height_mm);
+  const meanH = heights.length ? (heights.reduce((a,b)=>a+b,0)/heights.length).toFixed(1) : '—';
+  set('sStatMeanH', meanH);
+
+  // Height/width ratio
+  const paired = scallops.filter(s=>s.width_mm&&s.height_mm);
+  const aspectRatio = paired.length ? (paired.reduce((a,s)=>a+(s.height_mm/s.width_mm),0)/paired.length).toFixed(3) : '—';
+  set('sStatAspect', aspectRatio);
+
+  // Size distribution histogram
+  const { labels: binLabels, counts: binCounts } = binSizes(scallops, 5);
+  const barColors = binLabels.map(l => {
+    const low = parseInt(l.split('-')[0]);
+    return low < 55 ? 'rgba(255,140,105,0.7)' : 'rgba(136,200,255,0.7)';
+  });
+  makeChart('chartSizeDist', 'bar', {
+    labels: binLabels,
+    datasets: [{ data: binCounts, backgroundColor: barColors, borderRadius:3, label: L('Antall','Count') }]
+  }, { ...chartDefaults, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ title: items => items[0].label + ' mm' } } } });
+
+  // Mean size per site
+  const sites = ['Bjørnøya','Concordia','Kveithola'];
+  const meanPerSite = sites.map(s => {
+    const sc = allScallops.filter(m => m.research_catch_sample?.research_session?.trip_registry?.site_registry?.site_name===s && m.width_mm!=null);
+    return sc.length ? sc.reduce((a,m)=>a+m.width_mm,0)/sc.length : null;
+  });
+  makeChart('chartSizeSite', 'bar', {
+    labels: sites,
+    datasets: [{ data: meanPerSite, backgroundColor:['rgba(136,200,255,0.7)','rgba(217,255,172,0.7)','rgba(230,210,197,0.7)'], borderRadius:4, label: L('Snitt bredde mm','Avg width mm') }]
+  }, { ...chartDefaults, plugins:{ legend:{ display:false } } });
+
+  // Before vs After
+  const before = scallops.filter(s => s.research_catch_sample?.research_transect?.before_after === 'before' && s.width_mm!=null).map(s=>s.width_mm);
+  const after = scallops.filter(s => s.research_catch_sample?.research_transect?.before_after === 'after' && s.width_mm!=null).map(s=>s.width_mm);
+  const meanBefore = before.length ? (before.reduce((a,b)=>a+b,0)/before.length) : null;
+  const meanAfter = after.length ? (after.reduce((a,b)=>a+b,0)/after.length) : null;
+  makeChart('chartSizeBA', 'bar', {
+    labels: [L('Før','Before'), L('Etter','After')],
+    datasets: [{ data: [meanBefore, meanAfter], backgroundColor:['rgba(230,210,197,0.7)','rgba(217,255,172,0.7)'], borderRadius:4 }]
+  }, { ...chartDefaults, plugins:{ legend:{ display:false } } });
+
+  // Size sample table
+  const sizeSamples = filterYear !== 'all'
+    ? allSizeSamples.filter(s => s.research_catch_sample?.research_session?.session_date?.startsWith(filterYear))
+    : allSizeSamples;
+  document.getElementById('sizeSampleTableBody').innerHTML = sizeSamples.length ?
+    sizeSamples.map(s => `<tr>
+      <td style="font-size:11px;color:var(--muted);">${s.research_catch_sample?.sample_code||s.sample_id?.slice(0,8)||'—'}</td>
+      <td>${s.measured_shells_weight_g!=null?s.measured_shells_weight_g.toFixed(1):'—'}</td>
+      <td>${s.empty_shells_weight_g!=null?s.empty_shells_weight_g.toFixed(1):'—'}</td>
+      <td><strong style="color:var(--research)">${s.scallop_weight_g!=null?s.scallop_weight_g.toFixed(1):'—'}</strong></td>
+      <td>${s.stone_weight_g!=null?s.stone_weight_g.toFixed(1):'—'}</td>
+      <td>${s.stone_count!=null?s.stone_count:'—'}</td>
+      <td>${s.total_sample_weight_g!=null?s.total_sample_weight_g.toFixed(1):'—'}</td>
+    </tr>`).join('') :
+    `<tr><td colspan="7" class="empty">${T[currentLang].noData}</td></tr>`;
+}
+
+// ═══════════════════════════════════════════════════
+// DAMAGE INDEX
+// ═══════════════════════════════════════════════════
+function renderDamage() {
+  const scallops = getFilteredScallops();
+  const set = (id, v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+  const total = scallops.length;
+  const d0 = scallops.filter(s=>s.damage_index===0).length;
+  const d1 = scallops.filter(s=>s.damage_index===1).length;
+  const d2 = scallops.filter(s=>s.damage_index===2).length;
+  const survival = total ? (((d0+d1)/total)*100).toFixed(1) : '—';
+  const lethal = total ? ((d2/total)*100).toFixed(1) : '—';
+  const avgDmg = total ? (scallops.filter(s=>s.damage_index!=null).reduce((a,s)=>a+s.damage_index,0)/total).toFixed(3) : '—';
+
+  set('dStatTotal', total); set('dStatD0', d0); set('dStatD1', d1); set('dStatD2', d2);
+  set('dStatSurvival', survival!=='—'?survival+'%':'—');
+  set('dStatLethal', lethal!=='—'?lethal+'%':'—');
+  set('dStatAvg', avgDmg);
+
+  // Damage bars per site
+  const sites = ['Bjørnøya','Concordia','Kveithola'];
+  const container = document.getElementById('damageBySiteContainer');
+  container.innerHTML = '';
+  sites.forEach(site => {
+    const sc = allScallops.filter(s => s.research_catch_sample?.research_session?.trip_registry?.site_registry?.site_name===site);
+    if(!sc.length) return;
+    const sd0=sc.filter(s=>s.damage_index===0).length, sd1=sc.filter(s=>s.damage_index===1).length, sd2=sc.filter(s=>s.damage_index===2).length;
+    const n=sc.length;
+    const div = document.createElement('div');
+    div.className = 'damage-bar-wrap';
+    div.innerHTML = `<div style="font-family:var(--font-head);font-weight:700;font-size:12px;color:var(--text);margin-bottom:10px;">${site} <span style="color:var(--muted);font-weight:300;">(n=${n})</span></div>
+      ${[{label:'Skade 0',count:sd0,color:'rgba(217,255,172,0.8)'},{label:'Skade 1',count:sd1,color:'rgba(136,200,255,0.8)'},{label:'Skade 2',count:sd2,color:'rgba(255,140,105,0.8)'}].map(row=>`
+      <div class="damage-bar-row">
+        <span class="damage-bar-label" style="color:${row.color.replace('0.8','1').replace('rgba(','rgb(').split(',').slice(0,3).join(',')});">${row.label}</span>
+        <div class="damage-bar-track"><div class="damage-bar-fill" style="width:${n?((row.count/n)*100).toFixed(1):0}%;background:${row.color};"></div></div>
+        <span class="damage-bar-pct">${n?((row.count/n)*100).toFixed(1):0}%</span>
+        <span class="damage-bar-count">(${row.count})</span>
+      </div>`).join('')}`;
+    container.appendChild(div);
+  });
+
+  // Overall damage doughnut
+  makeChart('chartDamageOverall', 'doughnut', {
+    labels: [L('Ingen skade (0)','No damage (0)'), L('Overlevbar (1)','Survivable (1)'), L('Dødelig (2)','Lethal (2)')],
+    datasets: [{ data: [d0,d1,d2], backgroundColor:['rgba(217,255,172,0.75)','rgba(136,200,255,0.75)','rgba(255,140,105,0.75)'], borderWidth:1 }]
+  }, noScalesOpts());
+
+  // Damage by site bar
+  const dmgBySite = sites.map(s => {
+    const sc = allScallops.filter(m=>m.research_catch_sample?.research_session?.trip_registry?.site_registry?.site_name===s&&m.damage_index!=null);
+    return sc.length ? (sc.reduce((a,m)=>a+m.damage_index,0)/sc.length) : null;
+  });
+  makeChart('chartDamageSite', 'bar', {
+    labels: sites,
+    datasets: [{ data: dmgBySite, backgroundColor:['rgba(136,200,255,0.7)','rgba(217,255,172,0.7)','rgba(230,210,197,0.7)'], borderRadius:4 }]
+  }, { ...chartDefaults, plugins:{ legend:{ display:false } } });
+
+  // Damage over time
+  const monthDmg = {};
+  scallops.forEach(s => {
+    const date = s.research_catch_sample?.research_session?.session_date || s.created_at?.slice(0,10);
+    if(!date||s.damage_index==null) return;
+    const m = date.slice(0,7);
+    if(!monthDmg[m]) monthDmg[m] = { sum:0, n:0 };
+    monthDmg[m].sum += s.damage_index;
+    monthDmg[m].n++;
+  });
+  const dMonths = Object.keys(monthDmg).sort();
+  makeChart('chartDamageTime', 'line', {
+    labels: dMonths,
+    datasets: [{ label: L('Snitt skadeindeks','Avg damage index'), data: dMonths.map(m=>(monthDmg[m].sum/monthDmg[m].n).toFixed(3)), borderColor:'#FF8C69', backgroundColor:'rgba(255,140,105,0.1)', tension:0.3, pointRadius:5, pointBackgroundColor:'#FF8C69' }]
+  }, { ...chartDefaults, plugins:{ legend:{ display:false } } });
+}
+
+// ═══════════════════════════════════════════════════
+// BENTHIC & BYCATCH
+// ═══════════════════════════════════════════════════
+function filterBenthicSite(site, el) {
+  benthicSiteFilter = site;
+  document.querySelectorAll('#section-benthic .site-tab').forEach(b => b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderBenthic();
+}
+
+function renderBenthic() {
+  // Only non-target species
+  const bycatchRec = getFilteredSpeciesRecords(benthicSiteFilter).filter(r => r.catch_category !== 'target');
+
+  // Category breakdown
+  const catCounts = {};
+  bycatchRec.forEach(r => {
+    const cat = r.catch_category || 'other';
+    catCounts[cat] = (catCounts[cat]||0) + (r.total_count_extrapolated||r.catch_count||0);
+  });
+  const catLabels = { commercial_bycatch: L('Komm. bifangst','Comm. bycatch'), benthic_bycatch: L('Bentisk','Benthic'), undersized_target: L('Undermåls','Undersized') };
+  const catKeys = Object.keys(catCounts);
+  makeChart('chartBenthicCat', 'doughnut', {
+    labels: catKeys.map(k=>catLabels[k]||k),
+    datasets: [{ data: catKeys.map(k=>Math.round(catCounts[k])), backgroundColor:['rgba(217,255,172,0.75)','rgba(136,200,255,0.75)','rgba(230,210,197,0.75)','rgba(255,140,105,0.75)'], borderWidth:1 }]
+  }, noScalesOpts());
+
+  // Vulnerability
+  const vulnCounts = {};
+  bycatchRec.forEach(r => {
+    const v = r.vulnerability || r.species_reference?.vulnerability || L('Ukjent','Unknown');
+    vulnCounts[v] = (vulnCounts[v]||0) + (r.total_count_extrapolated||r.catch_count||0);
+  });
+  const vulnColors = { A:'rgba(217,255,172,0.75)',B:'rgba(136,200,255,0.75)',C:'rgba(230,210,197,0.75)',D:'rgba(255,140,105,0.75)',E:'rgba(168,149,158,0.5)',F:'rgba(92,80,96,0.5)' };
+  const vKeys = Object.keys(vulnCounts).sort();
+  makeChart('chartBenthicVuln', 'doughnut', {
+    labels: vKeys,
+    datasets: [{ data: vKeys.map(k=>Math.round(vulnCounts[k])), backgroundColor:vKeys.map(k=>vulnColors[k]||'rgba(136,200,255,0.5)'), borderWidth:1 }]
+  }, noScalesOpts());
+
+  // Top bycatch species
+  const spCounts = {};
+  bycatchRec.forEach(r => {
+    const name = r.species_reference?.common_name || r.custom_species_name || L('Ukjent','Unknown');
+    spCounts[name] = (spCounts[name]||0) + (r.total_count_extrapolated||r.catch_count||0);
+  });
+  const top = Object.entries(spCounts).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  makeChart('chartBenthicTop', 'bar', {
+    labels: top.map(e=>e[0]),
+    datasets: [{ data: top.map(e=>Math.round(e[1])), backgroundColor:'rgba(136,200,255,0.65)', borderRadius:3 }]
+  }, { ...chartDefaults, indexAxis:'y', plugins:{ legend:{ display:false } } });
+
+  // Substrate from transects
+  const substrateRec = allTransects.filter(t => {
+    const site = t.research_session?.trip_registry?.site_registry?.site_name;
+    if(benthicSiteFilter !== 'all' && site !== benthicSiteFilter) return false;
+    return t.substrate_type;
+  });
+  const subCounts = {};
+  substrateRec.forEach(t => { subCounts[t.substrate_type] = (subCounts[t.substrate_type]||0)+1; });
+  const subKeys = Object.keys(subCounts);
+  makeChart('chartSubstrate', 'doughnut', {
+    labels: subKeys,
+    datasets: [{ data: subKeys.map(k=>subCounts[k]), backgroundColor:['rgba(217,255,172,0.7)','rgba(136,200,255,0.7)','rgba(230,210,197,0.7)','rgba(255,140,105,0.7)','rgba(168,149,158,0.5)','rgba(92,80,96,0.5)'], borderWidth:1 }]
+  }, noScalesOpts());
+
+  // Epifaunal cover
+  const epiCounts = {};
+  allTransects.filter(t=>t.epifaunal_cover).forEach(t => { epiCounts[t.epifaunal_cover]=(epiCounts[t.epifaunal_cover]||0)+1; });
+  const epiKeys = Object.keys(epiCounts);
+  makeChart('chartEpifaunal', 'bar', {
+    labels: epiKeys,
+    datasets: [{ data: epiKeys.map(k=>epiCounts[k]), backgroundColor:'rgba(136,200,255,0.65)', borderRadius:4 }]
+  }, { ...chartDefaults, plugins:{ legend:{ display:false } } });
+
+  // Benthic table
+  const spDetails = {};
+  bycatchRec.forEach(r => {
+    const key = r.species_ref_id || r.custom_species_name || 'unknown';
+    const name = r.species_reference?.common_name || r.custom_species_name || '—';
+    const sci = r.species_reference?.scientific_name || '—';
+    const vuln = r.vulnerability || r.species_reference?.vulnerability || '—';
+    const cat = r.catch_category || '—';
+    if(!spDetails[key]) spDetails[key] = { name, sci, vuln, cat, count:0, weight:0, samples:new Set() };
+    spDetails[key].count += r.total_count_extrapolated || r.catch_count || 0;
+    spDetails[key].weight += r.total_weight_extrapolated_g || r.catch_weight_g || 0;
+    if(r.sample_id) spDetails[key].samples.add(r.sample_id);
+  });
+  const totalSamples = new Set(bycatchRec.map(r=>r.sample_id)).size || 1;
+  const sorted = Object.values(spDetails).sort((a,b)=>b.count-a.count);
+  document.getElementById('benthicTableBody').innerHTML = sorted.length ?
+    sorted.map(s => `<tr>
+      <td><strong>${s.name}</strong></td>
+      <td><em style="color:var(--muted);font-size:11px;">${s.sci}</em></td>
+      <td>${s.vuln !== '—' ? `<span class="vuln-badge vuln-${s.vuln}">${s.vuln}</span>` : '—'}</td>
+      <td style="color:var(--muted);font-size:11px;">${formatCat(s.cat)}</td>
+      <td><strong style="color:var(--research)">${Math.round(s.count).toLocaleString()}</strong></td>
+      <td>${s.weight>0?Math.round(s.weight).toLocaleString()+'g':'—'}</td>
+      <td>${((s.samples.size/totalSamples)*100).toFixed(0)}%</td>
+    </tr>`).join('') :
+    `<tr><td colspan="7" class="empty">${T[currentLang].noData}</td></tr>`;
+}
+
+// ═══════════════════════════════════════════════════
+// NAV & MOBILE
+// ═══════════════════════════════════════════════════
+function showSection(name, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('section-'+name).classList.add('active');
+  if(el) el.classList.add('active');
+  if(name === 'baci') setTimeout(() => { if(baciMapInstance) baciMapInstance.invalidateSize(); }, 200);
+}
+function toggleMobileMenu() { document.getElementById('mobileNav').classList.toggle('open'); document.getElementById('mobileOverlay').classList.toggle('open'); }
+function closeMobileMenu() { document.getElementById('mobileNav').classList.remove('open'); document.getElementById('mobileOverlay').classList.remove('open'); }
+function mobileNavTo(name) {
+  const navEl = document.getElementById('nav-'+name);
+  showSection(name, navEl);
+  document.querySelectorAll('.mobile-nav-item').forEach(i=>i.classList.remove('active'));
+  event?.target?.closest('.mobile-nav-item')?.classList.add('active');
+  closeMobileMenu();
+}
+
+init();
+</script>
+</body>
+</html>
