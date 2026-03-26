@@ -12,11 +12,9 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-
-@font-face { font-family: 'ABCFavorit'; src: url('ABCFavorit-Bold.woff2') format('woff2'); font-weight: 700; }
 @font-face { font-family: 'ABCFavorit'; src: url('ABCFavorit-Bold.woff2') format('woff2'); font-weight: 700; }
 @font-face { font-family: 'ProtoGrotesk'; src: url('protogroteskweb-light.woff2') format('woff2'); font-weight: 300; }
-  
+
 :root {
   --deep:#2C262E;--ocean:#332D35;--surface:#3C3540;--panel:#433A46;--border:#5c5060;
   --accent:#D9FFAC;--accent2:#c2f090;--warn:#FF8C69;--scallop:#E6D2C5;
@@ -116,94 +114,241 @@ tr:hover td{background:rgba(217,255,172,0.02);}
 .refresh-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:6px;font-family:var(--font-head);font-size:11px;cursor:pointer;font-weight:700;}
 .refresh-btn:hover{color:var(--accent);border-color:var(--accent);}
 
+/* ═══════════════════════════════════════════
+   DRILL-DOWN STYLES
+═══════════════════════════════════════════ */
+.drill-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 32px 0 28px;
+}
 
-/* ── Mobile ─────────────────────────────────────────────── */
+/* Breadcrumb trail */
+.drill-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 20px;
+  font-family: var(--font-head);
+  font-size: 11px;
+  flex-wrap: wrap;
+}
+.drill-breadcrumb-item {
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.drill-breadcrumb-item:hover { color: var(--text); border-color: var(--accent); }
+.drill-breadcrumb-item.active { background: rgba(217,255,172,0.1); color: var(--accent); border-color: var(--accent); }
+.drill-breadcrumb-sep { color: var(--border); font-size: 14px; }
+
+/* Trip cards grid */
+.drill-trip-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.drill-trip-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+.drill-trip-card:hover {
+  border-color: var(--accent2);
+  border-left-color: var(--accent);
+  background: rgba(217,255,172,0.04);
+  transform: translateY(-1px);
+}
+.drill-trip-card.selected {
+  border-color: var(--accent);
+  border-left-color: var(--accent);
+  background: rgba(217,255,172,0.07);
+}
+.drill-trip-code {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.drill-trip-meta {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.drill-trip-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.drill-pill {
+  font-family: var(--font-head);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.drill-pill.hi { color: var(--accent); border-color: rgba(217,255,172,0.3); background: rgba(217,255,172,0.07); }
+.drill-pill.warn { color: var(--warn); border-color: rgba(255,140,105,0.3); background: rgba(255,140,105,0.07); }
+
+/* Date rows */
+.drill-date-table { margin-bottom: 24px; }
+.drill-date-row {
+  display: grid;
+  grid-template-columns: 130px 1fr 1fr 1fr 1fr 1fr 80px;
+  align-items: center;
+  gap: 0;
+  padding: 11px 16px;
+  border-bottom: 1px solid rgba(92,80,96,0.35);
+  cursor: pointer;
+  transition: background 0.12s;
+  font-size: 12px;
+}
+.drill-date-row:hover { background: rgba(217,255,172,0.03); }
+.drill-date-row.selected { background: rgba(217,255,172,0.07); }
+.drill-date-row.header {
+  font-family: var(--font-head);
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: default;
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+}
+.drill-date-row.header:hover { background: transparent; }
+.drill-date-val { font-family: var(--font-head); font-weight: 700; color: var(--accent); }
+.drill-date-chevron { text-align: right; color: var(--muted); font-size: 16px; transition: transform 0.15s; }
+.drill-date-row.selected .drill-date-chevron { transform: rotate(90deg); color: var(--accent); }
+
+/* Tow detail sub-table */
+.drill-tow-detail {
+  background: var(--surface);
+  border-radius: 10px;
+  margin: 0 0 8px 0;
+  overflow: hidden;
+  animation: slideDown 0.2s ease;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Drill map */
+#drillMap {
+  height: 420px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  width: 100%;
+}
+.drill-map-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--font-head);
+}
+.fill-gradient-bar {
+  height: 10px;
+  width: 120px;
+  border-radius: 5px;
+  background: linear-gradient(to right, #FF8C69, #FFD580, #D9FFAC);
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 6px;
+}
+
+/* Section label with count badge */
+.section-label-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.drill-count-badge {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-family: var(--font-head);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 2px 8px;
+}
+
+/* Daily summary cards */
+.drill-day-stats {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0,1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.drill-day-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 14px 12px;
+}
+.drill-day-stat-label {
+  font-family: var(--font-head);
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.drill-day-stat-val {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--accent);
+  line-height: 1;
+}
+.drill-day-stat-unit {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+/* Mobile */
 .mobile-header{display:none;}
-
 @media(max-width:768px){
-  /* Hide desktop sidebar */
   .sidebar{display:none !important;width:0 !important;}
-
-  /* Show mobile header */
-  .mobile-header{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    position:fixed;
-    top:0;left:0;right:0;
-    height:52px;
-    background:var(--ocean);
-    border-bottom:2px solid var(--accent);
-    padding:0 16px;
-    z-index:200;
-  }
+  .mobile-header{display:flex;align-items:center;justify-content:space-between;position:fixed;top:0;left:0;right:0;height:52px;background:var(--ocean);border-bottom:2px solid var(--accent);padding:0 16px;z-index:200;}
   .mobile-logo{height:22px;}
-  .mobile-menu-btn{
-    background:none;border:1px solid var(--border);
-    color:var(--text);border-radius:6px;
-    padding:6px 12px;font-size:18px;cursor:pointer;
-    line-height:1;
-  }
-
-  /* Dropdown nav */
-  .mobile-nav{
-    display:none;
-    position:fixed;
-    top:52px;left:0;right:0;
-    background:var(--ocean);
-    border-bottom:1px solid var(--border);
-    z-index:199;
-    padding:8px 0;
-    box-shadow:0 8px 24px rgba(0,0,0,0.4);
-  }
+  .mobile-menu-btn{background:none;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 12px;font-size:18px;cursor:pointer;line-height:1;}
+  .mobile-nav{display:none;position:fixed;top:52px;left:0;right:0;background:var(--ocean);border-bottom:1px solid var(--border);z-index:199;padding:8px 0;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
   .mobile-nav.open{display:block;}
-  .mobile-nav-item{
-    display:flex;align-items:center;gap:12px;
-    padding:13px 20px;
-    font-family:var(--font-head);font-weight:700;
-    font-size:13px;letter-spacing:0.5px;
-    color:var(--muted);cursor:pointer;
-    border-left:3px solid transparent;
-  }
+  .mobile-nav-item{display:flex;align-items:center;gap:12px;padding:13px 20px;font-family:var(--font-head);font-weight:700;font-size:13px;letter-spacing:0.5px;color:var(--muted);cursor:pointer;border-left:3px solid transparent;}
   .mobile-nav-item.active{color:var(--accent);border-left-color:var(--accent);}
   .mobile-nav-item:active{background:var(--surface);}
   .mobile-nav-icon{font-size:18px;}
-
-  /* Trip filter inside dropdown */
   .mobile-trip-filter{padding:12px 20px;border-top:1px solid var(--border);}
-  .mobile-trip-filter select{
-    width:100%;background:var(--surface);border:1px solid var(--border);
-    color:var(--text);border-radius:8px;padding:10px 12px;
-    font-family:var(--font-body);font-size:14px;
-  }
-  .mobile-lang-row{
-    display:flex;gap:8px;padding:10px 20px 14px;
-  }
-  .mobile-lang-btn{
-    flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);
-    background:transparent;color:var(--muted);
-    font-family:var(--font-head);font-weight:700;font-size:13px;cursor:pointer;
-  }
+  .mobile-trip-filter select{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 12px;font-family:var(--font-body);font-size:14px;}
+  .mobile-lang-row{display:flex;gap:8px;padding:10px 20px 14px;}
+  .mobile-lang-btn{flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--font-head);font-weight:700;font-size:13px;cursor:pointer;}
   .mobile-lang-btn.active{background:var(--accent);color:var(--deep);border-color:var(--accent);}
-
-  /* Main content */
-  .main{
-    margin-left:0 !important;
-    padding:16px;
-    padding-top:68px;
-    width:100%;
-    box-sizing:border-box;
-    overflow-x:hidden;
-  }
-
-  /* Overlay to close menu */
-  .mobile-overlay{
-    display:none;position:fixed;inset:0;
-    background:rgba(0,0,0,0.4);z-index:198;
-  }
+  .main{margin-left:0 !important;padding:16px;padding-top:68px;width:100%;box-sizing:border-box;overflow-x:hidden;}
+  .mobile-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:198;}
   .mobile-overlay.open{display:block;}
-
-  /* Content adjustments */
   .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
   .charts-grid{grid-template-columns:1fr;}
   .stat-card{padding:14px;}
@@ -211,17 +356,15 @@ tr:hover td{background:rgba(217,255,172,0.02);}
   .page-title{font-size:18px;margin-bottom:4px;}
   .page-sub{font-size:11px;}
   .section-header{flex-direction:column;align-items:flex-start;gap:8px;}
-  .section-header > div:last-child{display:flex;gap:8px;flex-wrap:wrap;width:100%;}
-  .section-header button{flex:1;font-size:11px;}
   .chart-wrap{height:200px !important;}
   .chart-card{padding:12px;}
   .chart-card.full{grid-column:span 1;}
-  .cpue-trip-card{padding:12px;}
-  .cpue-metrics{grid-template-columns:repeat(2,minmax(0,1fr));}
-  .info-pill{font-size:11px;padding:8px 10px;}
   .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
   th,td{padding:5px 8px;font-size:11px;white-space:nowrap;}
   .btn-outline{padding:7px 12px;font-size:11px;}
+  .drill-trip-grid{grid-template-columns:1fr;}
+  .drill-day-stats{grid-template-columns:repeat(2,1fr);}
+  .drill-date-row{grid-template-columns:110px 1fr 1fr 1fr 50px;gap:0;}
 }
 </style>
 </head>
@@ -246,7 +389,6 @@ tr:hover td{background:rgba(217,255,172,0.02);}
 </div>
 
 <div id="app">
-  <!-- Mobile header -->
   <div class="mobile-header" id="mobileHeader">
     <img class="mobile-logo" src="ava-ocean-logo-mark-lime-purple-master.png">
     <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
@@ -262,9 +404,7 @@ tr:hover td{background:rgba(217,255,172,0.02);}
     <div class="mobile-nav-item" id="mnav-factory" onclick="mobileNav('factory')"><span class="mobile-nav-icon">⚖️</span><span id="mnavFactory">Factory</span></div>
     <div class="mobile-nav-item ai-only" id="mnav-ai" onclick="mobileNav('ai')" style="display:none;"><span class="mobile-nav-icon">🤖</span><span id="mnavAi">AI Insights</span></div>
     <div class="mobile-trip-filter">
-      <select id="mobileTripSelect" onchange="onMobileTripFilter()">
-        <option value="all">All Trips</option>
-      </select>
+      <select id="mobileTripSelect" onchange="onMobileTripFilter()"><option value="all">All Trips</option></select>
     </div>
     <div class="mobile-lang-row">
       <button class="mobile-lang-btn" id="mlangNo" onclick="setLang('no');closeMobileMenu()">NO</button>
@@ -285,7 +425,7 @@ tr:hover td{background:rgba(217,255,172,0.02);}
       <div class="nav-item" id="nav-bycatch" onclick="showSection('bycatch',this)"><span class="nav-icon">🐟</span> <span id="navBycatch">Bifangst</span></div>
       <div class="nav-item" id="nav-map" onclick="showSection('map',this)"><span class="nav-icon">🗺️</span> <span id="navMap">Høstkart</span></div>
       <div class="nav-item" id="nav-factory" onclick="showSection('factory',this)"><span class="nav-icon">⚖️</span> <span id="navFactory">Fabrikk</span></div>
-        <div class="nav-item ai-only" id="nav-ai" onclick="showSection('ai',this)"><span class="nav-icon">🤖</span> <span id="navAi">AI Innsikt</span></div>
+      <div class="nav-item ai-only" id="nav-ai" onclick="showSection('ai',this)"><span class="nav-icon">🤖</span> <span id="navAi">AI Innsikt</span></div>
     </nav>
     <div class="trip-selector">
       <label id="filterLabel">Filtrer etter tur</label>
@@ -305,22 +445,140 @@ tr:hover td{background:rgba(217,255,172,0.02);}
   </div>
 
   <div class="main" style="margin-left:260px !important;display:block;width:calc(100vw - 260px);box-sizing:border-box;">
-    <!-- OVERVIEW -->
+
+    <!-- ═══════════════════════════════════════════════════
+         OVERVIEW — with drill-down below stat cards
+    ═══════════════════════════════════════════════════ -->
     <div class="section active" id="section-overview">
       <div class="page-title" id="titleOverview">Oversikt</div>
       <div class="page-sub" id="overviewSub">Laster...</div>
+
+      <!-- Existing top stat cards -->
       <div class="stats-grid">
         <div class="stat-card"><div class="stat-label" id="labelTrips">Totale turer</div><div class="stat-val" id="statTrips">—</div><div class="stat-unit" id="unitTrips">tokt</div></div>
         <div class="stat-card"><div class="stat-label" id="labelTows">Totale høster</div><div class="stat-val" id="statTows">—</div><div class="stat-unit" id="unitTows">høster logget</div></div>
         <div class="stat-card"><div class="stat-label" id="labelFill">Snitt fylling</div><div class="stat-val" id="statFill">—</div><div class="stat-unit" id="unitFill">% per høster</div></div>
         <div class="stat-card"><div class="stat-label" id="labelBycatch">Total bifangst</div><div class="stat-val" id="statBycatch">—</div><div class="stat-unit" id="unitBycatch">individer</div></div>
       </div>
+
+      <!-- Existing charts -->
       <div class="charts-grid">
         <div class="chart-card"><div class="chart-title" id="chartFillTitle">Høsterfylling % per høster</div><div class="chart-wrap"><canvas id="fillChart"></canvas></div></div>
         <div class="chart-card"><div class="chart-title" id="chartActTitle">Aktivitetsfordeling</div><div class="chart-wrap"><canvas id="activityChart"></canvas></div></div>
         <div class="chart-card full"><div class="chart-title" id="chartFuelTitle">Drivstoff per aktivitet</div><div class="chart-wrap"><canvas id="fuelChart"></canvas></div></div>
       </div>
-    </div>
+
+      <!-- ─── DRILL-DOWN SECTION ─── -->
+      <hr class="drill-divider">
+
+      <div class="section-label-row">
+        <div class="section-label" id="drillSectionLabel">Turdetaljer</div>
+        <span class="drill-count-badge" id="drillTripCount">— turer</span>
+      </div>
+
+      <!-- Breadcrumb -->
+      <div class="drill-breadcrumb" id="drillBreadcrumb">
+        <span class="drill-breadcrumb-item active" id="bcAll" onclick="drillReset()">Alle turer</span>
+      </div>
+
+      <!-- Level 0: Trip cards -->
+      <div id="drillLevel0">
+        <div class="drill-trip-grid" id="drillTripGrid"></div>
+      </div>
+
+      <!-- Level 1: Selected trip — site info + date table + map -->
+      <div id="drillLevel1" style="display:none;">
+
+        <!-- Site summary banner -->
+        <div class="metrics-banner" id="drillTripBanner">
+          <div class="metrics-banner-title" id="drillTripBannerTitle">—</div>
+          <div class="metrics-row" id="drillTripBannerMetrics"></div>
+        </div>
+
+        <!-- Date breakdown table -->
+        <div class="section-label-row" style="margin-bottom:12px;">
+          <div class="section-label" id="drillDateLabel">Daglig nedbrytning</div>
+          <span class="drill-count-badge" id="drillDateCount">— dager</span>
+        </div>
+
+        <!-- Date table header -->
+        <div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;">
+          <div class="drill-date-row header" id="drillDateHeader">
+            <span id="dh0">Dato</span>
+            <span id="dh1">Høster</span>
+            <span id="dh2">Snitt fylling</span>
+            <span id="dh3">Kg landet</span>
+            <span id="dh4">Høstetid</span>
+            <span id="dh5">WOW / nedetid</span>
+            <span></span>
+          </div>
+          <div id="drillDateRows"></div>
+        </div>
+
+        <!-- Tow detail (shown when a date is selected) -->
+        <div id="drillTowDetail" style="display:none;">
+          <div class="section-label-row" style="margin-bottom:12px;">
+            <div class="section-label" id="drillTowDetailLabel">Høster denne dagen</div>
+            <span class="drill-count-badge" id="drillTowDetailCount">—</span>
+          </div>
+
+          <!-- Day summary stat cards -->
+          <div class="drill-day-stats" id="drillDayStats"></div>
+
+          <!-- Detailed 17-col table -->
+          <div class="card" style="padding:0;overflow:hidden;margin-bottom:20px;">
+            <div style="padding:16px 18px 12px;border-bottom:1px solid var(--border);">
+              <span class="section-label" id="drillDetailTableLabel">Detaljert dagssammendrag</span>
+            </div>
+            <div class="table-wrap">
+              <table id="drillDetailTable">
+                <thead><tr id="drillDetailThead"></tr></thead>
+                <tbody id="drillDetailTbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tow-level table -->
+          <div class="card" style="padding:0;overflow:hidden;margin-bottom:20px;">
+            <div style="padding:16px 18px 12px;border-bottom:1px solid var(--border);">
+              <span class="section-label" id="drillTowTableLabel">Høster</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr>
+                  <th id="dtt0">#</th>
+                  <th id="dtt1">Start</th>
+                  <th id="dtt2">Slutt</th>
+                  <th id="dtt3">Min</th>
+                  <th id="dtt4">Fylling %</th>
+                  <th id="dtt5">Vol m³</th>
+                  <th id="dtt6">Spor (m)</th>
+                  <th id="dtt7">Areal (m²)</th>
+                  <th id="dtt8">CPUE</th>
+                  <th id="dtt9">Dybde (m)</th>
+                  <th id="dtt10">Hastighet (kn)</th>
+                </tr></thead>
+                <tbody id="drillTowTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Map: all tows for this trip, coloured by fill % -->
+        <div class="section-label-row" style="margin-bottom:12px;">
+          <div class="section-label" id="drillMapLabel">Høstkart</div>
+          <span id="drillMapSub" style="font-size:11px;color:var(--muted);font-family:var(--font-head);">Farge etter fylling % — klikk for detaljer</span>
+        </div>
+        <div id="drillMap"></div>
+        <div class="drill-map-legend">
+          <span id="drillLegLow">Lav fylling</span>
+          <span class="fill-gradient-bar"></span>
+          <span id="drillLegHigh">Høy fylling</span>
+          <span style="margin-left:16px;color:var(--border);">|</span>
+          <span style="margin-left:16px;" id="drillLegSelected">● Valgt dato</span>
+        </div>
+      </div>
+    </div><!-- end section-overview -->
 
     <!-- CPUE -->
     <div class="section" id="section-cpue">
@@ -338,55 +596,33 @@ tr:hover td{background:rgba(217,255,172,0.02);}
         </tr></thead>
         <tbody id="cpueTowTbody"><tr><td colspan="8" class="empty">Laster...</td></tr></tbody>
       </table></div></div>
-     <!-- end cpueSub-trip -->
 
-      <!-- Sub: Daily Summary -->
       <div id="cpueSub-daily" style="display:none;">
         <div class="section-label" style="margin-bottom:16px;" id="lblDailySummary">Daglig sammendrag</div>
         <div class="card"><div class="table-wrap"><table id="dailySummaryTable">
           <thead><tr>
-            <th>Dato</th>
-            <th>Kg landet</th>
-            <th>Høstetid (t)</th>
-            <th>Høstetid / 24t %</th>
-            <th>Kg / høstetid</th>
-            <th>Høstetid / driftstid %</th>
-            <th>Antall høster</th>
-            <th>Kg / høster</th>
-            <th>Min / høster</th>
-            <th>Nedetid høster (t)</th>
-            <th>Nedetid høster %</th>
-            <th>WOW (t)</th>
-            <th>WOW %</th>
-            <th>Nedetid fabrikk (t)</th>
-            <th>Nedetid fabrikk %</th>
-            <th>Snitt g/muskel</th>
-            <th>Drivstoff (L)</th>
+            <th>Dato</th><th>Kg landet</th><th>Høstetid (t)</th><th>Høstetid / 24t %</th>
+            <th>Kg / høstetid</th><th>Høstetid / driftstid %</th><th>Antall høster</th>
+            <th>Kg / høster</th><th>Min / høster</th><th>Nedetid høster (t)</th>
+            <th>Nedetid høster %</th><th>WOW (t)</th><th>WOW %</th>
+            <th>Nedetid fabrikk (t)</th><th>Nedetid fabrikk %</th><th>Snitt g/muskel</th><th>Drivstoff (L)</th>
           </tr></thead>
           <tbody id="dailySummaryBody"><tr><td colspan="17" class="empty">Laster...</td></tr></tbody>
         </table></div></div>
-      </div><!-- end cpueSub-daily -->
+      </div>
 
-      <!-- Sub: Emissions per month -->
       <div id="cpueSub-emissions" style="display:none;">
         <div class="section-label" style="margin-bottom:16px;" id="lblEmissionsMonth">Utslipp per måned</div>
         <div class="card"><div class="table-wrap"><table>
           <thead><tr>
-            <th>Måned</th>
-            <th>Turer</th>
-            <th>Kg landet</th>
-            <th>Drivstoff (L)</th>
-            <th>CO₂ (tonn)</th>
-            <th>Kg CO₂ / kg fangst</th>
-            <th>Snitt bølgehøyde (m)</th>
-            <th>Antall høster</th>
-            <th>Kg / høster</th>
+            <th>Måned</th><th>Turer</th><th>Kg landet</th><th>Drivstoff (L)</th>
+            <th>CO₂ (tonn)</th><th>Kg CO₂ / kg fangst</th><th>Snitt bølgehøyde (m)</th>
+            <th>Antall høster</th><th>Kg / høster</th>
           </tr></thead>
           <tbody id="emissionsMonthBody"><tr><td colspan="9" class="empty">Laster...</td></tr></tbody>
         </table></div></div>
-      </div><!-- end cpueSub-emissions -->
-
-   </div><!-- end section-cpue -->
+      </div>
+    </div>
 
     <!-- ACTIVITIES -->
     <div class="section" id="section-activities">
@@ -417,8 +653,6 @@ tr:hover td{background:rgba(217,255,172,0.02);}
           <button class="btn btn-outline" id="btnCsvTow" onclick="exportCSV('tows')">↓ CSV</button>
         </div>
       </div>
-
-      <!-- Tow summary cards -->
       <div class="stats-grid" style="margin-bottom:24px;">
         <div class="stat-card"><div class="stat-label" id="towLblAvgFill">Snitt fylling</div><div class="stat-val" id="towStatFill">—</div><div class="stat-unit">%</div></div>
         <div class="stat-card"><div class="stat-label" id="towLblAvgDur">Snitt varighet</div><div class="stat-val" id="towStatDur">—</div><div class="stat-unit">min</div></div>
@@ -427,8 +661,6 @@ tr:hover td{background:rgba(217,255,172,0.02);}
         <div class="stat-card"><div class="stat-label" id="towLblAvgSpeed">Snitt høstehastighet</div><div class="stat-val" id="towStatSpeed">—</div><div class="stat-unit">knop</div></div>
         <div class="stat-card"><div class="stat-label" id="towLblAvgDepth">Snitt dybde</div><div class="stat-val" id="towStatDepth">—</div><div class="stat-unit">m</div></div>
       </div>
-
-      <!-- Tow charts -->
       <div class="charts-grid" style="margin-bottom:20px;">
         <div class="chart-card"><div class="chart-title" id="towChartFillTime">Fylling % over tid</div><div class="chart-wrap"><canvas id="towFillTimeChart"></canvas></div></div>
         <div class="chart-card"><div class="chart-title" id="towChartFillSite">Fylling % per felt</div><div class="chart-wrap"><canvas id="towFillSiteChart"></canvas></div></div>
@@ -441,7 +673,6 @@ tr:hover td{background:rgba(217,255,172,0.02);}
         <div class="chart-card"><div class="chart-title" id="towChartSeaFill">Sjøtilstand vs fylling %</div><div class="chart-wrap"><canvas id="towSeaFillChart"></canvas></div></div>
         <div class="chart-card"><div class="chart-title" id="towChartDurFill">Varighet vs fylling %</div><div class="chart-wrap"><canvas id="towDurFillChart"></canvas></div></div>
       </div>
-
       <div class="card"><div class="table-wrap"><table>
         <thead><tr>
           <th id="thTowTrip">Tur</th><th id="thTowNum">Høst #</th><th id="thTowStart">Start</th>
@@ -488,6 +719,7 @@ tr:hover td{background:rgba(217,255,172,0.02);}
         <div><span class="legend-dot" style="background:var(--scallop);"></span><span id="legTrack">Spor</span></div>
       </div>
     </div>
+
     <!-- FACTORY -->
     <div class="section" id="section-factory">
       <div class="section-header">
@@ -501,22 +733,13 @@ tr:hover td{background:rgba(217,255,172,0.02);}
         <div class="stat-card"><div class="stat-label" id="fLblAvgDamage">Snitt skade</div><div class="stat-val" id="fStatDamage">—</div><div class="stat-unit">%</div></div>
       </div>
       <div class="charts-grid" style="margin-bottom:24px;">
-        <div class="chart-card full">
-          <div class="chart-title" id="fChartYieldTitle">Muskelutbytte per måned — gram per muskel &amp; andel muskel %</div>
-          <div class="chart-wrap" style="height:260px;"><canvas id="fYieldChart"></canvas></div>
-        </div>
+        <div class="chart-card full"><div class="chart-title" id="fChartYieldTitle">Muskelutbytte per måned</div><div class="chart-wrap" style="height:260px;"><canvas id="fYieldChart"></canvas></div></div>
       </div>
       <div class="charts-grid" style="margin-bottom:24px;">
-        <div class="chart-card full">
-          <div class="chart-title" id="fChartPopTitle">Populasjonsfordeling per måned — % hunn vs % hann</div>
-          <div class="chart-wrap" style="height:260px;"><canvas id="fPopChart"></canvas></div>
-        </div>
+        <div class="chart-card full"><div class="chart-title" id="fChartPopTitle">Populasjonsfordeling per måned</div><div class="chart-wrap" style="height:260px;"><canvas id="fPopChart"></canvas></div></div>
       </div>
       <div class="charts-grid" style="margin-bottom:24px;">
-        <div class="chart-card full">
-          <div class="chart-title" id="fChartDamageTitle">Skaderate per måned — % skadet per prøve</div>
-          <div class="chart-wrap" style="height:240px;"><canvas id="fDamageChart"></canvas></div>
-        </div>
+        <div class="chart-card full"><div class="chart-title" id="fChartDamageTitle">Skaderate per måned</div><div class="chart-wrap" style="height:240px;"><canvas id="fDamageChart"></canvas></div></div>
       </div>
       <div class="section-label" id="fLblSiteTable" style="margin-bottom:16px;">Feltsammenligning</div>
       <div class="card"><div class="table-wrap"><table>
@@ -530,47 +753,35 @@ tr:hover td{background:rgba(217,255,172,0.02);}
       </table></div></div>
     </div>
 
-
     <!-- AI INSIGHTS -->
     <div class="section" id="section-ai">
       <div class="section-header">
-        <div>
-          <div class="page-title" id="titleAi">AI Insights</div>
-          <div class="page-sub" id="subAi">Powered by Claude</div>
-        </div>
+        <div><div class="page-title" id="titleAi">AI Insights</div><div class="page-sub" id="subAi">Powered by Claude</div></div>
       </div>
-
-      <!-- Sub-tabs -->
       <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;">
         <button class="btn btn-outline" id="aiTab1" onclick="showAiSub('anomaly')" style="border-color:var(--accent);color:var(--accent);">🔍 <span id="aiTabAnomaly">Anomaly Detection</span></button>
         <button class="btn btn-outline" id="aiTab2" onclick="showAiSub('summary')">📋 <span id="aiTabSummary">Trip Summary</span></button>
         <button class="btn btn-outline" id="aiTab3" onclick="showAiSub('optimal')">🎯 <span id="aiTabOptimal">Optimal Conditions</span></button>
         <button class="btn btn-outline" id="aiTab4" onclick="showAiSub('query')">💬 <span id="aiTabQuery">Ask Your Data</span></button>
       </div>
-
-      <!-- ANOMALY DETECTION -->
       <div id="aiSub-anomaly">
         <div class="card" style="margin-bottom:16px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
             <div class="section-label" id="aiAnomalyTitle">Anomaly Scanner</div>
             <button class="btn btn-primary" onclick="runAnomalyDetection()" id="btnRunAnomaly">🔍 <span id="aiRunScan">Run Scan</span></button>
           </div>
-          <div style="font-size:12px;color:var(--muted);" id="aiAnomalyDesc">Scans tows and activities for statistical outliers (>2 std dev from mean). Uses data from the currently selected trip filter.</div>
+          <div style="font-size:12px;color:var(--muted);" id="aiAnomalyDesc">Scans tows and activities for statistical outliers (>2 std dev from mean).</div>
         </div>
         <div id="anomalyResults"><div style="color:var(--muted);font-size:13px;text-align:center;padding:32px;" id="aiAnomalyEmpty">Run a scan to detect anomalies in your data.</div></div>
       </div>
-
-      <!-- TRIP SUMMARY -->
       <div id="aiSub-summary" style="display:none;">
         <div class="card" style="margin-bottom:16px;">
           <div class="section-label" style="margin-bottom:12px;" id="aiSummaryTitle">Generate Trip Report</div>
           <div class="field" style="margin-bottom:12px;">
             <label id="aiSummaryTripLabel">Select Trip</label>
-            <select id="aiTripSelect" style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 12px;font-family:var(--font-body);font-size:14px;">
-              <option value="">— Select a trip —</option>
-            </select>
+            <select id="aiTripSelect" style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 12px;font-family:var(--font-body);font-size:14px;"><option value="">— Select a trip —</option></select>
           </div>
-          <div style="display:flex;gap:8px;margin-bottom:0;">
+          <div style="display:flex;gap:8px;">
             <button class="btn btn-primary" onclick="generateTripSummary('no')" id="btnSummaryNo">🇳🇴 Norsk</button>
             <button class="btn btn-primary" onclick="generateTripSummary('en')" id="btnSummaryEn">🇬🇧 English</button>
           </div>
@@ -583,12 +794,9 @@ tr:hover td{background:rgba(217,255,172,0.02);}
           <div id="summaryText" style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--text);"></div>
         </div>
         <div id="summaryLoading" style="display:none;text-align:center;padding:32px;color:var(--muted);">
-          <div style="font-size:24px;margin-bottom:8px;">⏳</div>
-          <div id="aiGenerating">Generating report...</div>
+          <div style="font-size:24px;margin-bottom:8px;">⏳</div><div id="aiGenerating">Generating report...</div>
         </div>
       </div>
-
-      <!-- OPTIMAL CONDITIONS -->
       <div id="aiSub-optimal" style="display:none;">
         <div class="card" style="margin-bottom:16px;">
           <div class="section-label" style="margin-bottom:12px;" id="aiOptimalTitle">Site Recommendations</div>
@@ -608,20 +816,17 @@ tr:hover td{background:rgba(217,255,172,0.02);}
           <div id="optimalText" style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--text);"></div>
         </div>
         <div id="optimalLoading" style="display:none;text-align:center;padding:32px;color:var(--muted);">
-          <div style="font-size:24px;margin-bottom:8px;">⏳</div>
-          <div id="aiAnalysing">Analysing data...</div>
+          <div style="font-size:24px;margin-bottom:8px;">⏳</div><div id="aiAnalysing">Analysing data...</div>
         </div>
       </div>
-
-      <!-- NATURAL LANGUAGE QUERY -->
       <div id="aiSub-query" style="display:none;">
         <div class="card" style="margin-bottom:16px;">
           <div class="section-label" style="margin-bottom:12px;" id="aiQueryTitle">Ask Your Data</div>
           <div class="field" style="margin-bottom:12px;">
             <label id="aiQueryLabel">Ask anything about your operational data</label>
-            <textarea id="aiQueryInput" style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:12px;font-family:var(--font-body);font-size:14px;resize:vertical;min-height:80px;" placeholder="e.g. What was our best performing site last month? Which tow had the highest fill?"></textarea>
+            <textarea id="aiQueryInput" style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:12px;font-family:var(--font-body);font-size:14px;resize:vertical;min-height:80px;" placeholder="e.g. What was our best performing site last month?"></textarea>
           </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;" id="aiSuggestions">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
             <button class="btn btn-outline" onclick="setQuery(this.textContent)" style="font-size:11px;padding:5px 10px;">What site gives best fill %?</button>
             <button class="btn btn-outline" onclick="setQuery(this.textContent)" style="font-size:11px;padding:5px 10px;">Which trip had highest CPUE?</button>
             <button class="btn btn-outline" onclick="setQuery(this.textContent)" style="font-size:11px;padding:5px 10px;">Best depth range for fill?</button>
@@ -634,15 +839,13 @@ tr:hover td{background:rgba(217,255,172,0.02);}
           <div id="queryText" style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--text);"></div>
         </div>
         <div id="queryLoading" style="display:none;text-align:center;padding:32px;color:var(--muted);">
-          <div style="font-size:24px;margin-bottom:8px;">⏳</div>
-          <div id="aiThinking">Thinking...</div>
+          <div style="font-size:24px;margin-bottom:8px;">⏳</div><div id="aiThinking">Thinking...</div>
         </div>
       </div>
-
     </div>
- </div><!-- end .main -->
-</div><!-- end #app -->
 
+  </div><!-- end .main -->
+</div><!-- end #app -->
 <script>
 const SUPABASE_URL='https://hpfxkamqbsbaohrwbppa.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwZnhrYW1xYnNiYW9ocndicHBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NjQyOTEsImV4cCI6MjA4ODA0MDI5MX0.coiX7bWx0CiiUmuU_pRMK8pSqe38-luT30lgatJBTz8';
@@ -650,6 +853,12 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const HARVESTER_WIDTH_M=12,BASKET_VOLUME_M3=28,HFO_EMISSION_FACTOR=3.114;
 let allTrips=[],allActivities=[],allTows=[],allBycatch=[],allFactory=[],allDailyLogs=[],charts={},map=null,currentTripFilter='all',currentLang='no';
 
+// ── Drill-down state ─────────────────────────────────────────
+let drillMap=null,drillSelectedTripId=null,drillSelectedDate=null;
+
+// ═══════════════════════════════════════════════════════════
+// TRANSLATION
+// ═══════════════════════════════════════════════════════════
 const T = {
   no: {
     overview:'Oversikt', cpue:'CPUE & Utslipp', activities:'Aktiviteter', tows:'Høsterlogg',
@@ -659,7 +868,7 @@ const T = {
     totalBycatch:'Total bifangst', voyages:'tokt', towsLogged:'høster logget',
     perTow:'% per høster', individuals:'individer', fillPerTow:'Høsterfylling % per høster',
     actBreakdown:'Aktivitetsfordeling', fuelPerAct:'Drivstoff per aktivitet',
-    constants:'Konstanter', noClosedTrips:'Ingen avsluttede turer ennå. Avslutt en tur i kapteinappen for å se metrikk her.',
+    constants:'Konstanter', noClosedTrips:'Ingen avsluttede turer ennå.',
     towLevelCpue:'Høst-nivå CPUE-detalj', noGPSTows:'Ingen høstere med full GPS-data ennå.',
     trip:'Tur', towNum:'Høster #', fill:'Fylling %', catchVol:'Fangstvolum (m³)',
     track:'Spor (m)', area:'Areal (m²)', cpueCol:'CPUE (m³/m²)', depth:'Dybde (m)',
@@ -679,6 +888,14 @@ const T = {
     loginTitle:'Forskningsdashboard', loginDesc:'Ava Ocean intern plattform — kun autoriserte brukere',
     signIn:'Logg inn', signingIn:'Logger inn...', wrongCreds:'Feil e-post eller passord.',
     enterCreds:'Fyll inn e-post og passord.',
+    drillTitle:'Turdetaljer', drillAllTrips:'Alle turer', drillDailyBreakdown:'Daglig nedbrytning',
+    drillTowsThisDay:'Høster denne dagen', drillDetailTable:'Detaljert dagssammendrag',
+    drillTowTable:'Høster', drillMapLabel:'Høstkart',
+    drillMapSub:'Farge etter fylling % — klikk for detaljer',
+    drillLegLow:'Lav fylling', drillLegHigh:'Høy fylling', drillLegSelected:'● Valgt dato',
+    drillSelectTrip:'Velg en tur ovenfor for å se detaljer',
+    drillNoData:'Ingen data for denne turen ennå.',
+    drillDays:'dager', drillTows:'høster',
   },
   en: {
     overview:'Overview', cpue:'CPUE & Emissions', activities:'Activities', tows:'Harvester Log',
@@ -688,7 +905,7 @@ const T = {
     totalBycatch:'Total Bycatch', voyages:'voyages', towsLogged:'harvesters logged',
     perTow:'% per tow', individuals:'individuals', fillPerTow:'Harvester Fill % per Tow',
     actBreakdown:'Activity Breakdown', fuelPerAct:'Fuel per Activity',
-    constants:'Constants', noClosedTrips:"No closed trips yet. Close a trip on the captain's form to see metrics here.",
+    constants:'Constants', noClosedTrips:'No closed trips yet.',
     towLevelCpue:'Tow-Level CPUE Detail', noGPSTows:'No tows with full GPS data yet.',
     trip:'Trip', towNum:'Harvester #', fill:'Fill %', catchVol:'Catch Vol (m³)',
     track:'Track (m)', area:'Area (m²)', cpueCol:'CPUE (m³/m²)', depth:'Depth (m)',
@@ -708,15 +925,21 @@ const T = {
     loginTitle:'Research Dashboard', loginDesc:'Ava Ocean internal platform — authorised users only',
     signIn:'Sign In', signingIn:'Signing in...', wrongCreds:'Incorrect email or password.',
     enterCreds:'Please enter email and password.',
+    drillTitle:'Trip Details', drillAllTrips:'All Trips', drillDailyBreakdown:'Daily Breakdown',
+    drillTowsThisDay:'Tows this day', drillDetailTable:'Detailed Daily Summary',
+    drillTowTable:'Tows', drillMapLabel:'Tow Map',
+    drillMapSub:'Colour by fill % — click for details',
+    drillLegLow:'Low fill', drillLegHigh:'High fill', drillLegSelected:'● Selected date',
+    drillSelectTrip:'Select a trip above to see details',
+    drillNoData:'No data for this trip yet.',
+    drillDays:'days', drillTows:'tows',
   }
 };
-
 
 function setLang(lang) {
   currentLang=lang;
   localStorage.setItem('ava_lang',lang);
   const t=T[lang];
-  // Toggle buttons
   document.querySelectorAll('.lang-btn,.sidebar-lang-btn').forEach(b=>b.classList.toggle('active',b.textContent===lang.toUpperCase()));
   // Login
   document.getElementById('loginTitle').textContent=t.loginTitle;
@@ -734,11 +957,9 @@ function setLang(lang) {
   document.getElementById('navTows').textContent=t.tows;
   document.getElementById('navBycatch').textContent=t.bycatch;
   document.getElementById('navMap').textContent=t.map;
-  if(document.getElementById('navFactory'))document.getElementById('navFactory').textContent=(currentLang==='no'?'Fabrikk':'Factory');
-  if(document.getElementById('navFactory')) document.getElementById('navFactory').textContent=t.factory;
-  // Factory section labels
-  const fno = currentLang==='no';
-  const fel = (id,no,en) => { const e=document.getElementById(id); if(e) e.textContent=fno?no:en; };
+  if(document.getElementById('navFactory'))document.getElementById('navFactory').textContent=t.factory;
+  const fno=lang==='no';
+  const fel=(id,no,en)=>{const e=document.getElementById(id);if(e)e.textContent=fno?no:en;};
   fel('titleFactory','Fabrikk','Factory');
   fel('subFactory','Prøvedata fra fabrikk — per måned og felt','Factory sample data — by month and site');
   fel('fLblAvgGram','Snitt gram per muskel','Avg gram per meat');
@@ -749,25 +970,19 @@ function setLang(lang) {
   fel('fChartPopTitle','Populasjonsfordeling per måned — % hunn vs % hann','Population split by month — % female vs % male');
   fel('fChartDamageTitle','Skaderate per måned — % skadet per prøve','Damage rate by month — % damaged per sample');
   fel('fLblSiteTable','Feltsammenligning','Site Comparison');
-  fel('fThSite',fno?'Felt':'Site','Site');
-  fel('fThSamples','Prøver','Samples');
-  fel('fThGram','Snitt g/muskel','Avg g/meat');
-  fel('fThAndel','Snitt muskel %','Avg meat %');
-  fel('fThCont','Snitt cont/lb','Avg cont/lb');
-  fel('fThDamage','Snitt skade %','Avg damage %');
-  fel('fThFemale','Snitt % hunn','Avg % female');
-  fel('fThMale','Snitt % hann','Avg % male');
-  if(allFactory && allFactory.length) renderFactory();
+  fel('fThSite','Felt','Site'); fel('fThSamples','Prøver','Samples');
+  fel('fThGram','Snitt g/muskel','Avg g/meat'); fel('fThAndel','Snitt muskel %','Avg meat %');
+  fel('fThCont','Snitt cont/lb','Avg cont/lb'); fel('fThDamage','Snitt skade %','Avg damage %');
+  fel('fThFemale','Snitt % hunn','Avg % female'); fel('fThMale','Snitt % hann','Avg % male');
+  if(allFactory&&allFactory.length)renderFactory();
   document.getElementById('filterLabel').textContent=t.filterTrip;
-  document.getElementById('statusText').textContent=currentLang==='no'?(document.getElementById('statusDot').classList.contains('connected')?'Tilkoblet':document.getElementById('statusDot').classList.contains('error')?'Feil':'Kobler til...'):(document.getElementById('statusDot').classList.contains('connected')?'Connected':document.getElementById('statusDot').classList.contains('error')?'Error':'Connecting...');
   document.getElementById('signoutBtn').textContent=t.signout;
   const pillText=document.getElementById('pillConstantsText');
-  if(pillText) pillText.textContent=currentLang==='no'?'Høster 12m · Kurv 28m³ ved 100% · HFO 3,114 kg CO₂/liter':'Harvester 12m · Basket 28m³ at 100% · HFO 3.114 kg CO₂/litre';
+  if(pillText)pillText.textContent=fno?'Høster 12m · Kurv 28m³ ved 100% · HFO 3,114 kg CO₂/liter':'Harvester 12m · Basket 28m³ at 100% · HFO 3.114 kg CO₂/litre';
   const pillLabel=document.getElementById('pillConstantsLabel');
-  if(pillLabel) pillLabel.textContent=currentLang==='no'?'Konstanter:':'Constants:';
+  if(pillLabel)pillLabel.textContent=fno?'Konstanter:':'Constants:';
   const subCpue=document.getElementById('subCpue');
-  if(subCpue) subCpue.textContent=currentLang==='no'?'Beregnet per avsluttet tur':'Calculated per closed trip';
-  // Overview
+  if(subCpue)subCpue.textContent=fno?'Beregnet per avsluttet tur':'Calculated per closed trip';
   document.getElementById('titleOverview').textContent=t.overview;
   document.getElementById('labelTrips').textContent=t.totalTrips;
   document.getElementById('unitTrips').textContent=t.voyages;
@@ -780,7 +995,6 @@ function setLang(lang) {
   document.getElementById('chartFillTitle').textContent=t.fillPerTow;
   document.getElementById('chartActTitle').textContent=t.actBreakdown;
   document.getElementById('chartFuelTitle').textContent=t.fuelPerAct;
-  // CPUE
   document.getElementById('titleCpue').textContent=t.cpue;
   document.getElementById('labelTowCpue').textContent=t.towLevelCpue;
   document.getElementById('thTrip').textContent=t.trip;
@@ -791,7 +1005,6 @@ function setLang(lang) {
   document.getElementById('thArea').textContent=t.area;
   document.getElementById('thCpue').textContent=t.cpueCol;
   document.getElementById('thDepth').textContent=t.depth;
-  // Activities
   document.getElementById('titleActivities').textContent=t.activities;
   document.getElementById('subActivities').textContent=t.activities_sub;
   document.getElementById('thActType').textContent=t.type;
@@ -803,12 +1016,11 @@ function setLang(lang) {
   document.getElementById('thActSea').textContent=t.seaState;
   document.getElementById('thActWind').textContent=t.wind;
   document.getElementById('thActVis').textContent=t.vis;
-  // Tows
   document.getElementById('titleTows').textContent=t.tows;
   document.getElementById('subTows').textContent=t.tows_sub;
   document.getElementById('thTowFill').textContent=t.fill;
   document.getElementById('thTowDepth').textContent=t.depth;
-  const tno=currentLang==='no';
+  const tno=fno;
   const tel=(id,no,en)=>{const e=document.getElementById(id);if(e)e.textContent=tno?no:en;};
   tel('towLblAvgFill','Snitt fylling','Avg fill');
   tel('towLblAvgDur','Snitt varighet','Avg duration');
@@ -823,8 +1035,7 @@ function setLang(lang) {
   tel('towChartSeaFill','Bølgehøyde vs fylling %','Wave height vs fill %');
   tel('towChartDurFill','Varighet vs fylling %','Duration vs fill %');
   tel('thTowSpeed','Hastighet (kn)','Speed (kn)');
-  if(allTows&&allTows.length) renderTowCharts(allTows.filter(t=>currentTripFilter==='all'||t.trip_id===currentTripFilter));
-  // Bycatch
+  if(allTows&&allTows.length)renderTowCharts(allTows.filter(tw=>currentTripFilter==='all'||tw.trip_id===currentTripFilter));
   document.getElementById('titleBycatch').textContent=t.bycatch;
   document.getElementById('subBycatch').textContent=t.bycatch_sub;
   document.getElementById('thBySpecies').textContent=t.species;
@@ -834,19 +1045,36 @@ function setLang(lang) {
   document.getElementById('thByL').textContent=t.large;
   document.getElementById('thByTotal').textContent=t.total;
   document.getElementById('thByRet').textContent=t.returned;
-  document.getElementById('chartBySpecies').textContent=lang==='no'?'Etter art':'By Species';
-  document.getElementById('chartBySize').textContent=lang==='no'?'Etter størrelse':'By Size Class';
-  // Map
+  document.getElementById('chartBySpecies').textContent=fno?'Etter art':'By Species';
+  document.getElementById('chartBySize').textContent=fno?'Etter størrelse':'By Size Class';
   document.getElementById('titleMap').textContent=t.map;
   document.getElementById('subMap').textContent=t.map_sub;
   document.getElementById('legStart').textContent=t.markerStart;
   document.getElementById('legEnd').textContent=t.markerEnd;
   document.getElementById('legTrack').textContent=t.markerTrack;
-  // Refresh + CSV buttons
   ['btnRefreshAct','btnRefreshTow','btnRefreshBy'].forEach(id=>document.getElementById(id).textContent=t.refresh);
   ['btnCsvAct','btnCsvTow','btnCsvBy'].forEach(id=>document.getElementById(id).textContent=t.exportCSV);
-  // AI tab
-  const ano=currentLang==='no';
+  // Drill-down labels
+  const del=(id,k)=>{const e=document.getElementById(id);if(e)e.textContent=t[k]||'';};
+  del('drillSectionLabel','drillTitle');
+  del('bcAll','drillAllTrips');
+  del('drillDateLabel','drillDailyBreakdown');
+  del('drillTowDetailLabel','drillTowsThisDay');
+  del('drillDetailTableLabel','drillDetailTable');
+  del('drillTowTableLabel','drillTowTable');
+  del('drillMapLabel','drillMapLabel');
+  del('drillMapSub','drillMapSub');
+  del('drillLegLow','drillLegLow');
+  del('drillLegHigh','drillLegHigh');
+  del('drillLegSelected','drillLegSelected');
+  // Date table headers
+  const dh=fno?['Dato','Høster','Snitt fylling','Kg landet','Høstetid','WOW / nedetid']:['Date','Tows','Avg fill','Kg landed','Harvest time','WOW / downtime'];
+  dh.forEach((h,i)=>{const e=document.getElementById('dh'+i);if(e)e.textContent=h;});
+  // Tow table headers
+  const th2=fno?['#','Start','Slutt','Min','Fylling %','Vol m³','Spor (m)','Areal (m²)','CPUE','Dybde (m)','Hastighet (kn)']:['#','Start','End','Min','Fill %','Vol m³','Track (m)','Area (m²)','CPUE','Depth (m)','Speed (kn)'];
+  th2.forEach((h,i)=>{const e=document.getElementById('dtt'+i);if(e)e.textContent=h;});
+  // AI
+  const ano=fno;
   const ael=(id,no,en)=>{const e=document.getElementById(id);if(e)e.textContent=ano?no:en;};
   ael('titleAi','AI Innsikt','AI Insights');
   ael('subAi','Drevet av Claude','Powered by Claude');
@@ -874,739 +1102,632 @@ function setLang(lang) {
   ael('aiThinking','Tenker...','Thinking...');
   ael('navAi','AI Innsikt','AI Insights');
   ael('mnavAi','AI Innsikt','AI Insights');
-  // Repopulate trip filter
   const sel=document.getElementById('tripFilter');
-  if(sel.options[0])sel.options[0].textContent=lang==='no'?'Alle turer':'All Trips';
-  // Re-render tables with new language
-  if(allTrips.length) renderAll();
+  if(sel&&sel.options[0])sel.options[0].textContent=lang==='no'?'Alle turer':'All Trips';
+  if(allTrips.length)renderAll();
 }
 function initLang(){const s=localStorage.getItem('ava_lang')||'no';if(s!=='no')setLang(s);}
 
-
-function renderTowCharts(tows) {
-  if (!tows || !tows.length) return;
-  const no = currentLang === 'no';
-
-  // ── Helper ───────────────────────────────────────────────
-  function haversine(lat1,lon1,lat2,lon2){
-    const R=6371000,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
-    const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-  }
-
-  // Enrich tows with derived fields
-  const enriched = tows.filter(tw=>tw.harvester_fill_pct!=null).map(tw=>{
-    const dur = tw.time_start&&tw.time_end?(new Date(tw.time_end)-new Date(tw.time_start))/60000:null;
-    const dist = tw.lat_start&&tw.lon_start&&tw.lat_end&&tw.lon_end?haversine(tw.lat_start,tw.lon_start,tw.lat_end,tw.lon_end):null;
-    const area = dist?Math.round(dist*12):null;
-    return {...tw, dur, dist, area};
-  });
-
-  // ── Summary cards ─────────────────────────────────────────
-  const avg = key => { const v=enriched.filter(t=>t[key]!=null).map(t=>t[key]); return v.length?(v.reduce((a,b)=>a+b,0)/v.length):null; };
-  const sum = key => enriched.filter(t=>t[key]!=null).reduce((s,t)=>s+t[key],0);
-  const fmt = (v,dp=1) => v!=null?v.toFixed(dp):'—';
-
-  document.getElementById('towStatFill').textContent   = fmt(avg('harvester_fill_pct'));
-  document.getElementById('towStatDur').textContent    = fmt(avg('dur'));
-  document.getElementById('towStatArea').textContent   = fmt(avg('area'),0);
-  document.getElementById('towStatTotalArea').textContent = Math.round(sum('area')).toLocaleString();
-  document.getElementById('towStatSpeed').textContent  = fmt(avg('speed_knots'));
-  document.getElementById('towStatDepth').textContent  = fmt(avg('depth_m'));
-
-  // Chart defaults
-  const cOpts = (xLabel,yLabel) => ({
-    responsive:true, maintainAspectRatio:false,
-    plugins:{legend:{display:false}},
-    scales:{
-      x:{title:{display:true,text:xLabel,color:'#a8959e',font:{size:10}},ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}},grid:{color:'#5c5060'}},
-      y:{title:{display:true,text:yLabel,color:'#a8959e',font:{size:10}},ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}},grid:{color:'#5c5060'}}
-    }
-  });
-
-  // ── 1. Fill % over time (line) ────────────────────────────
-  const sorted = [...enriched].sort((a,b)=>new Date(a.time_start)-new Date(b.time_start));
-  if(charts.towFillTime) charts.towFillTime.destroy();
-  const c1 = document.getElementById('towFillTimeChart')?.getContext('2d');
-  if(c1) charts.towFillTime = new Chart(c1,{
-    type:'line',
-    data:{
-      labels:sorted.map(t=>t.time_start?new Date(t.time_start).toLocaleDateString(no?'nb-NO':'en-GB',{month:'short',day:'numeric'}):''),
-      datasets:[{data:sorted.map(t=>t.harvester_fill_pct),borderColor:'#D9FFAC',backgroundColor:'rgba(217,255,172,0.1)',tension:0.3,pointRadius:4,pointBackgroundColor:'#D9FFAC'}]
-    },
-    options:cOpts(no?'Dato':'Date','%')
-  });
-
-  // ── 2. Fill % by site (bar) ───────────────────────────────
-  const sites = [...new Set(enriched.filter(t=>t.trip_registry?.site_registry?.site_name).map(t=>t.trip_registry.site_registry.site_name))];
-  const siteAvg = sites.map(s=>{const v=enriched.filter(t=>t.trip_registry?.site_registry?.site_name===s).map(t=>t.harvester_fill_pct);return v.length?(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1):0;});
-  const siteColors=['rgba(217,255,172,0.7)','rgba(230,210,197,0.7)','rgba(255,140,105,0.7)'];
-  if(charts.towFillSite) charts.towFillSite.destroy();
-  const c2 = document.getElementById('towFillSiteChart')?.getContext('2d');
-  if(c2) charts.towFillSite = new Chart(c2,{
-    type:'bar',
-    data:{labels:sites.length?sites:[no?'Ingen data':'No data'],datasets:[{data:siteAvg,backgroundColor:siteColors,borderRadius:4}]},
-    options:{...cOpts(no?'Felt':'Site','%'),plugins:{legend:{display:false}},scales:{...cOpts().scales,y:{...cOpts().scales.y,min:0,max:100}}}
-  });
-
-  // ── 3. Speed vs fill % (scatter) ─────────────────────────
-  const speedData = enriched.filter(t=>t.speed_knots!=null).map(t=>({x:t.speed_knots,y:t.harvester_fill_pct}));
-  if(charts.towSpeedFill) charts.towSpeedFill.destroy();
-  const c3 = document.getElementById('towSpeedFillChart')?.getContext('2d');
-  if(c3) charts.towSpeedFill = new Chart(c3,{
-    type:'scatter',
-    data:{datasets:[{data:speedData,backgroundColor:'rgba(217,255,172,0.6)',pointRadius:6,pointHoverRadius:8}]},
-    options:cOpts(no?'Hastighet (knop)':'Speed (knots)','%')
-  });
-
-  // ── 4. Depth vs fill % (scatter) ─────────────────────────
-  const depthData = enriched.filter(t=>t.depth_m!=null).map(t=>({x:t.depth_m,y:t.harvester_fill_pct}));
-  if(charts.towDepthFill) charts.towDepthFill.destroy();
-  const c4 = document.getElementById('towDepthFillChart')?.getContext('2d');
-  if(c4) charts.towDepthFill = new Chart(c4,{
-    type:'scatter',
-    data:{datasets:[{data:depthData,backgroundColor:'rgba(230,210,197,0.6)',pointRadius:6,pointHoverRadius:8}]},
-    options:cOpts(no?'Dybde (m)':'Depth (m)','%')
-  });
-
-  // ── 5. Sea state vs fill % (bar - avg fill per sea state) ─
-  const seaStates = [...new Set(enriched.filter(t=>t.wave_height_m!=null).map(t=>Math.round(t.wave_height_m*2)/2))].sort((a,b)=>a-b);
-  const seaAvg = seaStates.map(s=>{const v=enriched.filter(t=>t.wave_height_m!=null&&Math.round(t.wave_height_m*2)/2===s).map(t=>t.harvester_fill_pct);return v.length?(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1):0;});
-  if(charts.towSeaFill) charts.towSeaFill.destroy();
-  const c5 = document.getElementById('towSeaFillChart')?.getContext('2d');
-  if(c5) charts.towSeaFill = new Chart(c5,{
-    type:'bar',
-    data:{labels:seaStates.map(s=>s+'m'),datasets:[{data:seaAvg,backgroundColor:'rgba(255,140,105,0.7)',borderRadius:4}]},
-    options:cOpts(no?'Bølgehøyde (m)':'Wave height (m)','%')
-  });
-
-  // ── 6. Duration vs fill % (scatter) ──────────────────────
-  const durData = enriched.filter(t=>t.dur!=null).map(t=>({x:parseFloat(t.dur.toFixed(1)),y:t.harvester_fill_pct}));
-  if(charts.towDurFill) charts.towDurFill.destroy();
-  const c6 = document.getElementById('towDurFillChart')?.getContext('2d');
-  if(c6) charts.towDurFill = new Chart(c6,{
-    type:'scatter',
-    data:{datasets:[{data:durData,backgroundColor:'rgba(180,130,255,0.6)',pointRadius:6,pointHoverRadius:8}]},
-    options:cOpts(no?'Varighet (min)':'Duration (min)','%')
-  });
+// ═══════════════════════════════════════════════════════════
+// DRILL-DOWN
+// ═══════════════════════════════════════════════════════════
+function haversineM(lat1,lon1,lat2,lon2){
+  const R=6371000,r=d=>d*Math.PI/180,dLat=r(lat2-lat1),dLon=r(lon2-lon1);
+  const a=Math.sin(dLat/2)**2+Math.cos(r(lat1))*Math.cos(r(lat2))*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-function renderFactory() {
-  const no = currentLang === 'no';
-  const filtered = currentTripFilter === 'all' ? allFactory : allFactory.filter(s => s.trip_id === currentTripFilter);
-  if (!filtered.length) return;
+function fillColor(pct) {
+  // 0% = red #FF8C69, 50% = amber #FFD580, 100% = lime #D9FFAC
+  if(pct==null) return '#a8959e';
+  const p = Math.max(0, Math.min(100, pct)) / 100;
+  let r, g, b;
+  if(p < 0.5) {
+    const t = p * 2;
+    r = Math.round(255 + (255-255)*t); // 255→255
+    g = Math.round(140 + (213-140)*t); // 140→213
+    b = Math.round(105 + (128-105)*t); // 105→128
+  } else {
+    const t = (p - 0.5) * 2;
+    r = Math.round(255 + (217-255)*t); // 255→217
+    g = Math.round(213 + (255-213)*t); // 213→255
+    b = Math.round(128 + (172-128)*t); // 128→172
+  }
+  return `rgb(${r},${g},${b})`;
+}
 
-  const avg = (arr, key) => { const v = arr.filter(s => s[key] != null).map(s => s[key]); return v.length ? parseFloat((v.reduce((a,b)=>a+b,0)/v.length).toFixed(1)) : null; };
-
-  // Summary cards
-  const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val !== null ? val : '—'; };
-  set('fStatGram',   avg(filtered,'gram_per_muskel'));
-  set('fStatAndel',  avg(filtered,'andel_muskel_pct'));
-  set('fStatCont',   avg(filtered,'gj_snitt_cont_per_pound'));
-  set('fStatDamage', avg(filtered,'andel_skadet_pct'));
-
-  // Group by month
-  const byMonth = {};
-  filtered.forEach(s => {
-    if (!s.sample_date) return;
-    const m = s.sample_date.slice(0,7);
-    if (!byMonth[m]) byMonth[m] = [];
-    byMonth[m].push(s);
-  });
-  const months = Object.keys(byMonth).sort();
-  const monthLabels = months.map(m => {
-    const [y,mo] = m.split('-');
-    return new Date(parseInt(y), parseInt(mo)-1, 1).toLocaleString(no?'nb-NO':'en-GB', {month:'short', year:'2-digit'});
-  });
-
-  const avgBy = (arr, key) => { const v = arr.filter(s=>s[key]!=null).map(s=>s[key]); return v.length ? parseFloat((v.reduce((a,b)=>a+b,0)/v.length).toFixed(1)) : null; };
-  const sites = [...new Set(filtered.filter(s=>s.site_name).map(s=>s.site_name))];
-  const siteColors = ['#D9FFAC','#E6D2C5','#FF8C69','#c2f090','#d4bfb3'];
-
-  // Chart 1: Yield
-  const gramDs = sites.map((site,si) => ({
-    label:(no?'g/muskel':'g/meat')+' — '+site,
-    data: months.map(m => avgBy(byMonth[m].filter(s=>s.site_name===site),'gram_per_muskel')),
-    borderColor:siteColors[si%5], backgroundColor:'transparent', tension:0.3, pointRadius:5, yAxisID:'y',
-  }));
-  const andelDs = sites.map((site,si) => ({
-    label:(no?'Muskel %':'Meat %')+' — '+site,
-    data: months.map(m => avgBy(byMonth[m].filter(s=>s.site_name===site),'andel_muskel_pct')),
-    borderColor:siteColors[si%5], backgroundColor:'transparent', borderDash:[5,4], tension:0.3, pointRadius:4, yAxisID:'y2',
-  }));
-  if (charts.fYield) charts.fYield.destroy();
-  const c1 = document.getElementById('fYieldChart')?.getContext('2d');
-  if (c1) charts.fYield = new Chart(c1, {type:'line', data:{labels:monthLabels, datasets:[...gramDs,...andelDs]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#a8959e',font:{family:'ABCFavorit',size:11}}}},scales:{x:{ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}},grid:{color:'#5c5060'}},y:{position:'left',title:{display:true,text:no?'g/muskel':'g/meat',color:'#a8959e'},ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}},grid:{color:'#5c5060'}},y2:{position:'right',title:{display:true,text:'%',color:'#a8959e'},ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}},grid:{drawOnChartArea:false}}}}});
-
-  // Chart 2: Population split
-  const femDs = sites.map((site,si) => ({label:(no?'% hunn':'% female')+' — '+site, data:months.map(m=>avgBy(byMonth[m].filter(s=>s.site_name===site),'pct_ho')), backgroundColor:siteColors[si%5]+'bb', borderColor:siteColors[si%5], borderWidth:1, borderRadius:3}));
-  const malDs = sites.map((site,si) => ({label:(no?'% hann':'% male')+' — '+site, data:months.map(m=>avgBy(byMonth[m].filter(s=>s.site_name===site),'pct_han')), backgroundColor:siteColors[si%5]+'44', borderColor:siteColors[si%5], borderWidth:1, borderRadius:3}));
-  if (charts.fPop) charts.fPop.destroy();
-  const c2 = document.getElementById('fPopChart')?.getContext('2d');
-  if (c2) charts.fPop = new Chart(c2, {type:'bar', data:{labels:monthLabels, datasets:[...femDs,...malDs]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#a8959e',font:{family:'ABCFavorit',size:11}}}},scales:{x:{ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}},grid:{color:'#5c5060'}},y:{min:0,max:100,ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10},callback:v=>v+'%'},grid:{color:'#5c5060'}}}}});
-
-  // Chart 3: Damage
-  const dmgDs = sites.map((site,si) => ({label:(no?'Skade %':'Damage %')+' — '+site, data:months.map(m=>avgBy(byMonth[m].filter(s=>s.site_name===site),'andel_skadet_pct')), backgroundColor:siteColors[si%5]+'bb', borderColor:siteColors[si%5], borderWidth:1, borderRadius:4}));
-  if (charts.fDamage) charts.fDamage.destroy();
-  const c3 = document.getElementById('fDamageChart')?.getContext('2d');
-  if (c3) charts.fDamage = new Chart(c3, {type:'bar', data:{labels:monthLabels, datasets:dmgDs}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#a8959e',font:{family:'ABCFavorit',size:11}}}},scales:{x:{ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}},grid:{color:'#5c5060'}},y:{min:0,ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10},callback:v=>v+'%'},grid:{color:'#5c5060'}}}}});
-
-  // Site table
-  const tbody = document.getElementById('fSiteTableBody');
-  if (!tbody) return;
-  const allSites = [...new Set(filtered.filter(s=>s.site_name).map(s=>s.site_name))].sort();
-  if (!allSites.length) { tbody.innerHTML=`<tr><td colspan="8" class="empty">${no?'Ingen data ennå.':'No data yet.'}</td></tr>`; return; }
-  tbody.innerHTML = allSites.map(site => {
-    const ss = filtered.filter(s=>s.site_name===site);
-    const a = key => { const v=avgBy(ss,key); return v!==null?v:'—'; };
-    return `<tr><td><strong>${site}</strong></td><td>${ss.length}</td><td><strong style="color:var(--accent)">${a('gram_per_muskel')} g</strong></td><td>${a('andel_muskel_pct')}%</td><td>${a('gj_snitt_cont_per_pound')}</td><td style="color:var(--warn)">${a('andel_skadet_pct')}%</td><td>${a('pct_ho')}%</td><td>${a('pct_han')}%</td></tr>`;
+function renderDrillTrips() {
+  const t = T[currentLang];
+  const grid = document.getElementById('drillTripGrid');
+  const badge = document.getElementById('drillTripCount');
+  if(!allTrips.length) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1;">${t.drillSelectTrip}</div>`;
+    badge.textContent = '0 ' + t.drillTows;
+    return;
+  }
+  badge.textContent = allTrips.length + ' ' + (currentLang==='no'?'turer':'trips');
+  grid.innerHTML = allTrips.map(trip => {
+    const tripTows = allTows.filter(tw => tw.trip_id === trip.id);
+    const fills = tripTows.filter(tw=>tw.harvester_fill_pct!=null).map(tw=>tw.harvester_fill_pct);
+    const avgFill = fills.length ? (fills.reduce((a,b)=>a+b,0)/fills.length).toFixed(1) : null;
+    const site = trip.site_registry?.site_name || '—';
+    const dates = [trip.departure_date, trip.return_date].filter(Boolean);
+    const dateStr = dates.length === 2 ? dates[0] + ' → ' + dates[1] : dates[0] || '—';
+    const isSelected = trip.id === drillSelectedTripId;
+    return `<div class="drill-trip-card${isSelected?' selected':''}" onclick="drillSelectTrip('${trip.id}')">
+      <div class="drill-trip-code">${trip.trip_code}</div>
+      <div class="drill-trip-meta">${site}<br>${dateStr}</div>
+      <div class="drill-trip-pills">
+        <span class="drill-pill hi">${tripTows.length} ${currentLang==='no'?'høster':'tows'}</span>
+        ${avgFill!=null?`<span class="drill-pill hi">⌀ ${avgFill}% fylling</span>`:''}
+        ${trip.trip_closed?`<span class="drill-pill">✓ ${currentLang==='no'?'Avsluttet':'Closed'}</span>`:`<span class="drill-pill warn">● ${currentLang==='no'?'Åpen':'Open'}</span>`}
+      </div>
+    </div>`;
   }).join('');
 }
 
-function showCpueSub(name) {
-  ['trip','daily','emissions'].forEach(n => {
-    const el = document.getElementById('cpueSub-'+n);
-    if(el) el.style.display = n===name?'block':'none';
-  });
-  ['cpueSubTab1','cpueSubTab2','cpueSubTab3'].forEach((id,i) => {
-    const el = document.getElementById(id);
-    if(!el) return;
-    const names=['trip','daily','emissions'];
-    if(names[i]===name){el.style.borderColor='var(--accent)';el.style.color='var(--accent)';}
-    else{el.style.borderColor='var(--border)';el.style.color='var(--text)';}
-  });
-  if(name==='daily') renderDailySummary();
-  if(name==='emissions') renderEmissionsMonth();
+function drillSelectTrip(tripId) {
+  drillSelectedTripId = tripId;
+  drillSelectedDate = null;
+  const trip = allTrips.find(t => t.id === tripId);
+  if(!trip) return;
+
+  // Update trip cards selection highlight
+  renderDrillTrips();
+
+  // Show level 1
+  document.getElementById('drillLevel0').style.display = 'block';
+  document.getElementById('drillLevel1').style.display = 'block';
+  document.getElementById('drillTowDetail').style.display = 'none';
+
+  // Breadcrumb
+  renderDrillBreadcrumb(trip, null);
+
+  // Banner
+  renderDrillBanner(trip);
+
+  // Date table
+  renderDrillDates(trip);
+
+  // Map
+  renderDrillMap(tripId, null);
+
+  // Scroll to level 1
+  setTimeout(() => document.getElementById('drillLevel1').scrollIntoView({behavior:'smooth', block:'start'}), 80);
 }
 
-function minsToHours(mins){ return mins/60; }
-function hoursStr(h){ return h!=null?h.toFixed(2):'—'; }
+function drillReset() {
+  drillSelectedTripId = null;
+  drillSelectedDate = null;
+  document.getElementById('drillLevel1').style.display = 'none';
+  document.getElementById('drillTowDetail').style.display = 'none';
+  renderDrillTrips();
+  renderDrillBreadcrumb(null, null);
+}
 
-function renderDailySummary() {
-  const HFO = 3.114;
-  const f = currentTripFilter==='all'
-    ? {activities:allActivities, tows:allTows, factory:allFactory, daily:allDailyLogs}
-    : {activities:allActivities.filter(a=>a.trip_id===currentTripFilter),
-       tows:allTows.filter(t=>t.trip_id===currentTripFilter),
-       factory:allFactory.filter(s=>s.trip_id===currentTripFilter),
-       daily:allDailyLogs.filter(d=>d.trip_id===currentTripFilter)};
+function renderDrillBreadcrumb(trip, date) {
+  const t = T[currentLang];
+  const bc = document.getElementById('drillBreadcrumb');
+  let html = `<span class="drill-breadcrumb-item${!trip?' active':''}" onclick="drillReset()">${t.drillAllTrips}</span>`;
+  if(trip) {
+    html += `<span class="drill-breadcrumb-sep">›</span>`;
+    html += `<span class="drill-breadcrumb-item${!date?' active':''}" onclick="drillSelectTrip('${trip.id}')">${trip.trip_code} — ${trip.site_registry?.site_name||''}</span>`;
+  }
+  if(date) {
+    html += `<span class="drill-breadcrumb-sep">›</span>`;
+    html += `<span class="drill-breadcrumb-item active">${date}</span>`;
+  }
+  bc.innerHTML = html;
+}
 
-  // Get all unique dates across activities
-  const dates = [...new Set([
-    ...f.activities.filter(a=>a.time_start).map(a=>a.time_start.slice(0,10)),
-    ...f.daily.map(d=>d.log_date),
-  ])].sort();
+function renderDrillBanner(trip) {
+  const no = currentLang === 'no';
+  const tripTows = allTows.filter(tw => tw.trip_id === trip.id);
+  const tripActs = allActivities.filter(a => a.trip_id === trip.id);
+  const fills = tripTows.filter(tw=>tw.harvester_fill_pct!=null).map(tw=>tw.harvester_fill_pct);
+  const avgFill = fills.length ? (fills.reduce((a,b)=>a+b,0)/fills.length).toFixed(1) : '—';
+  let totalFuel = 0;
+  tripActs.forEach(a => { if(a.fuel_start_litres!=null&&a.fuel_end_litres!=null) totalFuel += Math.max(0,a.fuel_end_litres-a.fuel_start_litres); });
+  let totalArea = 0, towsGPS = 0;
+  tripTows.forEach(tw => { if(tw.lat_start&&tw.lon_start&&tw.lat_end&&tw.lon_end){ totalArea += haversineM(tw.lat_start,tw.lon_start,tw.lat_end,tw.lon_end)*HARVESTER_WIDTH_M; towsGPS++; } });
+  const fishingMins = tripActs.filter(a=>a.activity_type==='fishing'&&a.time_start&&a.time_end).reduce((s,a)=>(s+(new Date(a.time_end)-new Date(a.time_start))/60000),0);
 
-  const tbody = document.getElementById('dailySummaryBody');
-  if(!dates.length){tbody.innerHTML='<tr><td colspan="17" class="empty">Ingen data ennå.</td></tr>';return;}
+  document.getElementById('drillTripBannerTitle').innerHTML = `${trip.trip_code} <span style="font-size:13px;font-weight:400;color:var(--muted);">— ${trip.site_registry?.site_name||'—'} &nbsp;·&nbsp; ${trip.departure_date||'?'}${trip.return_date?' → '+trip.return_date:''}</span>`;
+  document.getElementById('drillTripBannerMetrics').innerHTML = `
+    <div class="metric-cell"><div class="metric-cell-label">${no?'Antall høster':'Total Tows'}</div><div class="metric-cell-val">${tripTows.length}</div><div class="metric-cell-unit">${no?'høster':'tows'}</div></div>
+    <div class="metric-cell"><div class="metric-cell-label">${no?'Snitt fylling':'Avg Fill'}</div><div class="metric-cell-val">${avgFill}</div><div class="metric-cell-unit">%</div></div>
+    <div class="metric-cell blue"><div class="metric-cell-label">${no?'Areal dekket':'Area Covered'}</div><div class="metric-cell-val">${totalArea>0?(totalArea/10000).toFixed(2):'—'}</div><div class="metric-cell-unit">ha · ${towsGPS}/${tripTows.length} GPS</div></div>
+    <div class="metric-cell plain"><div class="metric-cell-label">${no?'Høstetid':'Harvest Time'}</div><div class="metric-cell-val">${(fishingMins/60).toFixed(1)}</div><div class="metric-cell-unit">${no?'timer':'hours'}</div></div>`;
+}
 
-  const actsDuration = (acts, type, date) => {
-    return acts.filter(a=>a.activity_type===type&&a.time_start?.slice(0,10)===date&&a.time_end)
-      .reduce((s,a)=>{return s+(new Date(a.time_end)-new Date(a.time_start))/60000;},0); // minutes
-  };
-  const actsFuel = (acts, date) => {
-    return acts.filter(a=>a.time_start?.slice(0,10)===date&&a.fuel_start_litres!=null&&a.fuel_end_litres!=null)
-      .reduce((s,a)=>s+Math.max(0,a.fuel_end_litres-a.fuel_start_litres),0);
-  };
+function renderDrillDates(trip) {
+  const no = currentLang === 'no';
+  const t = T[currentLang];
+  const tripTows = allTows.filter(tw => tw.trip_id === trip.id);
+  const tripActs = allActivities.filter(a => a.trip_id === trip.id);
+  const tripDaily = allDailyLogs.filter(d => d.trip_id === trip.id);
 
-  tbody.innerHTML = dates.map(date => {
-    const harvestMins = actsDuration(f.activities,'fishing',date);
-    const downtimeHarvestMins = actsDuration(f.activities,'downtime_harvester',date);
-    const downtimeFactoryMins = actsDuration(f.activities,'downtime_factory',date);
-    const wowMins = actsDuration(f.activities,'wow',date);
-    const steamMins = actsDuration(f.activities,'steaming',date);
-    const totalDownMins = downtimeHarvestMins+downtimeFactoryMins+wowMins;
-    const operationMins = 24*60 - totalDownMins;
-    const fuel = actsFuel(f.activities, date);
-    const dailyEntry = f.daily.find(d=>d.log_date===date);
-    const kg = dailyEntry?.kg_landed||null;
-    const tows = f.tows.filter(t=>t.time_start?.slice(0,10)===date).length;
-    const harvestH = harvestMins/60;
-    const factorySamples = f.factory.filter(s=>s.sample_date===date);
-    const avgGram = factorySamples.length ? (factorySamples.filter(s=>s.gram_per_muskel).reduce((s,x)=>s+x.gram_per_muskel,0)/factorySamples.filter(s=>s.gram_per_muskel).length) : null;
+  // Get all unique dates
+  const dateSet = new Set([
+    ...tripActs.filter(a=>a.time_start).map(a=>a.time_start.slice(0,10)),
+    ...tripTows.filter(tw=>tw.time_start).map(tw=>tw.time_start.slice(0,10)),
+    ...tripDaily.map(d=>d.log_date),
+  ]);
+  const dates = [...dateSet].sort();
 
-    const pct = (mins,base) => base>0?(mins/base*100).toFixed(1)+'%':'—';
-    const div = (a,b) => b>0?(a/b).toFixed(2):'—';
+  const badge = document.getElementById('drillDateCount');
+  badge.textContent = dates.length + ' ' + t.drillDays;
 
-    return `<tr>
+  const container = document.getElementById('drillDateRows');
+  if(!dates.length) {
+    container.innerHTML = `<div class="empty">${t.drillNoData}</div>`;
+    return;
+  }
+
+  const actDur = (acts, type, date) =>
+    acts.filter(a=>a.activity_type===type&&a.time_start?.slice(0,10)===date&&a.time_end)
+        .reduce((s,a)=>(s+(new Date(a.time_end)-new Date(a.time_start))/60000),0);
+
+  container.innerHTML = dates.map(date => {
+    const dayTows = tripTows.filter(tw=>tw.time_start?.slice(0,10)===date);
+    const fills = dayTows.filter(tw=>tw.harvester_fill_pct!=null).map(tw=>tw.harvester_fill_pct);
+    const avgFill = fills.length ? (fills.reduce((a,b)=>a+b,0)/fills.length).toFixed(1) : '—';
+    const dailyEntry = tripDaily.find(d=>d.log_date===date);
+    const kg = dailyEntry?.kg_landed;
+    const harvestMins = actDur(tripActs,'fishing',date);
+    const wowMins = actDur(tripActs,'wow',date);
+    const dtHarvMins = actDur(tripActs,'downtime_harvester',date);
+    const dtFacMins = actDur(tripActs,'downtime_factory',date);
+    const downTotal = wowMins + dtHarvMins + dtFacMins;
+    const isSelected = date === drillSelectedDate;
+    return `<div class="drill-date-row${isSelected?' selected':''}" onclick="drillSelectDate('${trip.id}','${date}')">
+      <span><strong>${date}</strong></span>
+      <span class="drill-date-val">${dayTows.length}</span>
+      <span class="drill-date-val">${avgFill}%</span>
+      <span style="color:var(--accent)">${kg!=null?kg.toLocaleString()+' kg':'—'}</span>
+      <span>${harvestMins>0?(harvestMins/60).toFixed(1)+'h':'—'}</span>
+      <span style="color:${downTotal>0?'var(--warn)':'var(--muted)'}">${downTotal>0?(downTotal/60).toFixed(1)+'h':'—'}</span>
+      <span class="drill-date-chevron">›</span>
+    </div>`;
+  }).join('');
+}
+
+function drillSelectDate(tripId, date) {
+  drillSelectedDate = date;
+  const trip = allTrips.find(t=>t.id===tripId);
+  if(!trip) return;
+
+  // Re-render dates to update selection highlight
+  renderDrillDates(trip);
+  renderDrillBreadcrumb(trip, date);
+
+  // Show tow detail section
+  document.getElementById('drillTowDetail').style.display = 'block';
+  renderDrillTowDetail(tripId, date);
+
+  // Update map to highlight this date's tows
+  renderDrillMap(tripId, date);
+
+  setTimeout(() => document.getElementById('drillTowDetail').scrollIntoView({behavior:'smooth', block:'start'}), 80);
+}
+
+function renderDrillTowDetail(tripId, date) {
+  const no = currentLang === 'no';
+  const t = T[currentLang];
+  const tripTows = allTows.filter(tw=>tw.trip_id===tripId && tw.time_start?.slice(0,10)===date);
+  const tripActs = allActivities.filter(a=>a.trip_id===tripId);
+  const tripDaily = allDailyLogs.filter(d=>d.trip_id===tripId);
+  const tripFactory = allFactory.filter(s=>s.trip_id===tripId);
+
+  // Update count badge
+  document.getElementById('drillTowDetailCount').textContent = tripTows.length + ' ' + t.drillTows;
+
+  // ── Day summary stat cards ──────────────────────────────
+  const actDur = (type) =>
+    tripActs.filter(a=>a.activity_type===type&&a.time_start?.slice(0,10)===date&&a.time_end)
+            .reduce((s,a)=>(s+(new Date(a.time_end)-new Date(a.time_start))/60000),0);
+  const harvestMins = actDur('fishing');
+  const wowMins = actDur('wow');
+  const dtHarvestMins = actDur('downtime_harvester');
+  const dtFactoryMins = actDur('downtime_factory');
+  const dailyEntry = tripDaily.find(d=>d.log_date===date);
+  const kg = dailyEntry?.kg_landed;
+  const fills = tripTows.filter(tw=>tw.harvester_fill_pct!=null).map(tw=>tw.harvester_fill_pct);
+  const avgFill = fills.length ? (fills.reduce((a,b)=>a+b,0)/fills.length).toFixed(1) : null;
+  const fuelActs = tripActs.filter(a=>a.time_start?.slice(0,10)===date&&a.fuel_start_litres!=null&&a.fuel_end_litres!=null);
+  const fuel = fuelActs.reduce((s,a)=>s+Math.max(0,a.fuel_end_litres-a.fuel_start_litres),0);
+  const factSamples = tripFactory.filter(s=>s.sample_date===date);
+  const avgGram = factSamples.filter(s=>s.gram_per_muskel!=null).length ?
+    (factSamples.filter(s=>s.gram_per_muskel!=null).reduce((s,x)=>s+x.gram_per_muskel,0)/factSamples.filter(s=>s.gram_per_muskel!=null).length).toFixed(1) : null;
+
+  document.getElementById('drillDayStats').innerHTML = `
+    <div class="drill-day-stat"><div class="drill-day-stat-label">${no?'Antall høster':'Tows'}</div><div class="drill-day-stat-val">${tripTows.length}</div><div class="drill-day-stat-unit">${no?'høster':'tows'}</div></div>
+    <div class="drill-day-stat"><div class="drill-day-stat-label">${no?'Snitt fylling':'Avg fill'}</div><div class="drill-day-stat-val">${avgFill??'—'}</div><div class="drill-day-stat-unit">%</div></div>
+    <div class="drill-day-stat"><div class="drill-day-stat-label">${no?'Kg landet':'Kg landed'}</div><div class="drill-day-stat-val" style="font-size:18px;">${kg!=null?kg.toLocaleString():'—'}</div><div class="drill-day-stat-unit">kg</div></div>
+    <div class="drill-day-stat"><div class="drill-day-stat-label">${no?'Høstetid':'Harvest time'}</div><div class="drill-day-stat-val">${(harvestMins/60).toFixed(1)}</div><div class="drill-day-stat-unit">${no?'timer':'hours'}</div></div>
+    <div class="drill-day-stat"><div class="drill-day-stat-label">${no?'Drivstoff':'Fuel'}</div><div class="drill-day-stat-val" style="font-size:18px;">${fuel.toFixed(0)}</div><div class="drill-day-stat-unit">L</div></div>
+    <div class="drill-day-stat"><div class="drill-day-stat-label">${no?'Snitt g/muskel':'Avg g/meat'}</div><div class="drill-day-stat-val" style="font-size:18px;">${avgGram??'—'}</div><div class="drill-day-stat-unit">g</div></div>`;
+
+  // ── 17-column detail table (one row = this date) ────────
+  const harvestH = harvestMins/60;
+  const operationMins = 24*60 - (wowMins+dtHarvestMins+dtFactoryMins);
+  const pct=(mins,base)=>base>0?(mins/base*100).toFixed(1)+'%':'—';
+
+  const thead = document.getElementById('drillDetailThead');
+  const tbody = document.getElementById('drillDetailTbody');
+  if(thead) {
+    const cols = no
+      ? ['Dato','Kg landet','Høstetid (t)','Høstetid/24t','Kg/høstetid','Høstetid/drift','Ant. høster','Kg/høster','Min/høster','Nedetid høster (t)','Nedetid høster%','WOW (t)','WOW%','Nedetid fabrikk (t)','Nedetid fabrikk%','Snitt g/muskel','Drivstoff (L)']
+      : ['Date','Kg landed','Harvest (h)','Harvest/24h','Kg/harvest h','Harvest/ops','Tows','Kg/tow','Min/tow','Harvester DT (h)','Harvester DT%','WOW (h)','WOW%','Factory DT (h)','Factory DT%','Avg g/meat','Fuel (L)'];
+    thead.innerHTML = cols.map(c=>`<th>${c}</th>`).join('');
+    tbody.innerHTML = `<tr>
       <td><strong>${date}</strong></td>
       <td style="color:var(--accent)">${kg!=null?kg.toLocaleString():'—'}</td>
       <td>${harvestH.toFixed(2)}</td>
       <td>${pct(harvestMins,24*60)}</td>
       <td>${kg!=null&&harvestH>0?(kg/harvestH).toFixed(1):'—'}</td>
       <td>${operationMins>0?pct(harvestMins,operationMins):'—'}</td>
-      <td>${tows}</td>
-      <td>${kg!=null&&tows>0?(kg/tows).toFixed(1):'—'}</td>
-      <td>${tows>0&&harvestH>0?((harvestH/tows)*60).toFixed(1):'—'}</td>
-      <td>${(downtimeHarvestMins/60).toFixed(2)}</td>
-      <td>${pct(downtimeHarvestMins,24*60)}</td>
+      <td>${tripTows.length}</td>
+      <td>${kg!=null&&tripTows.length>0?(kg/tripTows.length).toFixed(1):'—'}</td>
+      <td>${tripTows.length>0&&harvestH>0?((harvestH/tripTows.length)*60).toFixed(1):'—'}</td>
+      <td>${(dtHarvestMins/60).toFixed(2)}</td>
+      <td>${pct(dtHarvestMins,24*60)}</td>
       <td>${(wowMins/60).toFixed(2)}</td>
       <td>${pct(wowMins,24*60)}</td>
-      <td>${(downtimeFactoryMins/60).toFixed(2)}</td>
-      <td>${pct(downtimeFactoryMins,24*60)}</td>
-      <td>${avgGram!=null?avgGram.toFixed(1):'—'} g</td>
+      <td>${(dtFactoryMins/60).toFixed(2)}</td>
+      <td>${pct(dtFactoryMins,24*60)}</td>
+      <td>${avgGram??'—'} g</td>
       <td>${fuel.toFixed(0)}</td>
     </tr>`;
+  }
+
+  // ── Per-tow table ────────────────────────────────────────
+  const towBody = document.getElementById('drillTowTableBody');
+  if(!towBody) return;
+  if(!tripTows.length) {
+    towBody.innerHTML = `<tr><td colspan="11" class="empty">${t.noTows}</td></tr>`;
+    return;
+  }
+  towBody.innerHTML = tripTows.map(tw => {
+    const dur = tw.time_start&&tw.time_end ? Math.round((new Date(tw.time_end)-new Date(tw.time_start))/60000) : '—';
+    const vol = ((tw.harvester_fill_pct||0)/100*BASKET_VOLUME_M3).toFixed(2);
+    let track='—', area='—', cpue='—';
+    if(tw.lat_start&&tw.lon_start&&tw.lat_end&&tw.lon_end) {
+      track = haversineM(tw.lat_start,tw.lon_start,tw.lat_end,tw.lon_end).toFixed(0);
+      area = (parseFloat(track)*HARVESTER_WIDTH_M).toFixed(0);
+      cpue = area>0 ? (parseFloat(vol)/parseFloat(area)).toFixed(5) : '—';
+    }
+    const ts = tw.time_start ? new Date(tw.time_start).toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'}) : '—';
+    const te = tw.time_end ? new Date(tw.time_end).toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'}) : '—';
+    const fc = fillColor(tw.harvester_fill_pct);
+    return `<tr>
+      <td><strong style="color:var(--accent)">#${tw.tow_number}</strong></td>
+      <td>${ts}</td><td>${te}</td><td>${dur}</td>
+      <td><strong style="color:${fc}">${tw.harvester_fill_pct??'—'}%</strong></td>
+      <td>${vol}</td><td>${track}</td><td>${area}</td>
+      <td>${cpue}</td><td>${tw.depth_m??'—'}</td><td>${tw.speed_knots??'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderDrillMap(tripId, selectedDate) {
+  const towsForTrip = allTows.filter(tw => tw.trip_id===tripId && tw.lat_start && tw.lon_start);
+  const mapEl = document.getElementById('drillMap');
+  if(!mapEl) return;
+
+  if(!drillMap) {
+    const center = towsForTrip.length > 0 ? [towsForTrip[0].lat_start, towsForTrip[0].lon_start] : [74.5, 19.0];
+    drillMap = L.map('drillMap').setView(center, towsForTrip.length>0 ? 9 : 5);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {attribution:'© OpenStreetMap © CARTO', maxZoom:18}).addTo(drillMap);
+  } else {
+    drillMap.eachLayer(l => { if(!(l instanceof L.TileLayer)) drillMap.removeLayer(l); });
+  }
+
+  if(!towsForTrip.length) return;
+
+  const no = currentLang === 'no';
+
+  towsForTrip.forEach(tw => {
+    const isSelectedDay = selectedDate && tw.time_start?.slice(0,10) === selectedDate;
+    const fc = fillColor(tw.harvester_fill_pct);
+    const radius = isSelectedDay ? 10 : 7;
+    const opacity = selectedDate ? (isSelectedDay ? 1 : 0.35) : 0.85;
+    const weight = isSelectedDay ? 3 : 1.5;
+
+    L.circleMarker([tw.lat_start, tw.lon_start], {
+      radius, fillColor: fc, color: isSelectedDay ? '#ffffff' : fc,
+      weight, fillOpacity: opacity, opacity: opacity
+    }).bindPopup(`<b>#${tw.tow_number}</b>${tw.time_start?'<br>'+tw.time_start.slice(0,16):''}<br>${no?'Fylling':'Fill'}: <b>${tw.harvester_fill_pct??'—'}%</b>`).addTo(drillMap);
+
+    if(tw.lat_end && tw.lon_end) {
+      L.polyline([[tw.lat_start,tw.lon_start],[tw.lat_end,tw.lon_end]], {
+        color: fc, weight: isSelectedDay ? 3 : 2, opacity: opacity
+      }).addTo(drillMap);
+      L.circleMarker([tw.lat_end, tw.lon_end], {
+        radius: isSelectedDay ? 7 : 5, fillColor: '#FF8C69', color: isSelectedDay?'#ffffff':'#FF8C69',
+        weight: isSelectedDay?2:1, fillOpacity: opacity
+      }).addTo(drillMap);
+    }
+  });
+
+  const bounds = towsForTrip.flatMap(tw => {
+    const pts = [[tw.lat_start,tw.lon_start]];
+    if(tw.lat_end&&tw.lon_end) pts.push([tw.lat_end,tw.lon_end]);
+    return pts;
+  });
+  if(bounds.length > 1) {
+    drillMap.fitBounds(bounds, {padding:[40,40]});
+  }
+  // Invalidate size after display
+  setTimeout(() => drillMap.invalidateSize(), 100);
+}
+
+function renderDrillOverview() {
+  renderDrillTrips();
+  // If a trip was already selected, re-render level 1
+  if(drillSelectedTripId) {
+    const trip = allTrips.find(t=>t.id===drillSelectedTripId);
+    if(trip) {
+      document.getElementById('drillLevel1').style.display='block';
+      renderDrillBanner(trip);
+      renderDrillDates(trip);
+      renderDrillBreadcrumb(trip, drillSelectedDate);
+      if(drillSelectedDate) {
+        document.getElementById('drillTowDetail').style.display='block';
+        renderDrillTowDetail(drillSelectedTripId, drillSelectedDate);
+      }
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXISTING CHART/TABLE RENDERERS (unchanged from original)
+// ═══════════════════════════════════════════════════════════
+function renderTowCharts(tows) {
+  if (!tows || !tows.length) return;
+  const no = currentLang === 'no';
+  function haversine(lat1,lon1,lat2,lon2){const R=6371000,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+  const enriched = tows.filter(tw=>tw.harvester_fill_pct!=null).map(tw=>{
+    const dur = tw.time_start&&tw.time_end?(new Date(tw.time_end)-new Date(tw.time_start))/60000:null;
+    const dist = tw.lat_start&&tw.lon_start&&tw.lat_end&&tw.lon_end?haversine(tw.lat_start,tw.lon_start,tw.lat_end,tw.lon_end):null;
+    const area = dist?Math.round(dist*12):null;
+    return {...tw, dur, dist, area};
+  });
+  const avg = key => { const v=enriched.filter(t=>t[key]!=null).map(t=>t[key]); return v.length?(v.reduce((a,b)=>a+b,0)/v.length):null; };
+  const sum = key => enriched.filter(t=>t[key]!=null).reduce((s,t)=>s+t[key],0);
+  const fmt = (v,dp=1) => v!=null?v.toFixed(dp):'—';
+  document.getElementById('towStatFill').textContent   = fmt(avg('harvester_fill_pct'));
+  document.getElementById('towStatDur').textContent    = fmt(avg('dur'));
+  document.getElementById('towStatArea').textContent   = fmt(avg('area'),0);
+  document.getElementById('towStatTotalArea').textContent = Math.round(sum('area')).toLocaleString();
+  document.getElementById('towStatSpeed').textContent  = fmt(avg('speed_knots'));
+  document.getElementById('towStatDepth').textContent  = fmt(avg('depth_m'));
+  const cOpts = (xLabel,yLabel) => ({responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:xLabel,color:'#a8959e',font:{size:10}},ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}},grid:{color:'#5c5060'}},y:{title:{display:true,text:yLabel,color:'#a8959e',font:{size:10}},ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}},grid:{color:'#5c5060'}}}});
+  const sorted = [...enriched].sort((a,b)=>new Date(a.time_start)-new Date(b.time_start));
+  if(charts.towFillTime) charts.towFillTime.destroy();
+  const c1 = document.getElementById('towFillTimeChart')?.getContext('2d');
+  if(c1) charts.towFillTime = new Chart(c1,{type:'line',data:{labels:sorted.map(t=>t.time_start?new Date(t.time_start).toLocaleDateString(no?'nb-NO':'en-GB',{month:'short',day:'numeric'}):''),datasets:[{data:sorted.map(t=>t.harvester_fill_pct),borderColor:'#D9FFAC',backgroundColor:'rgba(217,255,172,0.1)',tension:0.3,pointRadius:4,pointBackgroundColor:'#D9FFAC'}]},options:cOpts(no?'Dato':'Date','%')});
+  const sites = [...new Set(enriched.filter(t=>t.trip_registry?.site_registry?.site_name).map(t=>t.trip_registry.site_registry.site_name))];
+  const siteAvg = sites.map(s=>{const v=enriched.filter(t=>t.trip_registry?.site_registry?.site_name===s).map(t=>t.harvester_fill_pct);return v.length?(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1):0;});
+  const siteColors=['rgba(217,255,172,0.7)','rgba(230,210,197,0.7)','rgba(255,140,105,0.7)'];
+  if(charts.towFillSite) charts.towFillSite.destroy();
+  const c2 = document.getElementById('towFillSiteChart')?.getContext('2d');
+  if(c2) charts.towFillSite = new Chart(c2,{type:'bar',data:{labels:sites.length?sites:[no?'Ingen data':'No data'],datasets:[{data:siteAvg,backgroundColor:siteColors,borderRadius:4}]},options:{...cOpts(no?'Felt':'Site','%'),plugins:{legend:{display:false}},scales:{...cOpts().scales,y:{...cOpts().scales.y,min:0,max:100}}}});
+  const speedData = enriched.filter(t=>t.speed_knots!=null).map(t=>({x:t.speed_knots,y:t.harvester_fill_pct}));
+  if(charts.towSpeedFill) charts.towSpeedFill.destroy();
+  const c3 = document.getElementById('towSpeedFillChart')?.getContext('2d');
+  if(c3) charts.towSpeedFill = new Chart(c3,{type:'scatter',data:{datasets:[{data:speedData,backgroundColor:'rgba(217,255,172,0.6)',pointRadius:6,pointHoverRadius:8}]},options:cOpts(no?'Hastighet (knop)':'Speed (knots)','%')});
+  const depthData = enriched.filter(t=>t.depth_m!=null).map(t=>({x:t.depth_m,y:t.harvester_fill_pct}));
+  if(charts.towDepthFill) charts.towDepthFill.destroy();
+  const c4 = document.getElementById('towDepthFillChart')?.getContext('2d');
+  if(c4) charts.towDepthFill = new Chart(c4,{type:'scatter',data:{datasets:[{data:depthData,backgroundColor:'rgba(230,210,197,0.6)',pointRadius:6,pointHoverRadius:8}]},options:cOpts(no?'Dybde (m)':'Depth (m)','%')});
+  const seaStates = [...new Set(enriched.filter(t=>t.wave_height_m!=null).map(t=>Math.round(t.wave_height_m*2)/2))].sort((a,b)=>a-b);
+  const seaAvg = seaStates.map(s=>{const v=enriched.filter(t=>t.wave_height_m!=null&&Math.round(t.wave_height_m*2)/2===s).map(t=>t.harvester_fill_pct);return v.length?(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1):0;});
+  if(charts.towSeaFill) charts.towSeaFill.destroy();
+  const c5 = document.getElementById('towSeaFillChart')?.getContext('2d');
+  if(c5) charts.towSeaFill = new Chart(c5,{type:'bar',data:{labels:seaStates.map(s=>s+'m'),datasets:[{data:seaAvg,backgroundColor:'rgba(255,140,105,0.7)',borderRadius:4}]},options:cOpts(no?'Bølgehøyde (m)':'Wave height (m)','%')});
+  const durData = enriched.filter(t=>t.dur!=null).map(t=>({x:parseFloat(t.dur.toFixed(1)),y:t.harvester_fill_pct}));
+  if(charts.towDurFill) charts.towDurFill.destroy();
+  const c6 = document.getElementById('towDurFillChart')?.getContext('2d');
+  if(c6) charts.towDurFill = new Chart(c6,{type:'scatter',data:{datasets:[{data:durData,backgroundColor:'rgba(180,130,255,0.6)',pointRadius:6,pointHoverRadius:8}]},options:cOpts(no?'Varighet (min)':'Duration (min)','%')});
+}
+
+function renderFactory() {
+  const no = currentLang === 'no';
+  const filtered = currentTripFilter === 'all' ? allFactory : allFactory.filter(s => s.trip_id === currentTripFilter);
+  if (!filtered.length) return;
+  const avg = (arr, key) => { const v = arr.filter(s => s[key] != null).map(s => s[key]); return v.length ? parseFloat((v.reduce((a,b)=>a+b,0)/v.length).toFixed(1)) : null; };
+  const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val !== null ? val : '—'; };
+  set('fStatGram', avg(filtered,'gram_per_muskel'));
+  set('fStatAndel', avg(filtered,'andel_muskel_pct'));
+  set('fStatCont', avg(filtered,'gj_snitt_cont_per_pound'));
+  set('fStatDamage', avg(filtered,'andel_skadet_pct'));
+  const byMonth = {};
+  filtered.forEach(s => { if(!s.sample_date)return; const m=s.sample_date.slice(0,7); if(!byMonth[m])byMonth[m]=[]; byMonth[m].push(s); });
+  const months = Object.keys(byMonth).sort();
+  const monthLabels = months.map(m => { const [y,mo]=m.split('-'); return new Date(parseInt(y),parseInt(mo)-1,1).toLocaleString(no?'nb-NO':'en-GB',{month:'short',year:'2-digit'}); });
+  const avgBy = (arr, key) => { const v=arr.filter(s=>s[key]!=null).map(s=>s[key]); return v.length?parseFloat((v.reduce((a,b)=>a+b,0)/v.length).toFixed(1)):null; };
+  const sites = [...new Set(filtered.filter(s=>s.site_name).map(s=>s.site_name))];
+  const siteColors = ['#D9FFAC','#E6D2C5','#FF8C69','#c2f090','#d4bfb3'];
+  const gramDs = sites.map((site,si)=>({label:(no?'g/muskel':'g/meat')+' — '+site,data:months.map(m=>avgBy(byMonth[m].filter(s=>s.site_name===site),'gram_per_muskel')),borderColor:siteColors[si%5],backgroundColor:'transparent',tension:0.3,pointRadius:5,yAxisID:'y'}));
+  const andelDs = sites.map((site,si)=>({label:(no?'Muskel %':'Meat %')+' — '+site,data:months.map(m=>avgBy(byMonth[m].filter(s=>s.site_name===site),'andel_muskel_pct')),borderColor:siteColors[si%5],backgroundColor:'transparent',borderDash:[5,4],tension:0.3,pointRadius:4,yAxisID:'y2'}));
+  if(charts.fYield)charts.fYield.destroy();
+  const c1=document.getElementById('fYieldChart')?.getContext('2d');
+  if(c1)charts.fYield=new Chart(c1,{type:'line',data:{labels:monthLabels,datasets:[...gramDs,...andelDs]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#a8959e',font:{family:'ABCFavorit',size:11}}}},scales:{x:{ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}},grid:{color:'#5c5060'}},y:{position:'left',title:{display:true,text:no?'g/muskel':'g/meat',color:'#a8959e'},ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}},grid:{color:'#5c5060'}},y2:{position:'right',title:{display:true,text:'%',color:'#a8959e'},ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}},grid:{drawOnChartArea:false}}}}});
+  const femDs=sites.map((site,si)=>({label:(no?'% hunn':'% female')+' — '+site,data:months.map(m=>avgBy(byMonth[m].filter(s=>s.site_name===site),'pct_ho')),backgroundColor:siteColors[si%5]+'bb',borderColor:siteColors[si%5],borderWidth:1,borderRadius:3}));
+  const malDs=sites.map((site,si)=>({label:(no?'% hann':'% male')+' — '+site,data:months.map(m=>avgBy(byMonth[m].filter(s=>s.site_name===site),'pct_han')),backgroundColor:siteColors[si%5]+'44',borderColor:siteColors[si%5],borderWidth:1,borderRadius:3}));
+  if(charts.fPop)charts.fPop.destroy();
+  const c2=document.getElementById('fPopChart')?.getContext('2d');
+  if(c2)charts.fPop=new Chart(c2,{type:'bar',data:{labels:monthLabels,datasets:[...femDs,...malDs]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#a8959e',font:{family:'ABCFavorit',size:11}}}},scales:{x:{ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}},grid:{color:'#5c5060'}},y:{min:0,max:100,ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10},callback:v=>v+'%'},grid:{color:'#5c5060'}}}}});
+  const dmgDs=sites.map((site,si)=>({label:(no?'Skade %':'Damage %')+' — '+site,data:months.map(m=>avgBy(byMonth[m].filter(s=>s.site_name===site),'andel_skadet_pct')),backgroundColor:siteColors[si%5]+'bb',borderColor:siteColors[si%5],borderWidth:1,borderRadius:4}));
+  if(charts.fDamage)charts.fDamage.destroy();
+  const c3=document.getElementById('fDamageChart')?.getContext('2d');
+  if(c3)charts.fDamage=new Chart(c3,{type:'bar',data:{labels:monthLabels,datasets:dmgDs},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#a8959e',font:{family:'ABCFavorit',size:11}}}},scales:{x:{ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}},grid:{color:'#5c5060'}},y:{min:0,ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10},callback:v=>v+'%'},grid:{color:'#5c5060'}}}}});
+  const tbody=document.getElementById('fSiteTableBody');
+  if(!tbody)return;
+  const allSites=[...new Set(filtered.filter(s=>s.site_name).map(s=>s.site_name))].sort();
+  if(!allSites.length){tbody.innerHTML=`<tr><td colspan="8" class="empty">${no?'Ingen data ennå.':'No data yet.'}</td></tr>`;return;}
+  tbody.innerHTML=allSites.map(site=>{const ss=filtered.filter(s=>s.site_name===site);const a=key=>{const v=avgBy(ss,key);return v!==null?v:'—';};return `<tr><td><strong>${site}</strong></td><td>${ss.length}</td><td><strong style="color:var(--accent)">${a('gram_per_muskel')} g</strong></td><td>${a('andel_muskel_pct')}%</td><td>${a('gj_snitt_cont_per_pound')}</td><td style="color:var(--warn)">${a('andel_skadet_pct')}%</td><td>${a('pct_ho')}%</td><td>${a('pct_han')}%</td></tr>`;}).join('');
+}
+
+function renderDailySummary() {
+  const f = currentTripFilter==='all'
+    ? {activities:allActivities,tows:allTows,factory:allFactory,daily:allDailyLogs}
+    : {activities:allActivities.filter(a=>a.trip_id===currentTripFilter),tows:allTows.filter(t=>t.trip_id===currentTripFilter),factory:allFactory.filter(s=>s.trip_id===currentTripFilter),daily:allDailyLogs.filter(d=>d.trip_id===currentTripFilter)};
+  const dates=[...new Set([...f.activities.filter(a=>a.time_start).map(a=>a.time_start.slice(0,10)),...f.daily.map(d=>d.log_date)])].sort();
+  const tbody=document.getElementById('dailySummaryBody');
+  if(!dates.length){tbody.innerHTML='<tr><td colspan="17" class="empty">Ingen data ennå.</td></tr>';return;}
+  const actsDuration=(acts,type,date)=>acts.filter(a=>a.activity_type===type&&a.time_start?.slice(0,10)===date&&a.time_end).reduce((s,a)=>(s+(new Date(a.time_end)-new Date(a.time_start))/60000),0);
+  const actsFuel=(acts,date)=>acts.filter(a=>a.time_start?.slice(0,10)===date&&a.fuel_start_litres!=null&&a.fuel_end_litres!=null).reduce((s,a)=>s+Math.max(0,a.fuel_end_litres-a.fuel_start_litres),0);
+  tbody.innerHTML=dates.map(date=>{
+    const harvestMins=actsDuration(f.activities,'fishing',date);
+    const downtimeHarvestMins=actsDuration(f.activities,'downtime_harvester',date);
+    const downtimeFactoryMins=actsDuration(f.activities,'downtime_factory',date);
+    const wowMins=actsDuration(f.activities,'wow',date);
+    const operationMins=24*60-(downtimeHarvestMins+downtimeFactoryMins+wowMins);
+    const fuel=actsFuel(f.activities,date);
+    const dailyEntry=f.daily.find(d=>d.log_date===date);
+    const kg=dailyEntry?.kg_landed||null;
+    const tows=f.tows.filter(t=>t.time_start?.slice(0,10)===date).length;
+    const harvestH=harvestMins/60;
+    const factorySamples=f.factory.filter(s=>s.sample_date===date);
+    const avgGram=factorySamples.length?(factorySamples.filter(s=>s.gram_per_muskel).reduce((s,x)=>s+x.gram_per_muskel,0)/factorySamples.filter(s=>s.gram_per_muskel).length):null;
+    const pct=(mins,base)=>base>0?(mins/base*100).toFixed(1)+'%':'—';
+    return `<tr><td><strong>${date}</strong></td><td style="color:var(--accent)">${kg!=null?kg.toLocaleString():'—'}</td><td>${harvestH.toFixed(2)}</td><td>${pct(harvestMins,24*60)}</td><td>${kg!=null&&harvestH>0?(kg/harvestH).toFixed(1):'—'}</td><td>${operationMins>0?pct(harvestMins,operationMins):'—'}</td><td>${tows}</td><td>${kg!=null&&tows>0?(kg/tows).toFixed(1):'—'}</td><td>${tows>0&&harvestH>0?((harvestH/tows)*60).toFixed(1):'—'}</td><td>${(downtimeHarvestMins/60).toFixed(2)}</td><td>${pct(downtimeHarvestMins,24*60)}</td><td>${(wowMins/60).toFixed(2)}</td><td>${pct(wowMins,24*60)}</td><td>${(downtimeFactoryMins/60).toFixed(2)}</td><td>${pct(downtimeFactoryMins,24*60)}</td><td>${avgGram!=null?avgGram.toFixed(1):'—'} g</td><td>${fuel.toFixed(0)}</td></tr>`;
   }).join('');
 }
 
 function renderEmissionsMonth() {
-  const HFO = 3.114;
-  const acts = currentTripFilter==='all'?allActivities:allActivities.filter(a=>a.trip_id===currentTripFilter);
-  const tows = currentTripFilter==='all'?allTows:allTows.filter(t=>t.trip_id===currentTripFilter);
-  const daily = currentTripFilter==='all'?allDailyLogs:allDailyLogs.filter(d=>d.trip_id===currentTripFilter);
-  const trips = currentTripFilter==='all'?allTrips:allTrips.filter(t=>t.id===currentTripFilter);
-
-  // Group by month (from trip departure date)
-  const byMonth = {};
-  acts.filter(a=>a.time_start).forEach(a => {
-    const m = a.time_start.slice(0,7);
-    if(!byMonth[m]) byMonth[m]={acts:[],tows:[],daily:[],trips:new Set()};
-    byMonth[m].acts.push(a);
-    if(a.trip_id) byMonth[m].trips.add(a.trip_id);
-  });
-  tows.filter(t=>t.time_start).forEach(t => {
-    const m = t.time_start.slice(0,7);
-    if(!byMonth[m]) byMonth[m]={acts:[],tows:[],daily:[],trips:new Set()};
-    byMonth[m].tows.push(t);
-  });
-  daily.filter(d=>d.log_date).forEach(d => {
-    const m = d.log_date.slice(0,7);
-    if(!byMonth[m]) byMonth[m]={acts:[],tows:[],daily:[],trips:new Set()};
-    byMonth[m].daily.push(d);
-  });
-
-  const months = Object.keys(byMonth).sort();
-  const tbody = document.getElementById('emissionsMonthBody');
+  const HFO=3.114;
+  const acts=currentTripFilter==='all'?allActivities:allActivities.filter(a=>a.trip_id===currentTripFilter);
+  const tows=currentTripFilter==='all'?allTows:allTows.filter(t=>t.trip_id===currentTripFilter);
+  const daily=currentTripFilter==='all'?allDailyLogs:allDailyLogs.filter(d=>d.trip_id===currentTripFilter);
+  const byMonth={};
+  acts.filter(a=>a.time_start).forEach(a=>{const m=a.time_start.slice(0,7);if(!byMonth[m])byMonth[m]={acts:[],tows:[],daily:[],trips:new Set()};byMonth[m].acts.push(a);if(a.trip_id)byMonth[m].trips.add(a.trip_id);});
+  tows.filter(t=>t.time_start).forEach(t=>{const m=t.time_start.slice(0,7);if(!byMonth[m])byMonth[m]={acts:[],tows:[],daily:[],trips:new Set()};byMonth[m].tows.push(t);});
+  daily.filter(d=>d.log_date).forEach(d=>{const m=d.log_date.slice(0,7);if(!byMonth[m])byMonth[m]={acts:[],tows:[],daily:[],trips:new Set()};byMonth[m].daily.push(d);});
+  const months=Object.keys(byMonth).sort();
+  const tbody=document.getElementById('emissionsMonthBody');
   if(!months.length){tbody.innerHTML='<tr><td colspan="9" class="empty">Ingen data ennå.</td></tr>';return;}
-
-  tbody.innerHTML = months.map(m => {
-    const g = byMonth[m];
-    const fuelActs = g.acts.filter(a=>a.fuel_start_litres!=null&&a.fuel_end_litres!=null);
-    const totalFuel = fuelActs.reduce((s,a)=>s+Math.max(0,a.fuel_end_litres-a.fuel_start_litres),0);
-    const co2 = totalFuel*HFO/1000;
-    const kgLanded = g.daily.reduce((s,d)=>s+(d.kg_landed||0),0);
-    const waveActs = g.acts.filter(a=>a.wave_height_m!=null);
-    const avgWave = waveActs.length?(waveActs.reduce((s,a)=>s+a.wave_height_m,0)/waveActs.length).toFixed(1):'—';
-    const towCount = g.tows.length;
-    const label = new Date(m+'-01').toLocaleString(currentLang==='no'?'nb-NO':'en-GB',{month:'long',year:'numeric'});
-    return `<tr>
-      <td><strong>${label}</strong></td>
-      <td>${g.trips.size}</td>
-      <td style="color:var(--accent)">${kgLanded>0?kgLanded.toLocaleString():'—'}</td>
-      <td>${totalFuel.toFixed(0)}</td>
-      <td>${co2.toFixed(2)}</td>
-      <td style="color:var(--warn)">${kgLanded>0?(co2*1000/kgLanded).toFixed(3):'—'}</td>
-      <td>${avgWave}</td>
-      <td>${towCount}</td>
-      <td>${kgLanded>0&&towCount>0?(kgLanded/towCount).toFixed(1):'—'}</td>
-    </tr>`;
+  tbody.innerHTML=months.map(m=>{
+    const g=byMonth[m];
+    const fuelActs=g.acts.filter(a=>a.fuel_start_litres!=null&&a.fuel_end_litres!=null);
+    const totalFuel=fuelActs.reduce((s,a)=>s+Math.max(0,a.fuel_end_litres-a.fuel_start_litres),0);
+    const co2=totalFuel*HFO/1000;
+    const kgLanded=g.daily.reduce((s,d)=>s+(d.kg_landed||0),0);
+    const waveActs=g.acts.filter(a=>a.wave_height_m!=null);
+    const avgWave=waveActs.length?(waveActs.reduce((s,a)=>s+a.wave_height_m,0)/waveActs.length).toFixed(1):'—';
+    const towCount=g.tows.length;
+    const label=new Date(m+'-01').toLocaleString(currentLang==='no'?'nb-NO':'en-GB',{month:'long',year:'numeric'});
+    return `<tr><td><strong>${label}</strong></td><td>${g.trips.size}</td><td style="color:var(--accent)">${kgLanded>0?kgLanded.toLocaleString():'—'}</td><td>${totalFuel.toFixed(0)}</td><td>${co2.toFixed(2)}</td><td style="color:var(--warn)">${kgLanded>0?(co2*1000/kgLanded).toFixed(3):'—'}</td><td>${avgWave}</td><td>${towCount}</td><td>${kgLanded>0&&towCount>0?(kgLanded/towCount).toFixed(1):'—'}</td></tr>`;
   }).join('');
 }
 
+function toggleMobileMenu(){document.getElementById('mobileNav').classList.toggle('open');document.getElementById('mobileOverlay').classList.toggle('open');}
+function closeMobileMenu(){document.getElementById('mobileNav').classList.remove('open');document.getElementById('mobileOverlay').classList.remove('open');}
+function mobileNav(name){document.querySelectorAll('.mobile-nav-item').forEach(el=>el.classList.remove('active'));const el=document.getElementById('mnav-'+name);if(el)el.classList.add('active');showSection(name,document.getElementById('nav-'+name)||{classList:{add:()=>{},remove:()=>{}}});closeMobileMenu();}
+function onMobileTripFilter(){const val=document.getElementById('mobileTripSelect').value;document.getElementById('tripFilter').value=val;onTripFilter();}
 
-// Close sidebar when nav item clicked on mobile
-
-
-function toggleMobileMenu(){
-  document.getElementById('mobileNav').classList.toggle('open');
-  document.getElementById('mobileOverlay').classList.toggle('open');
-}
-function closeMobileMenu(){
-  document.getElementById('mobileNav').classList.remove('open');
-  document.getElementById('mobileOverlay').classList.remove('open');
-}
-function mobileNav(name){
-  document.querySelectorAll('.mobile-nav-item').forEach(el=>el.classList.remove('active'));
-  const el=document.getElementById('mnav-'+name);
-  if(el) el.classList.add('active');
-  showSection(name, document.getElementById('nav-'+name)||{classList:{add:()=>{},remove:()=>{}}});
-  closeMobileMenu();
-}
-function onMobileTripFilter(){
-  const val=document.getElementById('mobileTripSelect').value;
-  document.getElementById('tripFilter').value=val;
-  onTripFilter();
-}
-function syncMobileTripSelect(){
-  const mob=document.getElementById('mobileTripSelect');
-  const desk=document.getElementById('tripFilter');
-  if(!mob||!desk) return;
-  mob.innerHTML=desk.innerHTML;
-  mob.value=desk.value;
-}
-
-// Fix mobile layout on load and resize
 function applyMobileLayout(){
-  const isMobile = window.innerWidth <= 768;
-  const main = document.querySelector('.main');
+  const isMobile=window.innerWidth<=768;
+  const main=document.querySelector('.main');
   if(main){
-    if(isMobile){
-      main.style.marginLeft = '0';
-      main.style.width = window.innerWidth + 'px';
-      main.style.maxWidth = window.innerWidth + 'px';
-      main.style.paddingTop = '68px';
-      main.style.paddingLeft = '12px';
-      main.style.paddingRight = '12px';
-      main.style.boxSizing = 'border-box';
-    } else {
-      main.style.marginLeft = '';
-      main.style.width = '';
-      main.style.maxWidth = '';
-      main.style.paddingTop = '';
-      main.style.paddingLeft = '';
-      main.style.paddingRight = '';
-    }
+    if(isMobile){main.style.marginLeft='0';main.style.width=window.innerWidth+'px';main.style.maxWidth=window.innerWidth+'px';main.style.paddingTop='68px';main.style.paddingLeft='12px';main.style.paddingRight='12px';main.style.boxSizing='border-box';}
+    else{main.style.marginLeft='';main.style.width='';main.style.maxWidth='';main.style.paddingTop='';main.style.paddingLeft='';main.style.paddingRight='';}
   }
 }
 window.addEventListener('resize', applyMobileLayout);
 applyMobileLayout();
 
-// ── AI INSIGHTS ─────────────────────────────────────────────
-
-const AI_ALLOWED = ['dagny@avaocean.no','management@avaocean.no'];
-
-function initAiTab(userEmail) {
-  if(AI_ALLOWED.includes(userEmail)) {
-    document.querySelectorAll('.ai-only').forEach(el=>el.style.display='flex');
-  }
-  // Populate trip select
-  const sel = document.getElementById('aiTripSelect');
-  if(sel) {
-    sel.innerHTML = '<option value="">— Select a trip —</option>';
-    allTrips.forEach(t=>{
-      const o = document.createElement('option');
-      o.value = t.id;
-      o.textContent = `${t.trip_code} — ${t.site_registry?.site_name||''} (${t.departure_date||''})`;
-      sel.appendChild(o);
-    });
-  }
+// ── AI INSIGHTS ──────────────────────────────────────────────
+const AI_ALLOWED=['dagny@avaocean.no','management@avaocean.no'];
+function initAiTab(userEmail){
+  if(AI_ALLOWED.includes(userEmail))document.querySelectorAll('.ai-only').forEach(el=>el.style.display='flex');
+  const sel=document.getElementById('aiTripSelect');
+  if(sel){sel.innerHTML='<option value="">— Select a trip —</option>';allTrips.forEach(t=>{const o=document.createElement('option');o.value=t.id;o.textContent=`${t.trip_code} — ${t.site_registry?.site_name||''} (${t.departure_date||''})`;sel.appendChild(o);});}
 }
-
-function showAiSub(name) {
-  ['anomaly','summary','optimal','query'].forEach(n=>{
-    const el=document.getElementById('aiSub-'+n);
-    if(el) el.style.display=n===name?'block':'none';
-  });
-  ['aiTab1','aiTab2','aiTab3','aiTab4'].forEach((id,i)=>{
-    const el=document.getElementById(id);
-    if(!el) return;
-    const names=['anomaly','summary','optimal','query'];
-    if(names[i]===name){el.style.borderColor='var(--accent)';el.style.color='var(--accent)';}
-    else{el.style.borderColor='var(--border)';el.style.color='var(--text)';}
-  });
+function showAiSub(name){
+  ['anomaly','summary','optimal','query'].forEach(n=>{const el=document.getElementById('aiSub-'+n);if(el)el.style.display=n===name?'block':'none';});
+  ['aiTab1','aiTab2','aiTab3','aiTab4'].forEach((id,i)=>{const el=document.getElementById(id);if(!el)return;const names=['anomaly','summary','optimal','query'];if(names[i]===name){el.style.borderColor='var(--accent)';el.style.color='var(--accent)';}else{el.style.borderColor='var(--border)';el.style.color='var(--text)';}});
 }
-
-function setQuery(text) {
-  document.getElementById('aiQueryInput').value = text;
-}
-
-// ── Build data context string for Claude ─────────────────────
-function buildDataContext(tripId) {
-  const acts   = tripId ? allActivities.filter(a=>a.trip_id===tripId) : allActivities;
-  const tows   = tripId ? allTows.filter(t=>t.trip_id===tripId)       : allTows;
-  const by     = tripId ? allBycatch.filter(b=>b.trip_id===tripId)    : allBycatch;
-  const daily  = tripId ? allDailyLogs.filter(d=>d.trip_id===tripId)  : allDailyLogs;
-  const trips  = tripId ? allTrips.filter(t=>t.id===tripId)           : allTrips;
-
+function setQuery(text){document.getElementById('aiQueryInput').value=text;}
+function buildDataContext(tripId){
+  const acts=tripId?allActivities.filter(a=>a.trip_id===tripId):allActivities;
+  const tows=tripId?allTows.filter(t=>t.trip_id===tripId):allTows;
+  const by=tripId?allBycatch.filter(b=>b.trip_id===tripId):allBycatch;
+  const daily=tripId?allDailyLogs.filter(d=>d.trip_id===tripId):allDailyLogs;
+  const trips=tripId?allTrips.filter(t=>t.id===tripId):allTrips;
   function haversine(a,b,c,d){const R=6371000,dL=(c-a)*Math.PI/180,dl=(d-b)*Math.PI/180,x=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dl/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
-
-  const towSummary = tows.map(t=>{
-    const dur=t.time_start&&t.time_end?Math.round((new Date(t.time_end)-new Date(t.time_start))/60000):null;
-    const dist=t.lat_start&&t.lon_start&&t.lat_end&&t.lon_end?Math.round(haversine(t.lat_start,t.lon_start,t.lat_end,t.lon_end)):null;
-    return {tow:t.tow_number,fill:t.harvester_fill_pct,dur_min:dur,depth_m:t.depth_m,speed_kn:t.speed_knots,area_m2:dist?dist*12:null,date:t.time_start?.slice(0,10)};
+  const towSummary=tows.map(t=>{const dur=t.time_start&&t.time_end?Math.round((new Date(t.time_end)-new Date(t.time_start))/60000):null;const dist=t.lat_start&&t.lon_start&&t.lat_end&&t.lon_end?Math.round(haversine(t.lat_start,t.lon_start,t.lat_end,t.lon_end)):null;return{tow:t.tow_number,fill:t.harvester_fill_pct,dur_min:dur,depth_m:t.depth_m,speed_kn:t.speed_knots,area_m2:dist?dist*12:null,date:t.time_start?.slice(0,10)};});
+  const actSummary=acts.map(a=>({type:a.activity_type,date:a.time_start?.slice(0,10),dur_min:a.time_start&&a.time_end?Math.round((new Date(a.time_end)-new Date(a.time_start))/60000):null,fuel_L:a.fuel_start_litres&&a.fuel_end_litres?Math.round(a.fuel_end_litres-a.fuel_start_litres):null,wave_m:a.wave_height_m,sea_state:a.sea_state,reason:a.reason}));
+  const dailySummary=daily.map(d=>({date:d.log_date,kg:d.kg_landed}));
+  return `OPERATIONAL DATA SUMMARY:\nTrips: ${trips.map(t=>`${t.trip_code} at ${t.site_registry?.site_name||'unknown'}`).join(', ')}\nTotal tows: ${tows.length}\n\nTOW DATA:\n${JSON.stringify(towSummary)}\n\nACTIVITY DATA:\n${JSON.stringify(actSummary)}\n\nDAILY KG:\n${JSON.stringify(dailySummary)}\n\nBYCATCH: ${by.length}`;
+}
+async function runAnomalyDetection(){
+  const btn=document.getElementById('btnRunAnomaly');const results=document.getElementById('anomalyResults');
+  btn.disabled=true;btn.textContent='⏳ Scanning...';results.innerHTML='';
+  function stats(arr){const v=arr.filter(x=>x!=null);if(!v.length)return null;const mean=v.reduce((a,b)=>a+b,0)/v.length;const std=Math.sqrt(v.map(x=>(x-mean)**2).reduce((a,b)=>a+b,0)/v.length);return{mean,std};}
+  const filtered=currentTripFilter==='all'?allTows:allTows.filter(t=>t.trip_id===currentTripFilter);
+  const anomalies=[];
+  const sFill=stats(filtered.map(t=>t.harvester_fill_pct).filter(x=>x!=null));
+  const sDepth=stats(filtered.map(t=>t.depth_m).filter(x=>x!=null));
+  const sSpeed=stats(filtered.map(t=>t.speed_knots).filter(x=>x!=null));
+  filtered.forEach(t=>{
+    const label=`Høster #${t.tow_number} (${t.time_start?.slice(0,10)||'?'})`;
+    if(sFill&&t.harvester_fill_pct!=null&&Math.abs(t.harvester_fill_pct-sFill.mean)>2*sFill.std)anomalies.push({tow:label,field:'Fill %',value:t.harvester_fill_pct,mean:sFill.mean.toFixed(1),std:sFill.std.toFixed(1),dir:t.harvester_fill_pct<sFill.mean?'low':'high'});
+    if(sDepth&&t.depth_m!=null&&Math.abs(t.depth_m-sDepth.mean)>2*sDepth.std)anomalies.push({tow:label,field:'Depth (m)',value:t.depth_m,mean:sDepth.mean.toFixed(1),std:sDepth.std.toFixed(1),dir:t.depth_m<sDepth.mean?'shallow':'deep'});
+    if(sSpeed&&t.speed_knots!=null&&Math.abs(t.speed_knots-sSpeed.mean)>2*sSpeed.std)anomalies.push({tow:label,field:'Speed (kn)',value:t.speed_knots,mean:sSpeed.mean.toFixed(1),std:sSpeed.std.toFixed(1),dir:t.speed_knots<sSpeed.mean?'slow':'fast'});
   });
-
-  const actSummary = acts.map(a=>({
-    type:a.activity_type,date:a.time_start?.slice(0,10),
-    dur_min:a.time_start&&a.time_end?Math.round((new Date(a.time_end)-new Date(a.time_start))/60000):null,
-    fuel_L:a.fuel_start_litres&&a.fuel_end_litres?Math.round(a.fuel_end_litres-a.fuel_start_litres):null,
-    wave_m:a.wave_height_m,sea_state:a.sea_state,reason:a.reason
-  }));
-
-  const dailySummary = daily.map(d=>({date:d.log_date,kg:d.kg_landed}));
-
-  return `OPERATIONAL DATA SUMMARY:
-Trips: ${trips.map(t=>`${t.trip_code} at ${t.site_registry?.site_name||'unknown'} (${t.departure_date||''}–${t.return_date||''})`).join(', ')}
-Total tows: ${tows.length}
-Total activities: ${acts.length}
-
-TOW DATA (each row: tow#, fill%, duration_min, depth_m, speed_knots, area_m2, date):
-${JSON.stringify(towSummary)}
-
-ACTIVITY DATA (type, date, duration_min, fuel_L, wave_height_m, sea_state, reason):
-${JSON.stringify(actSummary)}
-
-DAILY KG LANDED:
-${JSON.stringify(dailySummary)}
-
-BYCATCH EVENTS: ${by.length}`;
+  const actFiltered=currentTripFilter==='all'?allActivities:allActivities.filter(a=>a.trip_id===currentTripFilter);
+  actFiltered.filter(a=>a.activity_type==='downtime_harvester'||a.activity_type==='downtime_factory').forEach(d=>{if(d.time_start&&d.time_end){const hrs=(new Date(d.time_end)-new Date(d.time_start))/3600000;if(hrs>4)anomalies.push({tow:`${d.activity_type==='downtime_harvester'?'Nedetid høster':'Nedetid fabrikk'} (${d.time_start?.slice(0,10)||'?'})`,field:'Duration',value:hrs.toFixed(1)+' hours',mean:'—',std:'—',dir:'long',reason:d.reason||''});}});
+  if(!anomalies.length&&filtered.length<3){results.innerHTML=`<div class="card" style="text-align:center;padding:24px;color:var(--muted);">Not enough data yet. Need at least 3 tows.</div>`;btn.disabled=false;btn.innerHTML='🔍 <span id="aiRunScan">Run Scan</span>';return;}
+  if(!anomalies.length){results.innerHTML=`<div class="card" style="text-align:center;padding:24px;color:var(--accent);">✓ No anomalies detected.</div>`;btn.disabled=false;btn.innerHTML='🔍 <span id="aiRunScan">Run Scan</span>';return;}
+  try{
+    const resp=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Ava Ocean scallop harvester anomaly analysis. Anomalies found:\n${JSON.stringify(anomalies,null,2)}\nStats: Fill mean=${sFill?.mean.toFixed(1)}% ±${sFill?.std.toFixed(1)}, Depth=${sDepth?.mean.toFixed(1)}m ±${sDepth?.std.toFixed(1)}, Speed=${sSpeed?.mean.toFixed(1)}kn ±${sSpeed?.std.toFixed(1)}. Explain each briefly with likely cause and whether action needed. Use bullet points. Respond in ${currentLang==='no'?'Norwegian':'English'}.`}]})});
+    const data=await resp.json();const explanation=data.content?.find(c=>c.type==='text')?.text||'Could not generate explanation.';
+    results.innerHTML=`<div class="card" style="margin-bottom:12px;"><div class="section-label" style="margin-bottom:12px;color:var(--warn);">⚠ ${anomalies.length} Anomal${anomalies.length===1?'y':'ies'} Detected</div>${anomalies.map(a=>`<div style="background:rgba(255,140,105,0.08);border:1px solid rgba(255,140,105,0.3);border-radius:8px;padding:12px;margin-bottom:8px;"><div style="font-weight:700;font-size:13px;">${a.tow}</div><div style="font-size:12px;color:var(--warn);">${a.field}: <strong>${a.value}</strong> (mean: ${a.mean}${a.std!=='—'?', ±'+a.std:''})</div>${a.reason?`<div style="font-size:11px;color:var(--muted);">Reason: ${a.reason}</div>`:''}</div>`).join('')}</div><div class="card"><div class="section-label" style="margin-bottom:12px;">🤖 AI Analysis</div><div style="font-size:13px;line-height:1.7;white-space:pre-wrap;">${explanation}</div></div>`;
+  }catch(e){results.innerHTML=`<div class="card" style="color:var(--warn);">API error: ${e.message}</div>`;}
+  btn.disabled=false;btn.innerHTML='🔍 <span id="aiRunScan">Run Scan</span>';
+}
+async function generateTripSummary(lang){
+  const tripId=document.getElementById('aiTripSelect').value;
+  if(!tripId){alert('Please select a trip first.');return;}
+  document.getElementById('summaryResult').style.display='none';document.getElementById('summaryLoading').style.display='block';
+  const trip=allTrips.find(t=>t.id===tripId);const ctx=buildDataContext(tripId);
+  try{
+    const resp=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:`Write a structured trip summary in ${lang==='no'?'Norwegian':'English'} for: ${trip?.trip_code} at ${trip?.site_registry?.site_name||'?'}. ${ctx}. Cover: 1.Overview 2.Performance 3.Tow analysis 4.Conditions 5.Downtime 6.Findings 7.Recommendations.`}]})});
+    const data=await resp.json();const text=data.content?.find(c=>c.type==='text')?.text||'Could not generate.';
+    document.getElementById('summaryText').textContent=text;document.getElementById('summaryLoading').style.display='none';document.getElementById('summaryResult').style.display='block';
+  }catch(e){document.getElementById('summaryLoading').style.display='none';document.getElementById('summaryResult').style.display='block';document.getElementById('summaryText').textContent='Error: '+e.message;}
+}
+function copySummary(){navigator.clipboard.writeText(document.getElementById('summaryText').textContent).then(()=>{});}
+async function getOptimalConditions(){
+  const site=document.getElementById('aiSiteSelect').value;
+  if(!site){alert('Please select a site.');return;}
+  document.getElementById('optimalResult').style.display='none';document.getElementById('optimalLoading').style.display='block';
+  const siteTows=allTows.filter(t=>t.trip_registry?.site_registry?.site_name===site&&t.harvester_fill_pct!=null);
+  if(siteTows.length<3){document.getElementById('optimalLoading').style.display='none';document.getElementById('optimalResult').style.display='block';document.getElementById('optimalText').textContent=`Not enough data for ${site} yet.`;return;}
+  try{
+    const resp=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Ava Ocean optimal conditions for site "${site}". Tow data (${siteTows.length} tows): ${JSON.stringify(siteTows.map(t=>({fill:t.harvester_fill_pct,depth:t.depth_m,speed:t.speed_knots})))}. Provide: 1.Optimal speed 2.Optimal depth 3.Optimal duration 4.Site notes 5.What to avoid. Be specific. ${currentLang==='no'?'Respond in Norwegian.':''}`}]})});
+    const data=await resp.json();document.getElementById('optimalText').textContent=data.content?.find(c=>c.type==='text')?.text||'Could not generate.';document.getElementById('optimalLoading').style.display='none';document.getElementById('optimalResult').style.display='block';
+  }catch(e){document.getElementById('optimalLoading').style.display='none';document.getElementById('optimalResult').style.display='block';document.getElementById('optimalText').textContent='Error: '+e.message;}
+}
+async function runQuery(){
+  const q=document.getElementById('aiQueryInput').value.trim();if(!q)return;
+  document.getElementById('queryResult').style.display='none';document.getElementById('queryLoading').style.display='block';
+  const ctx=buildDataContext(currentTripFilter==='all'?null:currentTripFilter);
+  try{
+    const resp=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:`${ctx}\n\nQuestion: ${q}\n\nAnswer directly using actual numbers. ${currentLang==='no'?'Respond in Norwegian.':''}`}]})});
+    const data=await resp.json();document.getElementById('queryText').textContent=data.content?.find(c=>c.type==='text')?.text||'Could not answer.';document.getElementById('queryLoading').style.display='none';document.getElementById('queryResult').style.display='block';
+  }catch(e){document.getElementById('queryLoading').style.display='none';document.getElementById('queryResult').style.display='block';document.getElementById('queryText').textContent='Error: '+e.message;}
 }
 
-// ── ANOMALY DETECTION ─────────────────────────────────────────
-async function runAnomalyDetection() {
-  const btn = document.getElementById('btnRunAnomaly');
-  const results = document.getElementById('anomalyResults');
-  btn.disabled = true;
-  btn.textContent = '⏳ Scanning...';
-  results.innerHTML = '';
-
-  // Statistical outlier detection (>2 std dev)
-  function stats(arr) {
-    const v = arr.filter(x=>x!=null);
-    if(!v.length) return null;
-    const mean = v.reduce((a,b)=>a+b,0)/v.length;
-    const std = Math.sqrt(v.map(x=>(x-mean)**2).reduce((a,b)=>a+b,0)/v.length);
-    return {mean, std};
-  }
-
-  const filtered = currentTripFilter==='all' ? allTows : allTows.filter(t=>t.trip_id===currentTripFilter);
-  const anomalies = [];
-
-  const fills = filtered.map(t=>t.harvester_fill_pct).filter(x=>x!=null);
-  const depths = filtered.map(t=>t.depth_m).filter(x=>x!=null);
-  const speeds = filtered.map(t=>t.speed_knots).filter(x=>x!=null);
-  const sFill = stats(fills), sDepth = stats(depths), sSpeed = stats(speeds);
-
-  filtered.forEach(t => {
-    const label = `Høster #${t.tow_number} (${t.time_start?.slice(0,10)||'?'})`;
-    if(sFill && t.harvester_fill_pct!=null && Math.abs(t.harvester_fill_pct-sFill.mean)>2*sFill.std)
-      anomalies.push({tow:label,field:'Fill %',value:t.harvester_fill_pct,mean:sFill.mean.toFixed(1),std:sFill.std.toFixed(1),dir:t.harvester_fill_pct<sFill.mean?'low':'high'});
-    if(sDepth && t.depth_m!=null && Math.abs(t.depth_m-sDepth.mean)>2*sDepth.std)
-      anomalies.push({tow:label,field:'Depth (m)',value:t.depth_m,mean:sDepth.mean.toFixed(1),std:sDepth.std.toFixed(1),dir:t.depth_m<sDepth.mean?'shallow':'deep'});
-    if(sSpeed && t.speed_knots!=null && Math.abs(t.speed_knots-sSpeed.mean)>2*sSpeed.std)
-      anomalies.push({tow:label,field:'Speed (kn)',value:t.speed_knots,mean:sSpeed.mean.toFixed(1),std:sSpeed.std.toFixed(1),dir:t.speed_knots<sSpeed.mean?'slow':'fast'});
-  });
-
-  // Also check activities for unusual downtime
-  const actFiltered = currentTripFilter==='all' ? allActivities : allActivities.filter(a=>a.trip_id===currentTripFilter);
-  const downtimes = actFiltered.filter(a=>a.activity_type==='downtime_harvester'||a.activity_type==='downtime_factory');
-  if(downtimes.length) {
-    downtimes.forEach(d=>{
-      if(d.time_start&&d.time_end) {
-        const hrs=(new Date(d.time_end)-new Date(d.time_start))/3600000;
-        if(hrs>4) anomalies.push({tow:`${d.activity_type==='downtime_harvester'?'Nedetid høster':'Nedetid fabrikk'} (${d.time_start?.slice(0,10)||'?'})`,field:'Duration',value:hrs.toFixed(1)+' hours',mean:'—',std:'—',dir:'long',reason:d.reason||''});
-      }
-    });
-  }
-
-  if(!anomalies.length && filtered.length < 3) {
-    results.innerHTML = `<div class="card" style="text-align:center;padding:24px;color:var(--muted);">Not enough data yet. Need at least 3 tows for statistical analysis.</div>`;
-    btn.disabled=false; btn.innerHTML='🔍 <span id="aiRunScan">Run Scan</span>'; return;
-  }
-
-  if(!anomalies.length) {
-    results.innerHTML = `<div class="card" style="text-align:center;padding:24px;color:var(--accent);">✓ No anomalies detected. All tows within 2 standard deviations of mean.<br><br><span style="color:var(--muted);font-size:12px;">Fill: ${sFill?sFill.mean.toFixed(1)+'% ±'+sFill.std.toFixed(1):'—'} &nbsp;|&nbsp; Depth: ${sDepth?sDepth.mean.toFixed(1)+'m ±'+sDepth.std.toFixed(1):'—'} &nbsp;|&nbsp; Speed: ${sSpeed?sSpeed.mean.toFixed(1)+'kn ±'+sSpeed.std.toFixed(1):'—'}</span></div>`;
-    btn.disabled=false; btn.innerHTML='🔍 <span id="aiRunScan">Run Scan</span>'; return;
-  }
-
-  // Send anomalies to Claude for explanation
-  const prompt = `You are an analyst for Ava Ocean, a Norwegian scallop harvesting company using an autonomous precision harvester (the Ava Ray). 
-
-The following statistical anomalies were detected (>2 standard deviations from mean):
-${JSON.stringify(anomalies, null, 2)}
-
-Dataset statistics:
-- Fill % mean: ${sFill?sFill.mean.toFixed(1)+'%, std: '+sFill.std.toFixed(1):'insufficient data'}
-- Depth mean: ${sDepth?sDepth.mean.toFixed(1)+'m, std: '+sDepth.std.toFixed(1):'insufficient data'}  
-- Speed mean: ${sSpeed?sSpeed.mean.toFixed(1)+' knots, std: '+sSpeed.std.toFixed(1):'insufficient data'}
-
-For each anomaly, provide:
-1. A brief plain-language explanation of what this means operationally
-2. The most likely cause(s)
-3. Whether it warrants action
-
-Be concise. Use bullet points. Respond in ${currentLang==='no'?'Norwegian':'English'}.`;
-
-  try {
-    const resp = await fetch('/api/ai', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
-    });
-    const data = await resp.json();
-    const explanation = data.content?.find(c=>c.type==='text')?.text || 'Could not generate explanation.';
-
-    results.innerHTML = `
-      <div class="card" style="margin-bottom:12px;">
-        <div class="section-label" style="margin-bottom:12px;color:var(--warn);">⚠ ${anomalies.length} Anomal${anomalies.length===1?'y':'ies'} Detected</div>
-        ${anomalies.map(a=>`
-          <div style="background:rgba(255,140,105,0.08);border:1px solid rgba(255,140,105,0.3);border-radius:8px;padding:12px;margin-bottom:8px;">
-            <div style="font-weight:700;font-size:13px;color:var(--text);">${a.tow}</div>
-            <div style="font-size:12px;color:var(--warn);margin-top:2px;">${a.field}: <strong>${a.value}</strong> (mean: ${a.mean}${a.std!=='—'?', ±'+a.std:''})</div>
-            ${a.reason?`<div style="font-size:11px;color:var(--muted);margin-top:2px;">Reason logged: ${a.reason}</div>`:''}
-          </div>`).join('')}
-      </div>
-      <div class="card">
-        <div class="section-label" style="margin-bottom:12px;">🤖 AI Analysis</div>
-        <div style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--text);">${explanation}</div>
-      </div>`;
-  } catch(e) {
-    results.innerHTML = `<div class="card" style="color:var(--warn);">API error: ${e.message}</div>`;
-  }
-  btn.disabled=false; btn.innerHTML='🔍 <span id="aiRunScan">Run Scan</span>';
-}
-
-// ── TRIP SUMMARY ──────────────────────────────────────────────
-async function generateTripSummary(lang) {
-  const tripId = document.getElementById('aiTripSelect').value;
-  if(!tripId) { alert('Please select a trip first.'); return; }
-  document.getElementById('summaryResult').style.display='none';
-  document.getElementById('summaryLoading').style.display='block';
-
-  const trip = allTrips.find(t=>t.id===tripId);
-  const ctx = buildDataContext(tripId);
-
-  const prompt = `You are a scientific analyst for Ava Ocean, a Norwegian marine technology company operating the Ava Ray precision scallop harvester in Arctic waters.
-
-Write a structured trip summary report in ${lang==='no'?'Norwegian':'English'} for the following trip:
-Trip: ${trip?.trip_code} | Site: ${trip?.site_registry?.site_name||'Unknown'} | Dates: ${trip?.departure_date||'?'} to ${trip?.return_date||'?'}
-
-${ctx}
-
-Structure the report as:
-1. Trip Overview (dates, site, total duration)
-2. Operational Performance (harvest time %, kg landed, CPUE if available)
-3. Tow Analysis (number of tows, avg fill %, notable tows, area covered)
-4. Environmental Conditions (sea state, wave heights, WOW time if any)
-5. Equipment & Downtime (any downtime events and duration)
-6. Key Findings & Observations
-7. Recommendations for next visit to this site
-
-Keep it professional, concise and scientifically accurate. Use actual numbers from the data.`;
-
-  try {
-    const resp = await fetch('/api/ai', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]})
-    });
-    const data = await resp.json();
-    const text = data.content?.find(c=>c.type==='text')?.text || 'Could not generate summary.';
-    document.getElementById('summaryText').textContent = text;
-    document.getElementById('summaryLoading').style.display='none';
-    document.getElementById('summaryResult').style.display='block';
-  } catch(e) {
-    document.getElementById('summaryLoading').style.display='none';
-    document.getElementById('summaryResult').style.display='block';
-    document.getElementById('summaryText').textContent = 'Error: '+e.message;
-  }
-}
-
-function copySummary() {
-  const text = document.getElementById('summaryText').textContent;
-  navigator.clipboard.writeText(text).then(()=>showToast('Copied to clipboard','success'));
-}
-
-// ── OPTIMAL CONDITIONS ────────────────────────────────────────
-async function getOptimalConditions() {
-  const site = document.getElementById('aiSiteSelect').value;
-  if(!site) { alert('Please select a site.'); return; }
-  document.getElementById('optimalResult').style.display='none';
-  document.getElementById('optimalLoading').style.display='block';
-
-  // Filter tows for this site
-  const siteTows = allTows.filter(t=>t.trip_registry?.site_registry?.site_name===site && t.harvester_fill_pct!=null);
-  
-  if(siteTows.length < 3) {
-    document.getElementById('optimalLoading').style.display='none';
-    document.getElementById('optimalResult').style.display='block';
-    document.getElementById('optimalText').textContent = `Not enough data for ${site} yet. Need at least 3 tows with fill data.`;
-    return;
-  }
-
-  function haversine(a,b,c,d){const R=6371000,dL=(c-a)*Math.PI/180,dl=(d-b)*Math.PI/180,x=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dl/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
-
-  const towData = siteTows.map(t=>({
-    fill:t.harvester_fill_pct,
-    depth:t.depth_m,
-    speed:t.speed_knots,
-    dur:t.time_start&&t.time_end?Math.round((new Date(t.time_end)-new Date(t.time_start))/60000):null,
-    area:t.lat_start&&t.lon_start&&t.lat_end&&t.lon_end?Math.round(haversine(t.lat_start,t.lon_start,t.lat_end,t.lon_end)*12):null,
-    date:t.time_start?.slice(0,10)
-  }));
-
-  // Get wave heights from activities at this site
-  const siteTrips = allTrips.filter(t=>t.site_registry?.site_name===site).map(t=>t.id);
-  const siteActs = allActivities.filter(a=>siteTrips.includes(a.trip_id)&&a.wave_height_m!=null);
-
-  const prompt = `You are an operational analyst for Ava Ocean's precision scallop harvester (the Ava Ray, 12m wide, 28m³ basket at 100% fill).
-
-Analyse historical tow data for the site "${site}" and provide practical recommendations for the next fishing operation.
-
-Tow data (${siteTows.length} tows):
-${JSON.stringify(towData)}
-
-Average wave height during operations: ${siteActs.length?(siteActs.reduce((s,a)=>s+a.wave_height_m,0)/siteActs.length).toFixed(1)+'m':'unknown'}
-
-Provide:
-1. **Optimal speed range** — what speed has correlated with highest fill %?
-2. **Optimal depth range** — what depths give best results?
-3. **Optimal tow duration** — how long should each tow be?
-4. **Site-specific notes** — any patterns unique to ${site}?
-5. **What to avoid** — conditions or settings that correlate with poor fill
-
-Be specific with numbers. If there isn't enough data to conclude something, say so honestly.
-Respond in ${currentLang==='no'?'Norwegian':'English'}.`;
-
-  try {
-    const resp = await fetch('/api/ai', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
-    });
-    const data = await resp.json();
-    const text = data.content?.find(c=>c.type==='text')?.text || 'Could not generate recommendations.';
-    document.getElementById('optimalText').textContent = text;
-    document.getElementById('optimalLoading').style.display='none';
-    document.getElementById('optimalResult').style.display='block';
-  } catch(e) {
-    document.getElementById('optimalLoading').style.display='none';
-    document.getElementById('optimalResult').style.display='block';
-    document.getElementById('optimalText').textContent = 'Error: '+e.message;
-  }
-}
-
-// ── NATURAL LANGUAGE QUERY ────────────────────────────────────
-async function runQuery() {
-  const q = document.getElementById('aiQueryInput').value.trim();
-  if(!q) return;
-  document.getElementById('queryResult').style.display='none';
-  document.getElementById('queryLoading').style.display='block';
-
-  const ctx = buildDataContext(currentTripFilter==='all'?null:currentTripFilter);
-
-  const prompt = `You are a data analyst for Ava Ocean, a Norwegian scallop harvesting company. Answer the following question using only the operational data provided below.
-
-${ctx}
-
-Question: ${q}
-
-Give a direct, specific answer using actual numbers from the data. If the data doesn't contain enough information to answer, say so clearly. Keep it concise.
-Respond in ${currentLang==='no'?'Norwegian':'English'}.`;
-
-  try {
-    const resp = await fetch('/api/ai', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:prompt}]})
-    });
-    const data = await resp.json();
-    const text = data.content?.find(c=>c.type==='text')?.text || 'Could not answer.';
-    document.getElementById('queryText').textContent = text;
-    document.getElementById('queryLoading').style.display='none';
-    document.getElementById('queryResult').style.display='block';
-  } catch(e) {
-    document.getElementById('queryLoading').style.display='none';
-    document.getElementById('queryResult').style.display='block';
-    document.getElementById('queryText').textContent = 'Error: '+e.message;
-  }
-}
-
+// ═══════════════════════════════════════════════════════════
+// CORE DATA + RENDER
+// ═══════════════════════════════════════════════════════════
 async function init(){initLang();const{data:{session}}=await sb.auth.getSession();if(session)showApp(session.user);sb.auth.onAuthStateChange((e,s)=>{if(s)showApp(s.user);else showLogin();});}
 function showLogin(){document.getElementById('loginScreen').style.display='flex';document.getElementById('app').style.display='none';}
-async function showApp(user){document.getElementById('loginScreen').style.display='none';document.getElementById('app').style.display='block';document.getElementById('userEmail').textContent=user?.email||'—';await loadAll();
-  initAiTab(currentUser?.email||"");}
+async function showApp(user){document.getElementById('loginScreen').style.display='none';document.getElementById('app').style.display='block';document.getElementById('userEmail').textContent=user?.email||'—';await loadAll();initAiTab(user?.email||'');}
 async function signIn(){
   const email=document.getElementById('loginEmail').value.trim(),password=document.getElementById('loginPassword').value;
   const btn=document.getElementById('loginBtn'),errEl=document.getElementById('loginError'),t=T[currentLang];
@@ -1631,7 +1752,7 @@ async function loadAll(){
       sb.from('factory_sample_log').select('*,trip_registry(trip_code)').order('sample_date',{ascending:true}),
       sb.from('daily_log').select('*,trip_registry(trip_code)').order('log_date',{ascending:true}),
     ]);
-    allTrips=trips.data||[];allActivities=activities.data||[];allTows=tows.data||[];allBycatch=bycatch.data||[];allFactory=factory.data||[];allDailyLogs=dailyLogs.data||[];allFactory=factory.data||[];
+    allTrips=trips.data||[];allActivities=activities.data||[];allTows=tows.data||[];allBycatch=bycatch.data||[];allFactory=factory.data||[];allDailyLogs=dailyLogs.data||[];
     populateTripFilter();renderAll();setStatus('connected');
   }catch(e){setStatus('error');}
 }
@@ -1645,8 +1766,19 @@ function populateTripFilter(){
   sel.innerHTML=`<option value="all">${t.allTrips}</option>`;
   allTrips.forEach(t2=>{const o=document.createElement('option');o.value=t2.id;o.textContent=t2.trip_code+(t2.trip_closed?' ✓':'');sel.appendChild(o);});
 }
-function renderAll(){const f=getFiltered();renderOverview(f);renderCPUE(f);renderActivitiesTable(f.activities);renderTowsTable(f.tows);renderTowCharts(f.tows);renderBycatchTable(f.bycatch);renderCharts(f);renderFactory();renderDailySummary();renderEmissionsMonth();renderFactory();if(document.getElementById('section-map').classList.contains('active'))renderMap();}
-function haversineM(lat1,lon1,lat2,lon2){const R=6371000,r=d=>d*Math.PI/180,dLat=r(lat2-lat1),dLon=r(lon2-lon1);const a=Math.sin(dLat/2)**2+Math.cos(r(lat1))*Math.cos(r(lat2))*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+function renderAll(){
+  const f=getFiltered();
+  renderOverview(f);renderCPUE(f);
+  renderActivitiesTable(f.activities);
+  renderTowsTable(f.tows);
+  renderTowCharts(f.tows);
+  renderBycatchTable(f.bycatch);
+  renderCharts(f);
+  renderFactory();
+  renderDailySummary();renderEmissionsMonth();
+  renderDrillOverview();  // ← new
+  if(document.getElementById('section-map').classList.contains('active'))renderMap();
+}
 function renderOverview(f){
   const t=T[currentLang];
   document.getElementById('statTrips').textContent=f.trips.length;
@@ -1666,7 +1798,7 @@ function renderCPUE(f){
     tripActs.forEach(a=>{if(a.fuel_start_litres!=null&&a.fuel_end_litres!=null)totalFuelL+=Math.max(0,a.fuel_end_litres-a.fuel_start_litres);});
     tripTows.forEach(tw=>{totalVolM3+=(tw.harvester_fill_pct/100)*BASKET_VOLUME_M3;if(tw.lat_start&&tw.lon_start&&tw.lat_end&&tw.lon_end){totalAreaM2+=haversineM(tw.lat_start,tw.lon_start,tw.lat_end,tw.lon_end)*HARVESTER_WIDTH_M;towsWithGPS++;}});
     const cpue=totalAreaM2>0?(totalVolM3/totalAreaM2).toFixed(5):'—',totalCO2kg=totalFuelL*HFO_EMISSION_FACTOR;
-    return `<div class="metrics-banner"><div class="metrics-banner-title">${trip.trip_code} — ${trip.site_registry?.site_name||''}<span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:12px;">${trip.trip_date}${trip.return_date?' → '+trip.return_date:''} · ${tripTows.length} ${t.towsLogged}</span></div><div class="metrics-row"><div class="metric-cell"><div class="metric-cell-label">CPUE</div><div class="metric-cell-val">${cpue}</div><div class="metric-cell-unit">m³/m²</div></div><div class="metric-cell blue"><div class="metric-cell-label">${currentLang==='no'?'Areal dekket':'Area Covered'}</div><div class="metric-cell-val">${totalAreaM2>0?(totalAreaM2/10000).toFixed(2):'—'}</div><div class="metric-cell-unit">ha · ${towsWithGPS}/${tripTows.length} ${t.gpsNote}</div></div><div class="metric-cell plain"><div class="metric-cell-label">${currentLang==='no'?'Fangst per høster':'Catch per Harvester'}</div><div class="metric-cell-val">${tripTows.length>0?(trip.processed_meat_kg/tripTows.length).toFixed(0):'—'}</div><div class="metric-cell-unit">kg</div></div><div class="metric-cell warn"><div class="metric-cell-label">${t.emissionsPerKg}</div><div class="metric-cell-val">${trip.processed_meat_kg>0?(totalCO2kg/trip.processed_meat_kg).toFixed(3):'—'}</div><div class="metric-cell-unit">kg CO₂/kg · ${(totalCO2kg/1000).toFixed(1)}t</div></div></div></div>`;
+    return `<div class="metrics-banner"><div class="metrics-banner-title">${trip.trip_code} — ${trip.site_registry?.site_name||''}<span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:12px;">${trip.trip_date}${trip.return_date?' → '+trip.return_date:''} · ${tripTows.length} ${t.towsLogged}</span></div><div class="metrics-row"><div class="metric-cell"><div class="metric-cell-label">CPUE</div><div class="metric-cell-val">${cpue}</div><div class="metric-cell-unit">m³/m²</div></div><div class="metric-cell blue"><div class="metric-cell-label">${currentLang==='no'?'Areal dekket':'Area Covered'}</div><div class="metric-cell-val">${totalAreaM2>0?(totalAreaM2/10000).toFixed(2):'—'}</div><div class="metric-cell-unit">ha · ${towsWithGPS}/${tripTows.length} GPS</div></div><div class="metric-cell plain"><div class="metric-cell-label">${currentLang==='no'?'Fangst per høster':'Catch per Harvester'}</div><div class="metric-cell-val">${tripTows.length>0?(trip.processed_meat_kg/tripTows.length).toFixed(0):'—'}</div><div class="metric-cell-unit">kg</div></div><div class="metric-cell warn"><div class="metric-cell-label">${t.emissionsPerKg}</div><div class="metric-cell-val">${trip.processed_meat_kg>0?(totalCO2kg/trip.processed_meat_kg).toFixed(3):'—'}</div><div class="metric-cell-unit">kg CO₂/kg</div></div></div></div>`;
   }).join('');}
   const t2=T[currentLang],towsGPS=f.tows.filter(tw=>tw.lat_start&&tw.lon_start&&tw.lat_end&&tw.lon_end);
   document.getElementById('cpueTowTbody').innerHTML=!towsGPS.length?`<tr><td colspan="8" class="empty">${t2.noGPSTows}</td></tr>`:towsGPS.map(tw=>{const trackM=haversineM(tw.lat_start,tw.lon_start,tw.lat_end,tw.lon_end),areaM2=trackM*HARVESTER_WIDTH_M,volM3=(tw.harvester_fill_pct||0)/100*BASKET_VOLUME_M3,cpue=areaM2>0?(volM3/areaM2).toFixed(5):'—';return `<tr><td>${tw.trip_registry?.trip_code||'—'}</td><td><strong style="color:var(--accent)">#${tw.tow_number}</strong></td><td><strong style="color:var(--accent)">${tw.harvester_fill_pct??'—'}%</strong></td><td>${volM3.toFixed(2)}</td><td>${trackM.toFixed(0)}</td><td>${areaM2.toFixed(0)}</td><td><strong style="color:var(--accent)">${cpue}</strong></td><td>${tw.depth_m??'—'}</td></tr>`;}).join('');
@@ -1677,7 +1809,7 @@ function renderActivitiesTable(activities){
     const dur=(a.time_start&&a.time_end)?Math.round((new Date(a.time_end)-new Date(a.time_start))/60000)+' min':'—';
     const fuel=(a.fuel_start_litres!=null&&a.fuel_end_litres!=null)?(a.fuel_end_litres-a.fuel_start_litres).toFixed(1):'—';
     const ts=a.time_start?new Date(a.time_start).toLocaleString('no-NO',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
-    const te=a.time_end?new Date(a.time_end).toLocaleString('no-NO',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):(`<span style="color:var(--warn)">● ${t.open.replace('● ','')}</span>`);
+    const te=a.time_end?new Date(a.time_end).toLocaleString('no-NO',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):`<span style="color:var(--warn)">● ${t.open.replace('● ','')}</span>`;
     const actLabel=a.activity_type==='fishing'?t.fishing:a.activity_type==='steaming'?t.steaming:t.wow;
     return `<tr><td>${a.trip_registry?.trip_code||'—'}</td><td><span class="badge badge-${a.activity_type}">${actLabel}</span></td><td>${ts}</td><td>${te}</td><td>${dur}</td><td>${fuel}</td><td>${a.wave_height_m??'—'}</td><td>${a.sea_state??'—'}</td><td>${a.wind_speed_knots??'—'}</td><td>${a.visibility??'—'}</td></tr>`;
   }).join('');
@@ -1707,33 +1839,14 @@ function renderCharts(f){
   const no=currentLang==='no';
   const cnt={fishing:0,steaming:0,wow:0,downtime_harvester:0,downtime_factory:0};
   const dur={fishing:0,steaming:0,wow:0,downtime_harvester:0,downtime_factory:0};
-  f.activities.forEach(a=>{
-    if(cnt[a.activity_type]!==undefined) cnt[a.activity_type]++;
-    if(dur[a.activity_type]!==undefined&&a.time_start&&a.time_end)
-      dur[a.activity_type]+=(new Date(a.time_end)-new Date(a.time_start))/3600000;
-  });
+  f.activities.forEach(a=>{if(cnt[a.activity_type]!==undefined)cnt[a.activity_type]++;if(dur[a.activity_type]!==undefined&&a.time_start&&a.time_end)dur[a.activity_type]+=(new Date(a.time_end)-new Date(a.time_start))/3600000;});
   const actLabels=[no?'Fiske':'Fishing','Steaming','WOW',no?'Nedetid høster':'Harvester DT',no?'Nedetid fabrikk':'Factory DT'];
   const actColors=['rgba(217,255,172,0.75)','rgba(230,210,197,0.75)','rgba(255,140,105,0.75)','rgba(255,180,80,0.75)','rgba(180,130,255,0.75)'];
   const actBorders=['#D9FFAC','#E6D2C5','#FF8C69','#FFB450','#B482FF'];
-  const actCounts=[cnt.fishing,cnt.steaming,cnt.wow,cnt.downtime_harvester,cnt.downtime_factory];
-  const chartActTitle=document.getElementById('chartActTitle');
-  if(chartActTitle) chartActTitle.textContent=no?'Aktivitetsfordeling — antall':'Activity Breakdown — count';
-  makeChart('activityChart','doughnut',{labels:actLabels,datasets:[{data:actCounts,backgroundColor:actColors,borderColor:actBorders,borderWidth:1}]},{plugins:{legend:{labels:{color:'#a8959e',font:{family:'ABCFavorit',size:11}}}},scales:{}});
-  // Time per activity type bar chart (hours)
-  const actTypeColors={fishing:'rgba(217,255,172,0.65)',steaming:'rgba(230,210,197,0.65)',wow:'rgba(255,140,105,0.65)',downtime_harvester:'rgba(255,180,80,0.65)',downtime_factory:'rgba(180,130,255,0.65)'};
-  const actTypeKeys=['fishing','steaming','wow','downtime_harvester','downtime_factory'];
-  const actTypeLabels2=[no?'Fiske':'Fishing','Steaming','WOW',no?'Nedetid høster':'Harvester DT',no?'Nedetid fabrikk':'Factory DT'];
+  makeChart('activityChart','doughnut',{labels:actLabels,datasets:[{data:[cnt.fishing,cnt.steaming,cnt.wow,cnt.downtime_harvester,cnt.downtime_factory],backgroundColor:actColors,borderColor:actBorders,borderWidth:1}]},{plugins:{legend:{labels:{color:'#a8959e',font:{family:'ABCFavorit',size:11}}}},scales:{}});
   const chartFuelTitle=document.getElementById('chartFuelTitle');
-  if(chartFuelTitle) chartFuelTitle.textContent=no?'Tidsbruk per aktivitet (timer)':'Time per Activity (hours)';
-  makeChart('fuelChart','bar',{
-    labels:actTypeLabels2,
-    datasets:[{
-      label:no?'Timer':'Hours',
-      data:actTypeKeys.map(k=>parseFloat(dur[k].toFixed(1))),
-      backgroundColor:actTypeKeys.map(k=>actTypeColors[k]),
-      borderRadius:4
-    }]
-  },{plugins:{legend:{display:false}}});
+  if(chartFuelTitle)chartFuelTitle.textContent=no?'Tidsbruk per aktivitet (timer)':'Time per Activity (hours)';
+  makeChart('fuelChart','bar',{labels:actLabels,datasets:[{label:no?'Timer':'Hours',data:['fishing','steaming','wow','downtime_harvester','downtime_factory'].map(k=>parseFloat(dur[k].toFixed(1))),backgroundColor:actColors,borderRadius:4}]},{plugins:{legend:{display:false}}});
   const byS={};f.bycatch.forEach(b=>{const k=b.species_common||'Unknown';byS[k]=(byS[k]||0)+(b.count_small||0)+(b.count_medium||0)+(b.count_large||0);});
   const spK=Object.keys(byS).sort((a,b)=>byS[b]-byS[a]).slice(0,8);
   const cols=['#D9FFAC','#E6D2C5','#FF8C69','#c2f090','#d4bfb3','#e8927a','#b5e880','#c9a898'];
@@ -1761,266 +1874,17 @@ function exportCSV(type){
   const csv=[headers,...rows].map(r=>r.map(v=>v==null?'':`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`ava-ocean-${type}-${new Date().toISOString().split('T')[0]}.csv`;a.click();
 }
-
-function renderTowCharts(tows) {
-  if (!tows || !tows.length) return;
-  const no = currentLang === 'no';
-
-  // ── Helper ───────────────────────────────────────────────
-  function haversine(lat1,lon1,lat2,lon2){
-    const R=6371000,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
-    const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-  }
-
-  // Enrich tows with derived fields
-  const enriched = tows.filter(tw=>tw.harvester_fill_pct!=null).map(tw=>{
-    const dur = tw.time_start&&tw.time_end?(new Date(tw.time_end)-new Date(tw.time_start))/60000:null;
-    const dist = tw.lat_start&&tw.lon_start&&tw.lat_end&&tw.lon_end?haversine(tw.lat_start,tw.lon_start,tw.lat_end,tw.lon_end):null;
-    const area = dist?Math.round(dist*12):null;
-    return {...tw, dur, dist, area};
-  });
-
-  // ── Summary cards ─────────────────────────────────────────
-  const avg = key => { const v=enriched.filter(t=>t[key]!=null).map(t=>t[key]); return v.length?(v.reduce((a,b)=>a+b,0)/v.length):null; };
-  const sum = key => enriched.filter(t=>t[key]!=null).reduce((s,t)=>s+t[key],0);
-  const fmt = (v,dp=1) => v!=null?v.toFixed(dp):'—';
-
-  document.getElementById('towStatFill').textContent   = fmt(avg('harvester_fill_pct'));
-  document.getElementById('towStatDur').textContent    = fmt(avg('dur'));
-  document.getElementById('towStatArea').textContent   = fmt(avg('area'),0);
-  document.getElementById('towStatTotalArea').textContent = Math.round(sum('area')).toLocaleString();
-  document.getElementById('towStatSpeed').textContent  = fmt(avg('speed_knots'));
-  document.getElementById('towStatDepth').textContent  = fmt(avg('depth_m'));
-
-  // Chart defaults
-  const cOpts = (xLabel,yLabel) => ({
-    responsive:true, maintainAspectRatio:false,
-    plugins:{legend:{display:false}},
-    scales:{
-      x:{title:{display:true,text:xLabel,color:'#a8959e',font:{size:10}},ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}},grid:{color:'#5c5060'}},
-      y:{title:{display:true,text:yLabel,color:'#a8959e',font:{size:10}},ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}},grid:{color:'#5c5060'}}
-    }
-  });
-
-  // ── 1. Fill % over time (line) ────────────────────────────
-  const sorted = [...enriched].sort((a,b)=>new Date(a.time_start)-new Date(b.time_start));
-  if(charts.towFillTime) charts.towFillTime.destroy();
-  const c1 = document.getElementById('towFillTimeChart')?.getContext('2d');
-  if(c1) charts.towFillTime = new Chart(c1,{
-    type:'line',
-    data:{
-      labels:sorted.map(t=>t.time_start?new Date(t.time_start).toLocaleDateString(no?'nb-NO':'en-GB',{month:'short',day:'numeric'}):''),
-      datasets:[{data:sorted.map(t=>t.harvester_fill_pct),borderColor:'#D9FFAC',backgroundColor:'rgba(217,255,172,0.1)',tension:0.3,pointRadius:4,pointBackgroundColor:'#D9FFAC'}]
-    },
-    options:cOpts(no?'Dato':'Date','%')
-  });
-
-  // ── 2. Fill % by site (bar) ───────────────────────────────
-  const sites = [...new Set(enriched.filter(t=>t.trip_registry?.site_registry?.site_name).map(t=>t.trip_registry.site_registry.site_name))];
-  const siteAvg = sites.map(s=>{const v=enriched.filter(t=>t.trip_registry?.site_registry?.site_name===s).map(t=>t.harvester_fill_pct);return v.length?(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1):0;});
-  const siteColors=['rgba(217,255,172,0.7)','rgba(230,210,197,0.7)','rgba(255,140,105,0.7)'];
-  if(charts.towFillSite) charts.towFillSite.destroy();
-  const c2 = document.getElementById('towFillSiteChart')?.getContext('2d');
-  if(c2) charts.towFillSite = new Chart(c2,{
-    type:'bar',
-    data:{labels:sites.length?sites:[no?'Ingen data':'No data'],datasets:[{data:siteAvg,backgroundColor:siteColors,borderRadius:4}]},
-    options:{...cOpts(no?'Felt':'Site','%'),plugins:{legend:{display:false}},scales:{...cOpts().scales,y:{...cOpts().scales.y,min:0,max:100}}}
-  });
-
-  // ── 3. Speed vs fill % (scatter) ─────────────────────────
-  const speedData = enriched.filter(t=>t.speed_knots!=null).map(t=>({x:t.speed_knots,y:t.harvester_fill_pct}));
-  if(charts.towSpeedFill) charts.towSpeedFill.destroy();
-  const c3 = document.getElementById('towSpeedFillChart')?.getContext('2d');
-  if(c3) charts.towSpeedFill = new Chart(c3,{
-    type:'scatter',
-    data:{datasets:[{data:speedData,backgroundColor:'rgba(217,255,172,0.6)',pointRadius:6,pointHoverRadius:8}]},
-    options:cOpts(no?'Hastighet (knop)':'Speed (knots)','%')
-  });
-
-  // ── 4. Depth vs fill % (scatter) ─────────────────────────
-  const depthData = enriched.filter(t=>t.depth_m!=null).map(t=>({x:t.depth_m,y:t.harvester_fill_pct}));
-  if(charts.towDepthFill) charts.towDepthFill.destroy();
-  const c4 = document.getElementById('towDepthFillChart')?.getContext('2d');
-  if(c4) charts.towDepthFill = new Chart(c4,{
-    type:'scatter',
-    data:{datasets:[{data:depthData,backgroundColor:'rgba(230,210,197,0.6)',pointRadius:6,pointHoverRadius:8}]},
-    options:cOpts(no?'Dybde (m)':'Depth (m)','%')
-  });
-
-  // ── 5. Sea state vs fill % (bar - avg fill per sea state) ─
-  const seaStates = [...new Set(enriched.filter(t=>t.wave_height_m!=null).map(t=>Math.round(t.wave_height_m*2)/2))].sort((a,b)=>a-b);
-  const seaAvg = seaStates.map(s=>{const v=enriched.filter(t=>t.wave_height_m!=null&&Math.round(t.wave_height_m*2)/2===s).map(t=>t.harvester_fill_pct);return v.length?(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1):0;});
-  if(charts.towSeaFill) charts.towSeaFill.destroy();
-  const c5 = document.getElementById('towSeaFillChart')?.getContext('2d');
-  if(c5) charts.towSeaFill = new Chart(c5,{
-    type:'bar',
-    data:{labels:seaStates.map(s=>s+'m'),datasets:[{data:seaAvg,backgroundColor:'rgba(255,140,105,0.7)',borderRadius:4}]},
-    options:cOpts(no?'Bølgehøyde (m)':'Wave height (m)','%')
-  });
-
-  // ── 6. Duration vs fill % (scatter) ──────────────────────
-  const durData = enriched.filter(t=>t.dur!=null).map(t=>({x:parseFloat(t.dur.toFixed(1)),y:t.harvester_fill_pct}));
-  if(charts.towDurFill) charts.towDurFill.destroy();
-  const c6 = document.getElementById('towDurFillChart')?.getContext('2d');
-  if(c6) charts.towDurFill = new Chart(c6,{
-    type:'scatter',
-    data:{datasets:[{data:durData,backgroundColor:'rgba(180,130,255,0.6)',pointRadius:6,pointHoverRadius:8}]},
-    options:cOpts(no?'Varighet (min)':'Duration (min)','%')
-  });
-}
-
-function renderFactory() {
-  const no = currentLang === 'no';
-  const samples = allFactory;
-  if (!samples.length) return;
-
-  // Filter by trip if needed
-  const filtered = currentTripFilter === 'all' ? samples : samples.filter(s => s.trip_id === currentTripFilter);
-
-  // Summary cards
-  const avg = (arr, key) => { const v = arr.filter(s => s[key] != null).map(s => s[key]); return v.length ? (v.reduce((a,b)=>a+b,0)/v.length).toFixed(1) : '—'; };
-  document.getElementById('fStatGram').textContent   = avg(filtered, 'gram_per_muskel');
-  document.getElementById('fStatAndel').textContent  = avg(filtered, 'andel_muskel_pct');
-  document.getElementById('fStatCont').textContent   = avg(filtered, 'gj_snitt_cont_per_pound');
-  document.getElementById('fStatDamage').textContent = avg(filtered, 'andel_skadet_pct');
-
-  // Group by month
-  const byMonth = {};
-  filtered.forEach(s => {
-    if (!s.sample_date) return;
-    const m = s.sample_date.slice(0, 7); // YYYY-MM
-    if (!byMonth[m]) byMonth[m] = [];
-    byMonth[m].push(s);
-  });
-  const months = Object.keys(byMonth).sort();
-  const monthLabels = months.map(m => {
-    const [y, mo] = m.split('-');
-    const d = new Date(parseInt(y), parseInt(mo)-1, 1);
-    return d.toLocaleString(no ? 'nb-NO' : 'en-GB', { month: 'short', year: '2-digit' });
-  });
-
-  const avgBy = (arr, key) => { const v = arr.filter(s => s[key] != null).map(s => s[key]); return v.length ? parseFloat((v.reduce((a,b)=>a+b,0)/v.length).toFixed(1)) : null; };
-
-  // Unique sites + colour palette
-  const sites = [...new Set(filtered.filter(s=>s.site_name).map(s=>s.site_name))];
-  const siteColors = ['#D9FFAC','#E6D2C5','#FF8C69','#c2f090','#d4bfb3'];
-
-  // --- Chart 1: Yield (gram per muskel + andel muskel %) ---
-  const gramBySite = sites.map((site, si) => ({
-    label: (no ? 'g/muskel' : 'g/meat') + ' — ' + site,
-    data: months.map(m => avgBy(byMonth[m].filter(s=>s.site_name===site), 'gram_per_muskel')),
-    borderColor: siteColors[si % siteColors.length],
-    backgroundColor: 'transparent',
-    tension: 0.3, pointRadius: 5, yAxisID: 'y',
-  }));
-  const andelBySite = sites.map((site, si) => ({
-    label: (no ? 'Muskel %' : 'Meat %') + ' — ' + site,
-    data: months.map(m => avgBy(byMonth[m].filter(s=>s.site_name===site), 'andel_muskel_pct')),
-    borderColor: siteColors[si % siteColors.length],
-    backgroundColor: 'transparent',
-    borderDash: [5,4], tension: 0.3, pointRadius: 4, yAxisID: 'y2',
-  }));
-
-  if (charts.fYield) charts.fYield.destroy();
-  const ctx1 = document.getElementById('fYieldChart')?.getContext('2d');
-  if (ctx1) charts.fYield = new Chart(ctx1, {
-    type: 'line',
-    data: { labels: monthLabels, datasets: [...gramBySite, ...andelBySite] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { labels: { color:'#a8959e', font:{ family:'ABCFavorit', size:11 } } } },
-      scales: {
-        x: { ticks:{ color:'#a8959e', font:{family:'ABCFavorit',size:10} }, grid:{color:'#5c5060'} },
-        y: { position:'left', title:{display:true, text: no?'g/muskel':'g/meat', color:'#a8959e', font:{size:10}}, ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}}, grid:{color:'#5c5060'} },
-        y2:{ position:'right', title:{display:true, text:'%', color:'#a8959e', font:{size:10}}, ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}}, grid:{drawOnChartArea:false} },
-      }
-    }
-  });
-
-  // --- Chart 2: Population split stacked bar ---
-  const femBySite = sites.map((site, si) => ({
-    label: (no ? '% hunn' : '% female') + ' — ' + site,
-    data: months.map(m => avgBy(byMonth[m].filter(s=>s.site_name===site), 'pct_ho')),
-    backgroundColor: siteColors[si % siteColors.length] + 'bb',
-    borderColor: siteColors[si % siteColors.length],
-    borderWidth: 1, borderRadius: 3,
-  }));
-  const malBySite = sites.map((site, si) => ({
-    label: (no ? '% hann' : '% male') + ' — ' + site,
-    data: months.map(m => avgBy(byMonth[m].filter(s=>s.site_name===site), 'pct_han')),
-    backgroundColor: siteColors[si % siteColors.length] + '55',
-    borderColor: siteColors[si % siteColors.length],
-    borderWidth: 1, borderRadius: 3, borderDash: [3,3],
-  }));
-
-  if (charts.fPop) charts.fPop.destroy();
-  const ctx2 = document.getElementById('fPopChart')?.getContext('2d');
-  if (ctx2) charts.fPop = new Chart(ctx2, {
-    type: 'bar',
-    data: { labels: monthLabels, datasets: [...femBySite, ...malBySite] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { labels: { color:'#a8959e', font:{family:'ABCFavorit',size:11} } } },
-      scales: {
-        x: { ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}}, grid:{color:'#5c5060'} },
-        y: { min:0, max:100, ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}, callback: v=>v+'%'}, grid:{color:'#5c5060'} },
-      }
-    }
-  });
-
-  // --- Chart 3: Damage rate ---
-  const dmgBySite = sites.map((site, si) => ({
-    label: (no ? 'Skade %' : 'Damage %') + ' — ' + site,
-    data: months.map(m => avgBy(byMonth[m].filter(s=>s.site_name===site), 'andel_skadet_pct')),
-    backgroundColor: siteColors[si % siteColors.length] + 'bb',
-    borderColor: siteColors[si % siteColors.length],
-    borderWidth: 1, borderRadius: 4,
-  }));
-
-  if (charts.fDamage) charts.fDamage.destroy();
-  const ctx3 = document.getElementById('fDamageChart')?.getContext('2d');
-  if (ctx3) charts.fDamage = new Chart(ctx3, {
-    type: 'bar',
-    data: { labels: monthLabels, datasets: dmgBySite },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { labels: { color:'#a8959e', font:{family:'ABCFavorit',size:11} } } },
-      scales: {
-        x: { ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}}, grid:{color:'#5c5060'} },
-        y: { min:0, ticks:{color:'#a8959e',font:{family:'ABCFavorit',size:10}, callback: v=>v+'%'}, grid:{color:'#5c5060'} },
-      }
-    }
-  });
-
-  // --- Site comparison table ---
-  const tbody = document.getElementById('fSiteTableBody');
-  const allSites = [...new Set(filtered.filter(s=>s.site_name).map(s=>s.site_name))].sort();
-  if (!allSites.length) {
-    tbody.innerHTML = `<tr><td colspan="8" class="empty">${no ? 'Ingen data ennå.' : 'No data yet.'}</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = allSites.map(site => {
-    const ss = filtered.filter(s => s.site_name === site);
-    const a = key => avgBy(ss, key);
-    return `<tr>
-      <td><strong>${site}</strong></td>
-      <td>${ss.length}</td>
-      <td><strong style="color:var(--accent)">${a('gram_per_muskel') ?? '—'} g</strong></td>
-      <td>${a('andel_muskel_pct') ?? '—'}%</td>
-      <td>${a('gj_snitt_cont_per_pound') ?? '—'}</td>
-      <td style="color:var(--warn)">${a('andel_skadet_pct') ?? '—'}%</td>
-      <td>${a('pct_ho') ?? '—'}%</td>
-      <td>${a('pct_han') ?? '—'}%</td>
-    </tr>`;
-  }).join('');
-}
-
 function showSection(name,el){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('section-'+name).classList.add('active');el.classList.add('active');
-  if(name==='map')renderMap();else if(name==='factory')renderFactory();else if(name==='ai')showAiSub('anomaly');else if(name==='tows')renderTowCharts(allTows.filter(t=>currentTripFilter==='all'||t.trip_id===currentTripFilter));
+  if(name==='map')renderMap();
+  else if(name==='factory')renderFactory();
+  else if(name==='ai')showAiSub('anomaly');
+  else if(name==='tows')renderTowCharts(allTows.filter(t=>currentTripFilter==='all'||t.trip_id===currentTripFilter));
+  else if(name==='overview'&&drillSelectedTripId) {
+    setTimeout(()=>{ if(drillMap) drillMap.invalidateSize(); }, 200);
+  }
 }
 init();
 </script>
