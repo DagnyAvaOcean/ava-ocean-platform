@@ -29,6 +29,10 @@ body{background:var(--deep);color:var(--text);font-family:'ProtoGrotesk',sans-se
 .role-card:hover.factory{border-color:var(--scallop);background:rgba(230,210,197,0.06);}
 .role-card:hover.dashboard{border-color:var(--warn);background:rgba(255,140,105,0.06);}
 .role-card:hover.research{border-color:var(--research);background:rgba(136,200,255,0.06);}
+.role-card.research-dash{border-color:rgba(136,200,255,0.2);}
+.role-card:hover.research-dash{border-color:var(--research);background:rgba(136,200,255,0.06);}
+.research-dash .role-icon{background:rgba(136,200,255,0.08);}
+.research-dash .role-title{color:var(--research);}
 .role-icon{font-size:36px;width:56px;height:56px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .captain .role-icon{background:rgba(217,255,172,0.08);}
 .factory .role-icon{background:rgba(230,210,197,0.08);}
@@ -87,6 +91,14 @@ body{background:var(--deep);color:var(--text);font-family:'ProtoGrotesk',sans-se
       </div>
       <div class="role-arrow">→</div>
     </a>
+    <a class="role-card research-dash" href="research-dashboard.html">
+      <div class="role-icon">📈</div>
+      <div class="role-text">
+        <div class="role-title" id="titleResearchDash">Forskningsdashboard</div>
+        <div class="role-desc" id="descResearchDash">BACI-analyse, diversitet, størrelsesfordeling og skadeindeks</div>
+      </div>
+      <div class="role-arrow">→</div>
+    </a>
   </div>
   <div class="footer" id="footer">Ava Ocean · Kun intern bruk</div>
 
@@ -98,6 +110,7 @@ const strings = {
     titleFactory: 'Fabrikk', descFactory: 'Registrer skiftprøver — muskelutbytte, rogntelling og kvalitetsdata',
     titleDash: 'Dashboard', descDash: 'Forskningsoversikt — CPUE, utslipp, bifangst og høstkart',
     titleResearch: 'Forskning', descResearch: 'Bentisk prøvetaking, BACI-design, artslister og skjellmålinger',
+     titleResearchDash: 'Forskningsdashboard', descResearchDash: 'BACI-analyse, diversitet, størrelsesfordeling og skadeindeks',
     footer: 'Ava Ocean · Kun intern bruk',
   },
   en: {
@@ -106,6 +119,7 @@ const strings = {
     titleFactory: 'Factory', descFactory: 'Record shift samples — muscle yield, roe counts and quality data',
     titleDash: 'Dashboard', descDash: 'Research overview — CPUE, emissions, bycatch and harvest map',
     titleResearch: 'Research', descResearch: 'Benthic sampling, BACI design, species records and scallop measurements',
+    titleResearchDash: 'Research Dashboard', descResearchDash: 'BACI analysis, diversity, size distribution and damage index',
     footer: 'Ava Ocean · Internal use only',
   }
 };
