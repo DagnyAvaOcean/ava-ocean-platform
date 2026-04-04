@@ -113,6 +113,11 @@ tr:hover td{background:rgba(217,255,172,0.02);}
 .divider{border:none;border-top:1px solid var(--border);margin:24px 0;}
 .refresh-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:6px;font-family:var(--font-head);font-size:11px;cursor:pointer;font-weight:700;}
 .refresh-btn:hover{color:var(--accent);border-color:var(--accent);}
+#fangstregDropZone:hover {
+  border-color: var(--accent) !important;
+  background: rgba(217,255,172,0.03) !important;
+}
+
 
 /* ═══════════════════════════════════════════
    DRILL-DOWN STYLES
@@ -403,6 +408,7 @@ tr:hover td{background:rgba(217,255,172,0.02);}
     <div class="mobile-nav-item" id="mnav-map" onclick="mobileNav('map')"><span class="mobile-nav-icon">🗺️</span><span id="mnavMap">Tow Map</span></div>
     <div class="mobile-nav-item" id="mnav-factory" onclick="mobileNav('factory')"><span class="mobile-nav-icon">⚖️</span><span id="mnavFactory">Factory</span></div>
     <div class="mobile-nav-item ai-only" id="mnav-ai" onclick="mobileNav('ai')" style="display:none;"><span class="mobile-nav-icon">🤖</span><span id="mnavAi">AI Insights</span></div>
+    <div class="mobile-nav-item" id="mnav-fangstreg" onclick="mobileNav('fangstreg')"><span class="mobile-nav-icon">📥</span><span id="mnavFangstreg">Fangstreg</span></div>
     <div class="mobile-trip-filter">
       <select id="mobileTripSelect" onchange="onMobileTripFilter()"><option value="all">All Trips</option></select>
     </div>
@@ -426,6 +432,7 @@ tr:hover td{background:rgba(217,255,172,0.02);}
       <div class="nav-item" id="nav-map" onclick="showSection('map',this)"><span class="nav-icon">🗺️</span> <span id="navMap">Høstkart</span></div>
       <div class="nav-item" id="nav-factory" onclick="showSection('factory',this)"><span class="nav-icon">⚖️</span> <span id="navFactory">Fabrikk</span></div>
       <div class="nav-item ai-only" id="nav-ai" onclick="showSection('ai',this)"><span class="nav-icon">🤖</span> <span id="navAi">AI Innsikt</span></div>
+      <div class="nav-item" id="nav-fangstreg" onclick="showSection('fangstreg',this)"><span class="nav-icon">📥</span> <span id="navFangstreg">Fangstreg Import</span></div>
     </nav>
     <div class="trip-selector">
       <label id="filterLabel">Filtrer etter tur</label>
@@ -844,6 +851,106 @@ tr:hover td{background:rgba(217,255,172,0.02);}
       </div>
     </div>
 
+    <!-- FANGSTREG IMPORT -->
+    <div class="section" id="section-fangstreg">
+      <div class="section-header">
+        <div>
+          <div class="page-title" id="titleFangstreg">Fangstreg Import</div>
+          <div class="page-sub" id="subFangstreg">Importer Halrapport CSV fra Fangstreg-portalen</div>
+        </div>
+        <button class="refresh-btn" onclick="fangstregReset()" id="btnFangstregReset">↺ Nullstill</button>
+      </div>
+
+      <div class="info-pill" id="fangstregPill">
+        <strong id="fangstregPillLabel">Format:</strong>
+        <span id="fangstregPillText">Halrapport · UTF-16 · Tab-separert · Kolonne «Haneskjell» = kg landet</span>
+      </div>
+
+      <!-- Step 1: File drop zone -->
+      <div id="fangstregStep1">
+        <div id="fangstregDropZone" onclick="document.getElementById('fangstregFileInput').click()"
+          style="border:2px dashed var(--border);border-radius:12px;padding:48px 24px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:20px;"
+          ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='rgba(217,255,172,0.04)'"
+          ondragleave="this.style.borderColor='var(--border)';this.style.background=''"
+          ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='';handleFangstregFile(event.dataTransfer.files[0])">
+          <div style="font-size:32px;margin-bottom:12px;">📂</div>
+          <div style="font-family:var(--font-head);font-weight:700;font-size:15px;color:var(--text);margin-bottom:6px;" id="dropZoneTitle">Dra og slipp Halrapport CSV her</div>
+          <div style="font-size:12px;color:var(--muted);" id="dropZoneSub">eller klikk for å velge fil · Fangstreg → Rapporter → Halrapport → Eksporter CSV</div>
+        </div>
+        <input type="file" id="fangstregFileInput" accept=".csv,.txt" style="display:none" onchange="handleFangstregFile(this.files[0])">
+      </div>
+
+      <!-- Step 2: Trip mapping + preview -->
+      <div id="fangstregStep2" style="display:none;">
+
+        <!-- File info banner -->
+        <div class="metrics-banner" id="fangstregFileBanner">
+          <div class="metrics-banner-title" id="fangstregFileName">—</div>
+          <div class="metrics-row" id="fangstregFileStats"></div>
+        </div>
+
+        <!-- Trip mapping -->
+        <div class="card" style="margin-bottom:20px;">
+          <div class="section-label" style="margin-bottom:12px;" id="fangstregTripLabel">Koble til tur i Ava Ocean</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:14px;" id="fangstregTripDesc">Velg hvilken tur disse dagene tilhører. Datoer som ikke overlapper med turen vil hoppes over.</div>
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+            <select id="fangstregTripSelect" style="flex:1;min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:13px;padding:10px 12px;outline:none;">
+              <option value="">— Velg tur —</option>
+            </select>
+            <div style="font-size:11px;color:var(--muted);" id="fangstregTripNote">Eller importer uten turkobling (dato-basert)</div>
+          </div>
+          <div style="margin-top:12px;display:flex;align-items:center;gap:8px;">
+            <input type="checkbox" id="fangstregNoTripCheck" onchange="renderFangstregPreview()">
+            <label for="fangstregNoTripCheck" style="font-size:12px;color:var(--muted);cursor:pointer;" id="fangstregNoTripLabel">Importer alle datoer uten turkobling</label>
+          </div>
+        </div>
+
+        <!-- Preview table -->
+        <div class="section-label-row" style="margin-bottom:12px;">
+          <div class="section-label" id="fangstregPreviewLabel">Forhåndsvisning</div>
+          <span class="drill-count-badge" id="fangstregPreviewCount">— rader</span>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden;margin-bottom:20px;">
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th id="fth0">Dato</th>
+                <th id="fth1">Haneskjell (kg)</th>
+                <th id="fth2">Brunpølse (kg)</th>
+                <th id="fth3">Annen bifangst (kg)</th>
+                <th id="fth4">Varighet (min)</th>
+                <th id="fth5">Sone</th>
+                <th id="fth6">Status</th>
+              </tr></thead>
+              <tbody id="fangstregPreviewBody"><tr><td colspan="7" class="empty">Laster forhåndsvisning...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Import button -->
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-outline" style="background:var(--accent);color:var(--deep);border:none;padding:14px 28px;font-size:14px;" onclick="runFangstregImport()" id="btnFangstregImport">
+            ↑ <span id="fangstregImportBtnLabel">Importer til Supabase</span>
+          </button>
+          <button class="btn btn-outline" style="padding:14px 18px;" onclick="fangstregReset()" id="btnFangstregCancel">Avbryt</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Result -->
+      <div id="fangstregStep3" style="display:none;">
+        <div class="metrics-banner" id="fangstregResultBanner">
+          <div class="metrics-banner-title" id="fangstregResultTitle">Import fullført</div>
+          <div class="metrics-row" id="fangstregResultStats"></div>
+        </div>
+        <div id="fangstregResultDetail" style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.8;"></div>
+        <div style="margin-top:20px;display:flex;gap:12px;">
+          <button class="btn btn-outline" style="background:var(--accent);color:var(--deep);border:none;" onclick="fangstregReset();loadAll();" id="btnFangstregDone">✓ <span id="fangstregDoneLabel">Ferdig — oppdater dashboard</span></button>
+          <button class="btn btn-outline" onclick="fangstregReset()" id="btnFangstregImportAnother">+ <span id="fangstregAnotherLabel">Importer en annen fil</span></button>
+        </div>
+      </div>
+    </div>
+
+
   </div><!-- end .main -->
 </div><!-- end #app -->
 <script>
@@ -1101,9 +1208,12 @@ function setLang(lang) {
   ael('aiQueryOutput','Svar','Answer');
   ael('aiThinking','Tenker...','Thinking...');
   ael('navAi','AI Innsikt','AI Insights');
+  ael('navFangstreg','Fangstreg Import','Fangstreg Import');
+  ael('mnavFangstreg','Fangstreg','Fangstreg');
   ael('mnavAi','AI Innsikt','AI Insights');
   const sel=document.getElementById('tripFilter');
   if(sel&&sel.options[0])sel.options[0].textContent=lang==='no'?'Alle turer':'All Trips';
+  fangstregSetLang(lang);
   if(allTrips.length)renderAll();
 }
 function initLang(){const s=localStorage.getItem('ava_lang')||'no';if(s!=='no')setLang(s);}
@@ -1886,6 +1996,297 @@ function showSection(name,el){
     setTimeout(()=>{ if(drillMap) drillMap.invalidateSize(); }, 200);
   }
 }
+// ═══════════════════════════════════════════════════════════
+// FANGSTREG CSV IMPORTER
+// ═══════════════════════════════════════════════════════════
+let fangstregParsedRows = [];
+
+function fangstregSetLang(lang) {
+  const no = lang === 'no';
+  const s = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+  s('titleFangstreg', no ? 'Fangstreg Import' : 'Fangstreg Import');
+  s('subFangstreg', no ? 'Importer Halrapport CSV fra Fangstreg-portalen' : 'Import Halrapport CSV from the Fangstreg portal');
+  s('btnFangstregReset', no ? '↺ Nullstill' : '↺ Reset');
+  s('fangstregPillLabel', no ? 'Format:' : 'Format:');
+  s('fangstregPillText', no ? 'Halrapport · UTF-16 · Tab-separert · «Haneskjell» = kg landet' : 'Halrapport · UTF-16 · Tab-separated · "Haneskjell" = kg landed');
+  s('dropZoneTitle', no ? 'Dra og slipp Halrapport CSV her' : 'Drag and drop Halrapport CSV here');
+  s('dropZoneSub', no ? 'eller klikk for å velge fil · Fangstreg → Rapporter → Halrapport → Eksporter CSV' : 'or click to choose file · Fangstreg → Reports → Halrapport → Export CSV');
+  s('fangstregTripLabel', no ? 'Koble til tur i Ava Ocean' : 'Link to Ava Ocean trip');
+  s('fangstregTripDesc', no ? 'Velg hvilken tur disse dagene tilhører. Datoer som ikke overlapper vil hoppes over.' : 'Choose which trip these days belong to. Dates outside the trip will be skipped.');
+  s('fangstregTripNote', no ? 'Eller importer uten turkobling (dato-basert)' : 'Or import without trip link (date-based)');
+  s('fangstregNoTripLabel', no ? 'Importer alle datoer uten turkobling' : 'Import all dates without trip link');
+  s('fangstregPreviewLabel', no ? 'Forhåndsvisning' : 'Preview');
+  s('fangstregImportBtnLabel', no ? 'Importer til Supabase' : 'Import to Supabase');
+  s('btnFangstregCancel', no ? 'Avbryt' : 'Cancel');
+  s('fangstregDoneLabel', no ? 'Ferdig — oppdater dashboard' : 'Done — refresh dashboard');
+  s('fangstregAnotherLabel', no ? 'Importer en annen fil' : 'Import another file');
+  // Table headers
+  const ths = no
+    ? ['Dato','Haneskjell (kg)','Brunpølse (kg)','Annen bifangst (kg)','Varighet (min)','Sone','Status']
+    : ['Date','Scallop (kg)','Sea cucumber (kg)','Other bycatch (kg)','Duration (min)','Zone','Status'];
+  ths.forEach((h, i) => s('fth' + i, h));
+  s('navFangstreg', no ? 'Fangstreg Import' : 'Fangstreg Import');
+  s('mnavFangstreg', no ? 'Fangstreg Import' : 'Fangstreg Import');
+}
+
+function fangstregReset() {
+  fangstregParsedRows = [];
+  document.getElementById('fangstregStep1').style.display = 'block';
+  document.getElementById('fangstregStep2').style.display = 'none';
+  document.getElementById('fangstregStep3').style.display = 'none';
+  document.getElementById('fangstregFileInput').value = '';
+}
+
+function handleFangstregFile(file) {
+  if(!file) return;
+  const no = currentLang === 'no';
+
+  // Read as ArrayBuffer to handle UTF-16
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const decoder = new TextDecoder('utf-16');
+      const text = decoder.decode(e.target.result);
+      parseFangstregCSV(text, file.name);
+    } catch(err) {
+      alert((no ? 'Feil ved lesing av fil: ' : 'Error reading file: ') + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseFangstregCSV(text, fileName) {
+  const no = currentLang === 'no';
+  const lines = text.split('\n');
+
+  // Find header row (starts with 'Dato')
+  let headerIdx = -1;
+  for(let i = 0; i < lines.length; i++) {
+    if(lines[i].startsWith('Dato\t') || lines[i].trim() === 'Dato') {
+      headerIdx = i;
+      break;
+    }
+  }
+  if(headerIdx === -1) {
+    alert(no ? 'Kunne ikke finne kolonneoverskrifter. Er dette en Halrapport fra Fangstreg?' : 'Could not find column headers. Is this a Fangstreg Halrapport?');
+    return;
+  }
+
+  const headers = lines[headerIdx].split('\t').map(h => h.trim().replace(/\u200b/g, ''));
+  const idxDato = headers.indexOf('Dato');
+  const idxHane = headers.indexOf('Haneskjell');
+  const idxBrun = headers.indexOf('Brunpølse');
+  const idxAnnen = headers.findIndex(h => h.includes('Samfengt bifangst') || h.includes('Annen fisk'));
+  const idxVarighet = headers.indexOf('Varighet (min)');
+  const idxSone = headers.indexOf('Sone');
+
+  if(idxDato === -1 || idxHane === -1) {
+    alert(no ? 'Mangler nødvendige kolonner (Dato, Haneskjell).' : 'Missing required columns (Dato, Haneskjell).');
+    return;
+  }
+
+  const clean = s => (s || '').replace(/\u200b/g, '').trim();
+  const parseNum = s => { const c = clean(s).replace(',', '.'); return c === '' ? 0 : parseFloat(c) || 0; };
+  const parseDate = s => {
+    const d = clean(s);
+    if(!d) return null;
+    const parts = d.split('.');
+    if(parts.length !== 3) return null;
+    return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+  };
+
+  const rows = [];
+  for(let i = headerIdx + 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if(!line) continue;
+    const cols = line.split('\t');
+    if(cols.length < 2) continue;
+    const date = parseDate(cols[idxDato]);
+    if(!date) continue;
+    rows.push({
+      date,
+      kg_scallop: idxHane >= 0 ? parseNum(cols[idxHane]) : 0,
+      kg_brunpolse: idxBrun >= 0 ? parseNum(cols[idxBrun]) : 0,
+      kg_other: idxAnnen >= 0 ? parseNum(cols[idxAnnen]) : 0,
+      varighet_min: idxVarighet >= 0 ? parseNum(cols[idxVarighet]) : null,
+      sone: idxSone >= 0 ? clean(cols[idxSone]) : '',
+    });
+  }
+
+  if(!rows.length) {
+    alert(no ? 'Ingen gyldige datarader funnet.' : 'No valid data rows found.');
+    return;
+  }
+
+  fangstregParsedRows = rows;
+
+  // Show step 2
+  document.getElementById('fangstregStep1').style.display = 'none';
+  document.getElementById('fangstregStep2').style.display = 'block';
+  document.getElementById('fangstregStep3').style.display = 'none';
+
+  // File banner
+  const datesSorted = rows.map(r => r.date).sort();
+  document.getElementById('fangstregFileName').textContent = fileName;
+  document.getElementById('fangstregFileStats').innerHTML = `
+    <div class="metric-cell"><div class="metric-cell-label">${no?'Antall dager':'Days'}</div><div class="metric-cell-val">${rows.length}</div></div>
+    <div class="metric-cell"><div class="metric-cell-label">${no?'Første dato':'First date'}</div><div class="metric-cell-val" style="font-size:16px;">${datesSorted[0]}</div></div>
+    <div class="metric-cell"><div class="metric-cell-label">${no?'Siste dato':'Last date'}</div><div class="metric-cell-val" style="font-size:16px;">${datesSorted[datesSorted.length-1]}</div></div>
+    <div class="metric-cell"><div class="metric-cell-label">${no?'Total haneskjell (kg)':'Total scallop (kg)'}</div><div class="metric-cell-val" style="color:var(--accent)">${rows.reduce((s,r)=>s+r.kg_scallop,0).toLocaleString()}</div></div>`;
+
+  // Populate trip select
+  const sel = document.getElementById('fangstregTripSelect');
+  sel.innerHTML = `<option value="">— ${no?'Velg tur (valgfritt)':'Select trip (optional)'} —</option>`;
+  allTrips.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.id;
+    o.textContent = `${t.trip_code} — ${t.site_registry?.site_name||''} (${t.departure_date||'?'} → ${t.return_date||'?'})`;
+    sel.appendChild(o);
+  });
+  sel.onchange = renderFangstregPreview;
+
+  renderFangstregPreview();
+}
+
+function renderFangstregPreview() {
+  const no = currentLang === 'no';
+  const tripId = document.getElementById('fangstregTripSelect').value;
+  const noTripCheck = document.getElementById('fangstregNoTripCheck').checked;
+  const trip = allTrips.find(t => t.id === tripId);
+
+  // Filter rows based on trip date range if trip selected and checkbox not checked
+  let rows = fangstregParsedRows;
+  if(trip && !noTripCheck) {
+    const start = trip.departure_date;
+    const end = trip.return_date || '9999-99-99';
+    rows = fangstregParsedRows.filter(r => r.date >= start && r.date <= end);
+  }
+
+  document.getElementById('fangstregPreviewCount').textContent = rows.length + (no ? ' rader' : ' rows');
+
+  const existingDates = new Set(allDailyLogs.map(d => d.log_date));
+
+  const tbody = document.getElementById('fangstregPreviewBody');
+  if(!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty">${no ? 'Ingen rader matcher denne turen.' : 'No rows match this trip.'}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => {
+    const existing = existingDates.has(r.date);
+    const statusColor = existing ? 'var(--warn)' : 'var(--accent)';
+    const statusText = existing
+      ? (no ? '↺ Oppdateres' : '↺ Update')
+      : (no ? '+ Ny rad' : '+ New row');
+    return `<tr>
+      <td><strong>${r.date}</strong></td>
+      <td style="color:var(--accent)"><strong>${r.kg_scallop.toLocaleString()}</strong></td>
+      <td style="color:var(--muted)">${r.kg_brunpolse > 0 ? r.kg_brunpolse.toLocaleString() : '—'}</td>
+      <td style="color:var(--muted)">${r.kg_other > 0 ? r.kg_other.toLocaleString() : '—'}</td>
+      <td style="color:var(--muted)">${r.varighet_min != null ? r.varighet_min.toFixed(0) : '—'}</td>
+      <td style="color:var(--muted);font-size:11px;">${r.sone || '—'}</td>
+      <td><span style="color:${statusColor};font-family:var(--font-head);font-weight:700;font-size:11px;">${statusText}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+async function runFangstregImport() {
+  const no = currentLang === 'no';
+  const tripId = document.getElementById('fangstregTripSelect').value;
+  const noTripCheck = document.getElementById('fangstregNoTripCheck').checked;
+  const trip = allTrips.find(t => t.id === tripId);
+  const btn = document.getElementById('btnFangstregImport');
+
+  // Filter rows
+  let rows = fangstregParsedRows;
+  if(trip && !noTripCheck) {
+    const start = trip.departure_date;
+    const end = trip.return_date || '9999-99-99';
+    rows = fangstregParsedRows.filter(r => r.date >= start && r.date <= end);
+  }
+
+  if(!rows.length) {
+    alert(no ? 'Ingen rader å importere.' : 'No rows to import.');
+    return;
+  }
+
+  // Must have trip selected unless checkbox checked
+  if(!tripId && !noTripCheck) {
+    alert(no ? 'Velg en tur eller kryss av «Importer uten turkobling».' : 'Select a trip or check "Import without trip link".');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = no ? '⏳ Importerer...' : '⏳ Importing...';
+
+  let inserted = 0, updated = 0, errors = 0;
+  const errorDetails = [];
+
+  for(const row of rows) {
+    try {
+      // Check if row exists
+      const { data: existing } = await sb
+        .from('daily_log')
+        .select('id, source')
+        .eq('log_date', row.date)
+        .eq('trip_id', tripId || null)
+        .maybeSingle();
+
+      const upsertData = {
+        log_date: row.date,
+        trip_id: tripId || null,
+        kg_landed: row.kg_scallop,
+        bycatch_brunpolse_kg: row.kg_brunpolse || null,
+        bycatch_other_kg: row.kg_other || null,
+        source: 'fangstreg',
+        notes: row.sone ? `Sone: ${row.sone}` : null,
+      };
+
+      let error;
+      if(existing) {
+        // Fangstreg always wins — update
+        ({ error } = await sb.from('daily_log').update(upsertData).eq('id', existing.id));
+        if(!error) updated++;
+      } else {
+        ({ error } = await sb.from('daily_log').insert(upsertData));
+        if(!error) inserted++;
+      }
+      if(error) { errors++; errorDetails.push(`${row.date}: ${error.message}`); }
+    } catch(e) {
+      errors++;
+      errorDetails.push(`${row.date}: ${e.message}`);
+    }
+  }
+
+  // Show result
+  btn.disabled = false;
+  btn.innerHTML = `↑ <span id="fangstregImportBtnLabel">${no ? 'Importer til Supabase' : 'Import to Supabase'}</span>`;
+  document.getElementById('fangstregStep2').style.display = 'none';
+  document.getElementById('fangstregStep3').style.display = 'block';
+
+  const success = inserted + updated;
+  document.getElementById('fangstregResultTitle').textContent = errors === 0
+    ? (no ? '✓ Import fullført' : '✓ Import complete')
+    : (no ? `⚠ Import fullført med ${errors} feil` : `⚠ Import complete with ${errors} errors`);
+  document.getElementById('fangstregResultTitle').style.color = errors === 0 ? 'var(--accent)' : 'var(--warn)';
+  document.getElementById('fangstregResultStats').innerHTML = `
+    <div class="metric-cell"><div class="metric-cell-label">${no?'Nye rader':'New rows'}</div><div class="metric-cell-val" style="color:var(--accent)">${inserted}</div></div>
+    <div class="metric-cell"><div class="metric-cell-label">${no?'Oppdaterte rader':'Updated rows'}</div><div class="metric-cell-val">${updated}</div></div>
+    <div class="metric-cell"><div class="metric-cell-label">${no?'Feil':'Errors'}</div><div class="metric-cell-val" style="color:${errors>0?'var(--warn)':'var(--muted)'}">${errors}</div></div>
+    <div class="metric-cell"><div class="metric-cell-label">${no?'Total behandlet':'Total processed'}</div><div class="metric-cell-val">${rows.length}</div></div>`;
+
+  if(errorDetails.length) {
+    document.getElementById('fangstregResultDetail').innerHTML =
+      `<strong>${no?'Feil:':'Errors:'}</strong><br>` + errorDetails.join('<br>');
+  } else {
+    document.getElementById('fangstregResultDetail').textContent = '';
+  }
+
+  // Reload data
+  await loadAll();
+}
+
+
 init();
 </script>
 </body>
