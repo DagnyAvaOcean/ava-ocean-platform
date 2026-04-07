@@ -2140,7 +2140,7 @@ function parseFangstregCSV(text, fileName) {
   allTrips.forEach(t => {
     const o = document.createElement('option');
     o.value = t.id;
-    o.textContent = `${t.trip_code} — ${t.site_registry?.site_name||''} (${t.departure_date||'?'} → ${t.return_date||'?'})`;
+    o.textContent = `${t.trip_code} — ${t.site_registry?.site_name||''} (${t.trip_date||'?'} → ${t.return_date||'?'})`;
     sel.appendChild(o);
   });
   sel.onchange = renderFangstregPreview;
@@ -2157,7 +2157,7 @@ function renderFangstregPreview() {
   // Filter rows based on trip date range if trip selected and checkbox not checked
   let rows = fangstregParsedRows;
   if(trip && !noTripCheck) {
-    const start = trip.departure_date;
+    const start = trip.trip_date;
     const end = trip.return_date || '9999-99-99';
     rows = fangstregParsedRows.filter(r => r.date >= start && r.date <= end);
   }
