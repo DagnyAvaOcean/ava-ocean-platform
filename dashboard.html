@@ -2103,6 +2103,13 @@ function parseFangstregCSV(text, fileName) {
     if(cols.length < 2) continue;
     const date = parseDate(cols[idxDato]);
     if(!date) continue;
+    const existing = rows.find(r => r.date === date);
+    if(existing) {
+      existing.kg_scallop += idxHane >= 0 ? parseNum(cols[idxHane]) : 0;
+      existing.kg_brunpolse += idxBrun >= 0 ? parseNum(cols[idxBrun]) : 0;
+      existing.kg_other += idxAnnen >= 0 ? parseNum(cols[idxAnnen]) : 0;
+      continue;
+    }
     rows.push({
       date,
       kg_scallop: idxHane >= 0 ? parseNum(cols[idxHane]) : 0,
@@ -2200,7 +2207,7 @@ async function runFangstregImport() {
   // Filter rows
   let rows = fangstregParsedRows;
   if(trip && !noTripCheck) {
-    const start = trip.departure_date;
+    const start = trip.trip_date;
     const end = trip.return_date || '9999-99-99';
     rows = fangstregParsedRows.filter(r => r.date >= start && r.date <= end);
   }
