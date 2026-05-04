@@ -432,7 +432,8 @@ tr:hover td{background:rgba(217,255,172,0.02);}
       <div class="nav-item" id="nav-map" onclick="showSection('map',this)"><span class="nav-icon">🗺️</span> <span id="navMap">Høstkart</span></div>
       <div class="nav-item" id="nav-factory" onclick="showSection('factory',this)"><span class="nav-icon">⚖️</span> <span id="navFactory">Fabrikk</span></div>
       <div class="nav-item ai-only" id="nav-ai" onclick="showSection('ai',this)"><span class="nav-icon">🤖</span> <span id="navAi">AI Innsikt</span></div>
-      <div class="nav-item" id="nav-fangstreg" onclick="showSection('fangstreg',this)"><span class="nav-icon">📥</span> <span id="navFangstreg">Fangstreg Import</span></div>
+      <div class="nav-item" id="nav-fangstreg" onclick="showSection('fangstreg',this)"><span class="nav-icon">📥</span> <span id="navFangstreg">Fangstreg Import</span></div>  
+      <div class="nav-item" id="nav-admin" onclick="showSection('admin',this)"><span class="nav-icon">🗑️</span> <span id="navAdmin">Admin</span></div>
     </nav>
     <div class="trip-selector">
       <label id="filterLabel">Filtrer etter tur</label>
@@ -950,6 +951,38 @@ tr:hover td{background:rgba(217,255,172,0.02);}
       </div>
     </div>
 
+
+<!-- ADMIN -->
+    <div class="section" id="section-admin">
+      <div class="page-title">Admin</div>
+      <div class="page-sub" id="adminSub">Dataadministrasjon — kun for Dagny</div>
+
+      <div class="card" style="border-color:rgba(255,140,105,0.3);margin-bottom:20px;">
+        <div class="section-label" style="color:var(--warn);margin-bottom:12px;">🧪 Demo / treningsdata</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.7;" id="adminDemoDesc">
+          Sletter alle turer merket som demo, inkludert alle tilknyttede aktiviteter, høstinger, bifangst og forskningsdata. Kan ikke angres.
+        </div>
+        <div id="adminDemoCount" style="font-family:var(--font-head);font-size:13px;color:var(--accent);margin-bottom:16px;"></div>
+        <button class="btn" style="background:var(--warn);color:white;width:auto;padding:12px 24px;" onclick="deleteAllDemoTrips()" id="btnDeleteDemo">
+          🗑️ <span id="btnDeleteDemoLabel">Slett alle demo-turer</span>
+        </button>
+      </div>
+
+      <div class="card" style="border-color:rgba(255,140,105,0.3);">
+        <div class="section-label" style="color:var(--warn);margin-bottom:12px;">🗑️ Slett enkelt tur</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:16px;" id="adminDeleteDesc">
+          Velg en tur og slett all tilknyttet data permanent.
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <select id="adminTripSelect" style="flex:1;min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:13px;padding:10px 12px;outline:none;">
+            <option value="">— Velg tur —</option>
+          </select>
+          <button class="btn" style="background:var(--warn);color:white;width:auto;padding:12px 24px;" onclick="deleteSingleTrip()" id="btnDeleteTrip">
+            🗑️ <span id="btnDeleteTripLabel">Slett valgt tur</span>
+          </button>
+        </div>
+      </div>
+    </div>
 
   </div><!-- end .main -->
 </div><!-- end #app -->
@@ -1990,7 +2023,8 @@ function showSection(name,el){
   document.getElementById('section-'+name).classList.add('active');el.classList.add('active');
   if(name==='map')renderMap();
   else if(name==='factory')renderFactory();
-  else if(name==='ai')showAiSub('anomaly');
+ else if(name==='ai')showAiSub('anomaly');
+  else if(name==='admin')loadAdminSection();
   else if(name==='tows')renderTowCharts(allTows.filter(t=>currentTripFilter==='all'||t.trip_id===currentTripFilter));
   else if(name==='overview'&&drillSelectedTripId) {
     setTimeout(()=>{ if(drillMap) drillMap.invalidateSize(); }, 200);
@@ -2293,6 +2327,135 @@ async function runFangstregImport() {
   await loadAll();
 }
 
+
+async function loadAdminSection() {
+  const no = currentLang === 'no';
+  // Count demo trips
+  const demoTrips = allTrips.filter(t => t.is_demo);
+  document.getElementById('adminDemoCount').textContent =
+    demoTrips.length > 0
+      ? `${demoTrips.length} demo-tur${demoTrips.length > 1 ? 'er' : ''} funnet: ${demoTrips.map(t => t.trip_code).join(', ')}`
+      : (no ? '✓ Ingen demo-turer funnet.' : '✓ No demo trips found.');
+
+  // Populate single trip delete select
+  const sel = document.getElementById('adminTripSelect');
+  sel.innerHTML = `<option value="">— ${no ? 'Velg tur' : 'Select trip'} —</option>`;
+  allTrips.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.id;
+    o.textContent = `${t.is_demo ? '🧪 ' : ''}${t.trip_code} — ${t.site_registry?.site_name || ''} (${t.trip_date || '?'})`;
+    sel.appendChild(o);
+  });
+}
+
+async function cascadeDeleteTrips(tripIds) {
+  if (!tripIds.length) return { error: null };
+  const inIds = tripIds;
+
+  // Delete in correct order
+  const steps = [
+    () => sb.from('research_scallop_measurement').delete().in('sample_id',
+      sb.from('research_catch_sample').select('id').in('transect_id',
+        sb.from('research_transect').select('id').in('session_id',
+          sb.from('research_session').select('id').in('trip_id', inIds)))),
+    () => sb.from('research_species_record').delete().in('sample_id',
+      sb.from('research_catch_sample').select('id').in('transect_id',
+        sb.from('research_transect').select('id').in('session_id',
+          sb.from('research_session').select('id').in('trip_id', inIds)))),
+    () => sb.from('research_size_sample').delete().in('sample_id',
+      sb.from('research_catch_sample').select('id').in('transect_id',
+        sb.from('research_transect').select('id').in('session_id',
+          sb.from('research_session').select('id').in('trip_id', inIds)))),
+    () => sb.from('research_photo_log').delete().in('session_id',
+      sb.from('research_session').select('id').in('trip_id', inIds)),
+    () => sb.from('research_video_log').delete().in('session_id',
+      sb.from('research_session').select('id').in('trip_id', inIds)),
+    () => sb.from('research_catch_sample').delete().in('transect_id',
+      sb.from('research_transect').select('id').in('session_id',
+        sb.from('research_session').select('id').in('trip_id', inIds))),
+    () => sb.from('research_transect').delete().in('session_id',
+      sb.from('research_session').select('id').in('trip_id', inIds)),
+    () => sb.from('research_session').delete().in('trip_id', inIds),
+    () => sb.from('bycatch_report').delete().in('tow_id',
+      sb.from('tow_log').select('id').in('activity_id',
+        sb.from('activity_log').select('id').in('trip_id', inIds))),
+    () => sb.from('tow_log').delete().in('activity_id',
+      sb.from('activity_log').select('id').in('trip_id', inIds)),
+    () => sb.from('activity_log').delete().in('trip_id', inIds),
+    () => sb.from('daily_log').delete().in('trip_id', inIds),
+    () => sb.from('trip_registry').delete().in('id', inIds),
+  ];
+
+  for (const step of steps) {
+    const { error } = await step();
+    if (error) return { error };
+  }
+  return { error: null };
+}
+
+async function deleteAllDemoTrips() {
+  const no = currentLang === 'no';
+  const demoTrips = allTrips.filter(t => t.is_demo);
+  if (!demoTrips.length) {
+    alert(no ? 'Ingen demo-turer å slette.' : 'No demo trips to delete.');
+    return;
+  }
+  const names = demoTrips.map(t => t.trip_code).join(', ');
+  const confirmed = window.confirm(
+    no
+      ? `Slette ${demoTrips.length} demo-tur(er)?\n\n${names}\n\nDette kan ikke angres.`
+      : `Delete ${demoTrips.length} demo trip(s)?\n\n${names}\n\nThis cannot be undone.`
+  );
+  if (!confirmed) return;
+
+  const btn = document.getElementById('btnDeleteDemo');
+  btn.disabled = true;
+  btn.textContent = no ? '⏳ Sletter...' : '⏳ Deleting...';
+
+  const { error } = await cascadeDeleteTrips(demoTrips.map(t => t.id));
+  btn.disabled = false;
+  btn.innerHTML = `🗑️ <span id="btnDeleteDemoLabel">${no ? 'Slett alle demo-turer' : 'Delete all demo trips'}</span>`;
+
+  if (error) {
+    alert((no ? 'Feil: ' : 'Error: ') + error.message);
+  } else {
+    alert(no ? `✓ ${demoTrips.length} demo-tur(er) slettet.` : `✓ ${demoTrips.length} demo trip(s) deleted.`);
+    await loadAll();
+    loadAdminSection();
+  }
+}
+
+async function deleteSingleTrip() {
+  const no = currentLang === 'no';
+  const tripId = document.getElementById('adminTripSelect').value;
+  if (!tripId) {
+    alert(no ? 'Velg en tur først.' : 'Please select a trip first.');
+    return;
+  }
+  const trip = allTrips.find(t => t.id === tripId);
+  const confirmed = window.confirm(
+    no
+      ? `Slette turen "${trip?.trip_code}"?\n\nAlle aktiviteter, høstinger, bifangst og forskningsdata for denne turen vil bli slettet permanent. Dette kan ikke angres.`
+      : `Delete trip "${trip?.trip_code}"?\n\nAll activities, tows, bycatch and research data for this trip will be permanently deleted. This cannot be undone.`
+  );
+  if (!confirmed) return;
+
+  const btn = document.getElementById('btnDeleteTrip');
+  btn.disabled = true;
+  btn.textContent = no ? '⏳ Sletter...' : '⏳ Deleting...';
+
+  const { error } = await cascadeDeleteTrips([tripId]);
+  btn.disabled = false;
+  btn.innerHTML = `🗑️ <span id="btnDeleteTripLabel">${no ? 'Slett valgt tur' : 'Delete selected trip'}</span>`;
+
+  if (error) {
+    alert((no ? 'Feil: ' : 'Error: ') + error.message);
+  } else {
+    alert(no ? `✓ Tur "${trip?.trip_code}" slettet.` : `✓ Trip "${trip?.trip_code}" deleted.`);
+    await loadAll();
+    loadAdminSection();
+  }
+}
 
 init();
 </script>
