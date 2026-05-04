@@ -969,7 +969,7 @@ tr:hover td{background:rgba(217,255,172,0.02);}
       </div>
 
       <div class="card" style="border-color:rgba(255,140,105,0.3);">
-        <div class="section-label" style="color:var(--warn);margin-bottom:12px;">🗑️ Slett enkelt tur</div>
+        <div class="section-label" style="color:var(--warn);margin-bottom:12px;">🗑️ <span id="adminDeleteTripTitle">Slett enkelt tur</span></div>
         <div style="font-size:13px;color:var(--muted);margin-bottom:16px;" id="adminDeleteDesc">
           Velg en tur og slett all tilknyttet data permanent.
         </div>
@@ -982,6 +982,43 @@ tr:hover td{background:rgba(217,255,172,0.02);}
           </button>
         </div>
       </div>
+
+      <div class="card" style="border-color:rgba(255,140,105,0.3);">
+        <div class="section-label" style="color:var(--warn);margin-bottom:12px;">🗑️ <span id="adminDeleteTowTitle">Slett enkelt høsting</span></div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:16px;" id="adminDeleteTowDesc">
+          Velg tur og høsting. Sletter høstingen og tilknyttet bifangst.
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+          <select id="adminTowTripSelect" style="flex:1;min-width:180px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:13px;padding:10px 12px;outline:none;" onchange="loadAdminTows()">
+            <option value="">— Velg tur —</option>
+          </select>
+          <select id="adminTowSelect" style="flex:1;min-width:180px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:13px;padding:10px 12px;outline:none;">
+            <option value="">— Velg høsting —</option>
+          </select>
+          <button class="btn" style="background:var(--warn);color:white;width:auto;padding:12px 24px;" onclick="deleteSingleTow()" id="btnDeleteTow">
+            🗑️ <span id="btnDeleteTowLabel">Slett høsting</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card" style="border-color:rgba(255,140,105,0.3);">
+        <div class="section-label" style="color:var(--warn);margin-bottom:12px;">🗑️ <span id="adminDeleteDayTitle">Slett daglig logg</span></div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:16px;" id="adminDeleteDayDesc">
+          Velg tur og dato. Sletter den daglige fangstloggen for den dagen.
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <select id="adminDayTripSelect" style="flex:1;min-width:180px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:13px;padding:10px 12px;outline:none;" onchange="loadAdminDays()">
+            <option value="">— Velg tur —</option>
+          </select>
+          <select id="adminDaySelect" style="flex:1;min-width:180px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:13px;padding:10px 12px;outline:none;">
+            <option value="">— Velg dato —</option>
+          </select>
+          <button class="btn" style="background:var(--warn);color:white;width:auto;padding:12px 24px;" onclick="deleteSingleDay()" id="btnDeleteDay">
+            🗑️ <span id="btnDeleteDayLabel">Slett dag</span>
+          </button>
+        </div>
+      </div>
+
     </div>
 
   </div><!-- end .main -->
@@ -1244,6 +1281,12 @@ function setLang(lang) {
   ael('navFangstreg','Fangstreg Import','Fangstreg Import');
   ael('mnavFangstreg','Fangstreg','Fangstreg');
   ael('mnavAi','AI Innsikt','AI Insights');
+  // Admin section
+  ael('adminSub','Dataadministrasjon — kun for Dagny','Data administration — Dagny only');
+  ael('adminDemoDesc','Sletter alle turer merket som demo, inkludert alle tilknyttede aktiviteter, høstinger, bifangst og forskningsdata. Kan ikke angres.','Deletes all trips marked as demo, including all linked activities, tows, bycatch and research data. Cannot be undone.');
+  ael('adminDeleteDesc','Velg en tur og slett all tilknyttet data permanent.','Select a trip and permanently delete all linked data.');
+  ael('btnDeleteDemoLabel',  'Slett alle demo-turer','Delete all demo trips');
+  ael('btnDeleteTripLabel','Slett valgt tur','Delete selected trip');
   const sel=document.getElementById('tripFilter');
   if(sel&&sel.options[0])sel.options[0].textContent=lang==='no'?'Alle turer':'All Trips';
   fangstregSetLang(lang);
@@ -2330,99 +2373,105 @@ async function runFangstregImport() {
 
 async function loadAdminSection() {
   const no = currentLang === 'no';
-  // Count demo trips
+
+  // Demo trip count
   const demoTrips = allTrips.filter(t => t.is_demo);
   document.getElementById('adminDemoCount').textContent =
     demoTrips.length > 0
       ? `${demoTrips.length} demo-tur${demoTrips.length > 1 ? 'er' : ''} funnet: ${demoTrips.map(t => t.trip_code).join(', ')}`
       : (no ? '✓ Ingen demo-turer funnet.' : '✓ No demo trips found.');
 
-  // Populate single trip delete select
-  const sel = document.getElementById('adminTripSelect');
-  sel.innerHTML = `<option value="">— ${no ? 'Velg tur' : 'Select trip'} —</option>`;
-  allTrips.forEach(t => {
+  // Populate all trip selects
+  const tripOptions = `<option value="">— ${no ? 'Velg tur' : 'Select trip'} —</option>` +
+    allTrips.map(t => `<option value="${t.id}">${t.is_demo ? '🧪 ' : ''}${t.trip_code} — ${t.site_registry?.site_name || ''} (${t.trip_date || '?'})</option>`).join('');
+
+  ['adminTripSelect','adminTowTripSelect','adminDayTripSelect'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = tripOptions;
+  });
+
+  // Update language labels
+  const ael = (id, no_txt, en_txt) => { const e = document.getElementById(id); if(e) e.textContent = no ? no_txt : en_txt; };
+  ael('adminDeleteTripTitle','Slett enkelt tur','Delete single trip');
+  ael('adminDeleteTowTitle','Slett enkelt høsting','Delete single tow');
+  ael('adminDeleteDayTitle','Slett daglig logg','Delete daily log entry');
+  ael('adminDeleteTowDesc','Velg tur og høsting. Sletter høstingen og tilknyttet bifangst.','Select trip and tow. Deletes the tow and its bycatch.');
+  ael('adminDeleteDayDesc','Velg tur og dato. Sletter den daglige fangstloggen for den dagen.','Select trip and date. Deletes the daily catch log for that day.');
+  ael('btnDeleteTowLabel','Slett høsting','Delete tow');
+  ael('btnDeleteDayLabel','Slett dag','Delete day');
+}
+
+async function loadAdminTows() {
+  const no = currentLang === 'no';
+  const tripId = document.getElementById('adminTowTripSelect').value;
+  const sel = document.getElementById('adminTowSelect');
+  sel.innerHTML = `<option value="">— ${no ? 'Velg høsting' : 'Select tow'} —</option>`;
+  if(!tripId) return;
+  const { data } = await sb.from('tow_log').select('*').eq('trip_id', tripId).order('tow_number');
+  (data || []).forEach(t => {
     const o = document.createElement('option');
     o.value = t.id;
-    o.textContent = `${t.is_demo ? '🧪 ' : ''}${t.trip_code} — ${t.site_registry?.site_name || ''} (${t.trip_date || '?'})`;
+    const ts = t.time_start ? new Date(t.time_start).toLocaleString('no-NO',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '?';
+    o.textContent = `#${t.tow_number} — ${ts} — ${t.harvester_fill_pct ?? '?'}% ${no ? 'fylling' : 'fill'}`;
     sel.appendChild(o);
   });
 }
 
-async function cascadeDeleteTrips(tripIds) {
-  if (!tripIds.length) return { error: null };
-  const inIds = tripIds;
-
-  // Delete in correct order
-  const steps = [
-    () => sb.from('research_scallop_measurement').delete().in('sample_id',
-      sb.from('research_catch_sample').select('id').in('transect_id',
-        sb.from('research_transect').select('id').in('session_id',
-          sb.from('research_session').select('id').in('trip_id', inIds)))),
-    () => sb.from('research_species_record').delete().in('sample_id',
-      sb.from('research_catch_sample').select('id').in('transect_id',
-        sb.from('research_transect').select('id').in('session_id',
-          sb.from('research_session').select('id').in('trip_id', inIds)))),
-    () => sb.from('research_size_sample').delete().in('sample_id',
-      sb.from('research_catch_sample').select('id').in('transect_id',
-        sb.from('research_transect').select('id').in('session_id',
-          sb.from('research_session').select('id').in('trip_id', inIds)))),
-    () => sb.from('research_photo_log').delete().in('session_id',
-      sb.from('research_session').select('id').in('trip_id', inIds)),
-    () => sb.from('research_video_log').delete().in('session_id',
-      sb.from('research_session').select('id').in('trip_id', inIds)),
-    () => sb.from('research_catch_sample').delete().in('transect_id',
-      sb.from('research_transect').select('id').in('session_id',
-        sb.from('research_session').select('id').in('trip_id', inIds))),
-    () => sb.from('research_transect').delete().in('session_id',
-      sb.from('research_session').select('id').in('trip_id', inIds)),
-    () => sb.from('research_session').delete().in('trip_id', inIds),
-    () => sb.from('bycatch_report').delete().in('tow_id',
-      sb.from('tow_log').select('id').in('activity_id',
-        sb.from('activity_log').select('id').in('trip_id', inIds))),
-    () => sb.from('tow_log').delete().in('activity_id',
-      sb.from('activity_log').select('id').in('trip_id', inIds)),
-    () => sb.from('activity_log').delete().in('trip_id', inIds),
-    () => sb.from('daily_log').delete().in('trip_id', inIds),
-    () => sb.from('trip_registry').delete().in('id', inIds),
-  ];
-
-  for (const step of steps) {
-    const { error } = await step();
-    if (error) return { error };
-  }
-  return { error: null };
+async function loadAdminDays() {
+  const no = currentLang === 'no';
+  const tripId = document.getElementById('adminDayTripSelect').value;
+  const sel = document.getElementById('adminDaySelect');
+  sel.innerHTML = `<option value="">— ${no ? 'Velg dato' : 'Select date'} —</option>`;
+  if(!tripId) return;
+  const { data } = await sb.from('daily_log').select('*').eq('trip_id', tripId).order('log_date');
+  (data || []).forEach(d => {
+    const o = document.createElement('option');
+    o.value = d.id;
+    o.textContent = `${d.log_date} — ${d.kg_landed?.toLocaleString() ?? '?'} kg`;
+    sel.appendChild(o);
+  });
 }
 
-async function deleteAllDemoTrips() {
+async function deleteSingleTow() {
   const no = currentLang === 'no';
-  const demoTrips = allTrips.filter(t => t.is_demo);
-  if (!demoTrips.length) {
-    alert(no ? 'Ingen demo-turer å slette.' : 'No demo trips to delete.');
-    return;
-  }
-  const names = demoTrips.map(t => t.trip_code).join(', ');
+  const towId = document.getElementById('adminTowSelect').value;
+  if(!towId) { alert(no ? 'Velg en høsting først.' : 'Select a tow first.'); return; }
+  const towText = document.getElementById('adminTowSelect').selectedOptions[0]?.textContent;
   const confirmed = window.confirm(
-    no
-      ? `Slette ${demoTrips.length} demo-tur(er)?\n\n${names}\n\nDette kan ikke angres.`
-      : `Delete ${demoTrips.length} demo trip(s)?\n\n${names}\n\nThis cannot be undone.`
+    no ? `Slette høsting "${towText}"?\n\nBifangst for denne høstingen slettes også. Kan ikke angres.`
+       : `Delete tow "${towText}"?\n\nBycatch for this tow will also be deleted. Cannot be undone.`
   );
-  if (!confirmed) return;
-
-  const btn = document.getElementById('btnDeleteDemo');
+  if(!confirmed) return;
+  const btn = document.getElementById('btnDeleteTow');
   btn.disabled = true;
-  btn.textContent = no ? '⏳ Sletter...' : '⏳ Deleting...';
-
-  const { error } = await cascadeDeleteTrips(demoTrips.map(t => t.id));
+  await sb.from('bycatch_report').delete().eq('tow_id', towId);
+  const { error } = await sb.from('tow_log').delete().eq('id', towId);
   btn.disabled = false;
-  btn.innerHTML = `🗑️ <span id="btnDeleteDemoLabel">${no ? 'Slett alle demo-turer' : 'Delete all demo trips'}</span>`;
+  if(error) { alert((no ? 'Feil: ' : 'Error: ') + error.message); return; }
+  alert(no ? '✓ Høsting slettet.' : '✓ Tow deleted.');
+  await loadAll();
+  await loadAdminTows();
+}
 
-  if (error) {
-    alert((no ? 'Feil: ' : 'Error: ') + error.message);
-  } else {
-    alert(no ? `✓ ${demoTrips.length} demo-tur(er) slettet.` : `✓ ${demoTrips.length} demo trip(s) deleted.`);
-    await loadAll();
-    loadAdminSection();
-  }
+async function deleteSingleDay() {
+  const no = currentLang === 'no';
+  const dayId = document.getElementById('adminDaySelect').value;
+  if(!dayId) { alert(no ? 'Velg en dato først.' : 'Select a date first.'); return; }
+  const dayText = document.getElementById('adminDaySelect').selectedOptions[0]?.textContent;
+  const confirmed = window.confirm(
+    no ? `Slette daglig logg for "${dayText}"?\n\nKan ikke angres.`
+       : `Delete daily log for "${dayText}"?\n\nCannot be undone.`
+  );
+  if(!confirmed) return;
+  const btn = document.getElementById('btnDeleteDay');
+  btn.disabled = true;
+  const { error } = await sb.from('daily_log').delete().eq('id', dayId);
+  btn.disabled = false;
+  if(error) { alert((no ? 'Feil: ' : 'Error: ') + error.message); return; }
+  alert(no ? '✓ Daglig logg slettet.' : '✓ Daily log entry deleted.');
+  await loadAll();
+  await loadAdminDays();
+}
 }
 
 async function deleteSingleTrip() {
