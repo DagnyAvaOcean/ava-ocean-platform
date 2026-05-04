@@ -571,7 +571,7 @@ function renderTowList(){
   el.innerHTML=towsThisActivity.map(t=>{
     const ts=t.time_start?new Date(t.time_start).toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'}):'—';
     const te=t.time_end?new Date(t.time_end).toLocaleTimeString('no-NO',{hour:'2-digit',minute:'2-digit'}):'—';
-    return `<div class="tow-item"><div><div class="tow-num">#${t.tow_number}</div><div class="tow-meta">${ts} → ${te} · ${no?'Fylling':'Fill'}: ${t.harvester_fill_pct??'—'}%</div></div><div class="act-badge">✓</div></div>`;
+    return `<div class="tow-item"><div><div class="tow-num">#${t.tow_number}</div><div class="tow-meta">${ts} → ${te} · ${no?'Fylling':'Fill'}: ${t.harvester_fill_pct??'—'}%</div></div><button onclick="deleteTow('${t.id}',${t.tow_number})" style="background:none;border:1px solid var(--warn);color:var(--warn);border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;font-family:var(--font-head);font-weight:700;">🗑️</button></div>`;
   }).join('');
 }
 
@@ -669,7 +669,17 @@ function skipBycatch(){
   document.getElementById('towListSection').style.display='block';
   goTo('screen-fishing');
 }
-
+async function deleteTow(towId, towNum) {
+  const no=currentLang==='no';
+  const confirm=window.confirm(no?`Slette høsting #${towNum}? Dette kan ikke angres.`:`Delete tow #${towNum}? This cannot be undone.`);
+  if(!confirm) return;
+  // Delete bycatch first, then tow
+  await sb.from('bycatch_report').delete().eq('tow_id',towId);
+  const{error}=await sb.from('tow_log').delete().eq('id',towId);
+  if(error){showToast((no?'Feil: ':'Error: ')+error.message,'error');return;}
+  showToast(no?`Høsting #${towNum} slettet`:`Tow #${towNum} deleted`,'success');
+  await loadTowsForActivity(currentActivityId);
+}
 function endActivityPrompt(){
   document.getElementById('endFuel').value='';
   document.getElementById('gpsActEndDisplay').textContent='';
