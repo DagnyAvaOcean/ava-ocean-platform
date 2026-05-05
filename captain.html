@@ -839,13 +839,18 @@ let generatedTransectCode = null;
 function toggleResearchPanel() {
   const on = document.getElementById('towIsResearch').checked;
   document.getElementById('researchPanel').style.display = on ? 'block' : 'none';
-  if (!on) {
+ if (!on) {
     selectedResearchType = null;
     selectedBaciPhase = null;
     generatedTransectCode = null;
     resetResearchButtons();
     document.getElementById('baciPhasePanel').style.display = 'none';
     document.getElementById('transectCodeDisplay').style.display = 'none';
+    // Restore fill slider
+    const fillSlider = document.getElementById('harvesterFill');
+    if(fillSlider) { fillSlider.disabled = false; fillSlider.style.opacity = '1'; }
+    document.getElementById('fillVal').style.opacity = '1';
+    document.getElementById('baciVolumeNote')?.remove();
   }
 }
 
@@ -863,9 +868,34 @@ function selectResearchType(type) {
   resetResearchButtons();
   const btn = document.getElementById(type === 'baci' ? 'btnSampleBaci' : 'btnSampleCommercial');
   if(btn) { btn.style.borderColor = '#88C8FF'; btn.style.color = '#88C8FF'; btn.style.background = 'rgba(136,200,255,0.08)'; }
-  document.getElementById('baciPhasePanel').style.display = type === 'baci' ? 'block' : 'none';
+ document.getElementById('baciPhasePanel').style.display = type === 'baci' ? 'block' : 'none';
   document.getElementById('transectCodeDisplay').style.display = 'none';
   if (type === 'commercial_sample') generateTransectCode();
+  // Grey out fill slider for BACI — volumes logged by researcher
+  const fillSlider = document.getElementById('harvesterFill');
+  const fillWrap = fillSlider?.closest('.card');
+  if (type === 'baci') {
+    fillSlider.disabled = true;
+    fillSlider.style.opacity = '0.3';
+    fillSlider.value = 0;
+    document.getElementById('fillVal').textContent = '0';
+    document.getElementById('fillVal').style.opacity = '0.3';
+    // Add researcher note if not already there
+    if (!document.getElementById('baciVolumeNote')) {
+      const note = document.createElement('div');
+      note.id = 'baciVolumeNote';
+      note.style.cssText = 'font-size:11px;color:#88C8FF;font-family:var(--font-head);margin-top:8px;text-align:center;';
+      note.setAttribute('data-no', '📋 Volum logges av forsker i forskningsdashboard');
+      note.setAttribute('data-en', '📋 Volume logged by researcher in research dashboard');
+      note.textContent = currentLang === 'no' ? '📋 Volum logges av forsker i forskningsdashboard' : '📋 Volume logged by researcher in research dashboard';
+      fillSlider.parentElement.appendChild(note);
+    }
+  } else {
+    fillSlider.disabled = false;
+    fillSlider.style.opacity = '1';
+    document.getElementById('fillVal').style.opacity = '1';
+    document.getElementById('baciVolumeNote')?.remove();
+  }
 }
 
 function selectBaciPhase(phase) {
