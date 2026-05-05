@@ -915,14 +915,15 @@ async function autoCreateResearchSession(towId, towData) {
   const no = currentLang === 'no';
   try {
     // Create research_session
-    const { data: session, error: sessErr } = await sb.from('research_session').insert({
+   const sessionInsert = {
       trip_id: currentTrip.id,
       tow_id: towId,
       session_code: generatedTransectCode,
       session_type: selectedResearchType,
       session_date: towData.time_start ? towData.time_start.slice(0,10) : new Date().toISOString().slice(0,10),
-      baci_designation: selectedResearchType === 'baci' ? 'impact' : null,
-    }).select().single();
+    };
+    if(selectedResearchType === 'baci') sessionInsert.baci_designation = 'impact';
+    const { data: session, error: sessErr } = await sb.from('research_session').insert(sessionInsert).select().single();
     if (sessErr) throw sessErr;
 
     // Create research_transect linked to session and tow GPS
