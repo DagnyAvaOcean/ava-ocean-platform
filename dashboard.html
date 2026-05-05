@@ -1285,8 +1285,15 @@ function setLang(lang) {
   ael('adminSub','Dataadministrasjon — kun for Dagny','Data administration — Dagny only');
   ael('adminDemoDesc','Sletter alle turer merket som demo, inkludert alle tilknyttede aktiviteter, høstinger, bifangst og forskningsdata. Kan ikke angres.','Deletes all trips marked as demo, including all linked activities, tows, bycatch and research data. Cannot be undone.');
   ael('adminDeleteDesc','Velg en tur og slett all tilknyttet data permanent.','Select a trip and permanently delete all linked data.');
-  ael('btnDeleteDemoLabel',  'Slett alle demo-turer','Delete all demo trips');
+ael('btnDeleteDemoLabel','Slett alle demo-turer','Delete all demo trips');
   ael('btnDeleteTripLabel','Slett valgt tur','Delete selected trip');
+  ael('btnDeleteTowLabel','Slett høsting','Delete tow');
+  ael('btnDeleteDayLabel','Slett dag','Delete day');
+  ael('adminDeleteTripTitle','Slett enkelt tur','Delete single trip');
+  ael('adminDeleteTowTitle','Slett enkelt høsting','Delete single tow');
+  ael('adminDeleteDayTitle','Slett daglig logg','Delete daily log entry');
+  ael('adminDeleteTowDesc','Velg tur og høsting. Sletter høstingen og tilknyttet bifangst.','Select trip and tow. Deletes the tow and its bycatch.');
+  ael('adminDeleteDayDesc','Velg tur og dato. Sletter den daglige fangstloggen for den dagen.','Select trip and date. Deletes the daily catch log for that day.');
   const sel=document.getElementById('tripFilter');
   if(sel&&sel.options[0])sel.options[0].textContent=lang==='no'?'Alle turer':'All Trips';
   fangstregSetLang(lang);
@@ -1913,7 +1920,18 @@ async function runQuery(){
 // ═══════════════════════════════════════════════════════════
 async function init(){initLang();const{data:{session}}=await sb.auth.getSession();if(session)showApp(session.user);sb.auth.onAuthStateChange((e,s)=>{if(s)showApp(s.user);else showLogin();});}
 function showLogin(){document.getElementById('loginScreen').style.display='flex';document.getElementById('app').style.display='none';}
-async function showApp(user){document.getElementById('loginScreen').style.display='none';document.getElementById('app').style.display='block';document.getElementById('userEmail').textContent=user?.email||'—';await loadAll();initAiTab(user?.email||'');}
+async function showApp(user){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('userEmail').textContent=user?.email||'—';
+  await loadAll();
+  initAiTab(user?.email||'');
+  // Hide Admin from non-admin users
+  const ADMIN_ALLOWED=['dagny@avaocean.no'];
+  const isAdmin=ADMIN_ALLOWED.includes(user?.email||'');
+  const adminNav=document.getElementById('nav-admin');
+  if(adminNav) adminNav.style.display=isAdmin?'flex':'none';
+}
 async function signIn(){
   const email=document.getElementById('loginEmail').value.trim(),password=document.getElementById('loginPassword').value;
   const btn=document.getElementById('loginBtn'),errEl=document.getElementById('loginError'),t=T[currentLang];
