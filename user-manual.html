@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Manual — Ava Ocean Platform</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+:root {
+  --bg:#0a0e14;--surface:#111720;--surface2:#161d28;--border:rgba(136,200,255,0.12);
+  --border2:rgba(136,200,255,0.06);--research:#88C8FF;--lime:#D9FFAC;--amber:#FFD580;
+  --coral:#FF8C69;--muted:#6a7d94;--text:#e2eaf4;--text2:#a8bccc;
+  --font-serif:'DM Serif Display',Georgia,serif;--font-mono:'DM Mono',monospace;
+  --font-sans:'DM Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.7;}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:20px 40px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.logo-mark{width:36px;height:36px;background:linear-gradient(135deg,var(--research),var(--lime));border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:18px;color:#0a0e14;font-weight:700;}
+.header-left{display:flex;align-items:center;gap:16px;}
+.header-title{font-family:var(--font-serif);font-size:20px;}
+.header-sub{font-size:12px;color:var(--muted);font-family:var(--font-mono);}
+.back-link{color:var(--muted);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--border);border-radius:6px;transition:all 0.2s;}
+.back-link:hover{color:var(--research);border-color:var(--research);}
+.layout{display:flex;min-height:calc(100vh - 77px);}
+.sidebar{width:260px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:28px 0;position:sticky;top:77px;height:calc(100vh - 77px);overflow-y:auto;}
+.sidebar-section{margin-bottom:28px;}
+.sidebar-label{font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);padding:0 24px;margin-bottom:8px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 24px;cursor:pointer;color:var(--text2);font-size:13.5px;transition:all 0.15s;border-left:2px solid transparent;text-decoration:none;}
+.nav-item:hover{color:var(--text);background:var(--surface2);}
+.nav-item.active{color:var(--research);border-left-color:var(--research);background:rgba(136,200,255,0.06);}
+.nav-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.main{flex:1;padding:48px 56px;max-width:860px;}
+.hero{background:linear-gradient(135deg,rgba(136,200,255,0.08),rgba(217,255,172,0.04));border:1px solid var(--border);border-radius:14px;padding:32px 36px;margin-bottom:48px;}
+.hero h1{font-family:var(--font-serif);font-size:40px;margin-bottom:10px;line-height:1.15;}
+.hero h1 em{font-style:italic;color:var(--research);}
+.hero p{color:var(--text2);font-size:15px;max-width:560px;}
+.hero-meta{display:flex;gap:24px;margin-top:22px;flex-wrap:wrap;}
+.hero-tag{font-family:var(--font-mono);font-size:11px;color:var(--muted);display:flex;gap:6px;align-items:center;}
+.hero-tag span{color:var(--text2);}
+.manual-section{margin-bottom:64px;scroll-margin-top:100px;}
+.section-tag{font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--research);margin-bottom:10px;}
+.section-title{font-family:var(--font-serif);font-size:32px;color:var(--text);margin-bottom:6px;line-height:1.2;}
+.divider{height:1px;background:var(--border);margin-bottom:32px;}
+.step-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px 28px;margin-bottom:16px;position:relative;overflow:hidden;}
+.step-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--research),transparent);}
+.step-num{font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.step-title{font-family:var(--font-sans);font-weight:600;font-size:16px;color:var(--text);margin-bottom:8px;}
+.step-body{font-size:14px;color:var(--text2);line-height:1.7;}
+.info-card{background:rgba(136,200,255,0.05);border:1px solid rgba(136,200,255,0.15);border-radius:10px;padding:18px 22px;margin:20px 0;font-size:13.5px;color:var(--text2);}
+.info-card strong{color:var(--research);}
+.warn-card{background:rgba(255,140,105,0.06);border:1px solid rgba(255,140,105,0.2);border-radius:10px;padding:18px 22px;margin:20px 0;font-size:13.5px;color:var(--text2);}
+.warn-card strong{color:var(--coral);}
+.tip-card{background:rgba(217,255,172,0.05);border:1px solid rgba(217,255,172,0.15);border-radius:10px;padding:18px 22px;margin:20px 0;font-size:13.5px;color:var(--text2);}
+.tip-card strong{color:var(--lime);}
+code{font-family:var(--font-mono);font-size:12.5px;background:rgba(136,200,255,0.08);color:var(--research);padding:2px 7px;border-radius:4px;}
+.screen-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0;}
+.screen-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;}
+.screen-card-icon{font-size:24px;margin-bottom:10px;}
+.screen-card-title{font-weight:600;font-size:14px;color:var(--text);margin-bottom:6px;}
+.screen-card-desc{font-size:13px;color:var(--text2);}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-family:var(--font-mono);font-size:10px;font-weight:500;margin-right:4px;}
+.badge-captain{background:rgba(217,255,172,0.1);color:var(--lime);border:1px solid rgba(217,255,172,0.3);}
+.badge-dagny{background:rgba(136,200,255,0.1);color:var(--research);border:1px solid rgba(136,200,255,0.3);}
+.badge-mgmt{background:rgba(255,213,128,0.1);color:var(--amber);border:1px solid rgba(255,213,128,0.3);}
+.flow{display:flex;flex-direction:column;gap:8px;margin:20px 0;}
+.flow-step{display:flex;align-items:flex-start;gap:16px;}
+.flow-dot{width:28px;height:28px;border-radius:50%;background:rgba(136,200,255,0.12);border:1px solid rgba(136,200,255,0.25);color:var(--research);font-family:var(--font-mono);font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.flow-content{font-size:14px;color:var(--text2);padding-top:4px;}
+.flow-content strong{color:var(--text);}
+.user-table{width:100%;border-collapse:collapse;margin:20px 0;}
+.user-table th{font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 14px;border-bottom:1px solid var(--border);}
+.user-table td{padding:10px 14px;font-size:13.5px;color:var(--text2);border-bottom:1px solid var(--border2);vertical-align:top;}
+.user-table tr:hover td{background:rgba(136,200,255,0.03);}
+.check{color:var(--lime);}
+.cross{color:var(--muted);}
+@media(max-width:900px){.sidebar{display:none;}.main{padding:28px 24px;}}
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="header-left">
+    <div class="logo-mark">A</div>
+    <div>
+      <div class="header-title">Ava Ocean</div>
+      <div class="header-sub">USER MANUAL</div>
+    </div>
+  </div>
+  <a href="index.html" class="back-link">← Back to platform</a>
+</header>
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Getting Started</div>
+      <a href="#overview" class="nav-item active"><span class="nav-dot" style="background:var(--research)"></span>Platform Overview</a>
+      <a href="#access" class="nav-item"><span class="nav-dot" style="background:var(--lime)"></span>Who Uses What</a>
+      <a href="#login" class="nav-item"><span class="nav-dot" style="background:var(--amber)"></span>Logging In</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Captain at Sea</div>
+      <a href="#captain-trip" class="nav-item"><span class="nav-dot" style="background:var(--lime)"></span>Starting a Trip</a>
+      <a href="#captain-activity" class="nav-item"><span class="nav-dot" style="background:var(--lime)"></span>Logging Activities</a>
+      <a href="#captain-tow" class="nav-item"><span class="nav-dot" style="background:var(--lime)"></span>Logging a Tow</a>
+      <a href="#captain-bycatch" class="nav-item"><span class="nav-dot" style="background:var(--lime)"></span>Bycatch Entry</a>
+      <a href="#captain-daily" class="nav-item"><span class="nav-dot" style="background:var(--lime)"></span>Daily Catch Log</a>
+      <a href="#captain-close" class="nav-item"><span class="nav-dot" style="background:var(--lime)"></span>Closing a Trip</a>
+      <a href="#captain-demo" class="nav-item"><span class="nav-dot" style="background:var(--coral)"></span>Demo / Training Mode</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Dashboard</div>
+      <a href="#dash-overview" class="nav-item"><span class="nav-dot" style="background:var(--research)"></span>Overview & Drill-Down</a>
+      <a href="#dash-cpue" class="nav-item"><span class="nav-dot" style="background:var(--research)"></span>CPUE & Emissions</a>
+      <a href="#dash-fangstreg" class="nav-item"><span class="nav-dot" style="background:var(--research)"></span>Fangstreg Import</a>
+      <a href="#dash-admin" class="nav-item"><span class="nav-dot" style="background:var(--coral)"></span>Admin Tools</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Research</div>
+      <a href="#research-session" class="nav-item"><span class="nav-dot" style="background:var(--amber)"></span>Research Sessions</a>
+      <a href="#research-data" class="nav-item"><span class="nav-dot" style="background:var(--amber)"></span>Entering Data</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Troubleshooting</div>
+      <a href="#troubleshoot" class="nav-item"><span class="nav-dot" style="background:var(--muted)"></span>Common Issues</a>
+    </div>
+  </nav>
+  <main class="main">
+
+    <div class="hero">
+      <h1>Ava Ocean <em>Platform</em><br>User Manual</h1>
+      <p>Step-by-step guide for all users — captain, researcher, and management. This manual covers everything from logging your first tow to importing catch reports and managing data.</p>
+      <div class="hero-meta">
+        <div class="hero-tag">VESSEL — <span>Ava Ray</span></div>
+        <div class="hero-tag">SPECIES — <span>Chlamys islandica</span></div>
+        <div class="hero-tag">VERSION — <span>May 2026</span></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ OVERVIEW ═══════════ -->
+    <section class="manual-section" id="overview">
+      <div class="section-tag">Getting Started</div>
+      <h2 class="section-title">Platform Overview</h2>
+      <div class="divider"></div>
+      <p style="color:var(--text2);margin-bottom:20px;">The Ava Ocean platform is a web-based tool for recording, monitoring, and analysing data from the Ava Ray's scallop harvesting operations. It has four main parts, each designed for a different user and purpose.</p>
+      <div class="screen-grid">
+        <div class="screen-card">
+          <div class="screen-card-icon">📱</div>
+          <div class="screen-card-title">Captain's Log <span class="badge badge-captain">Captain</span></div>
+          <div class="screen-card-desc">Mobile-optimised data entry at sea. Log activities, tows, bycatch, and daily catch weight in real time.</div>
+        </div>
+        <div class="screen-card">
+          <div class="screen-card-icon">📊</div>
+          <div class="screen-card-title">Operations Dashboard <span class="badge badge-dagny">Dagny</span><span class="badge badge-mgmt">Øystein</span></div>
+          <div class="screen-card-desc">Charts, tables, maps, and drill-down analysis of all operational data. CPUE, emissions, bycatch.</div>
+        </div>
+        <div class="screen-card">
+          <div class="screen-card-icon">🔬</div>
+          <div class="screen-card-title">Research Dashboard <span class="badge badge-dagny">Dagny</span></div>
+          <div class="screen-card-desc">PhD data collection and analysis — Shannon diversity, BACI design, damage index, species records.</div>
+        </div>
+        <div class="screen-card">
+          <div class="screen-card-icon">🏭</div>
+          <div class="screen-card-title">Factory Log <span class="badge badge-dagny">Dagny</span></div>
+          <div class="screen-card-desc">Enter factory sample data — meat yield, damage rates, population split (% female/male).</div>
+        </div>
+      </div>
+      <div class="info-card"><strong>Access URL:</strong> All tools are at <code>https://ava-ocean-platform.vercel.app</code> — bookmark this on your phone and computer.</div>
+    </section>
+
+    <!-- ═══════════ WHO USES WHAT ═══════════ -->
+    <section class="manual-section" id="access">
+      <div class="section-tag">Getting Started</div>
+      <h2 class="section-title">Who Uses What</h2>
+      <div class="divider"></div>
+      <table class="user-table">
+        <tr><th>Tool / Feature</th><th>Captain Robin</th><th>Dagny</th><th>Øystein (CEO)</th></tr>
+        <tr><td>Captain's Log (captain.html)</td><td class="check">✅ Primary user</td><td class="check">✅</td><td class="cross">—</td></tr>
+        <tr><td>Dashboard — Overview</td><td class="check">✅</td><td class="check">✅</td><td class="check">✅</td></tr>
+        <tr><td>Dashboard — CPUE & Emissions</td><td class="cross">—</td><td class="check">✅</td><td class="check">✅</td></tr>
+        <tr><td>Dashboard — Tow Map</td><td class="check">✅</td><td class="check">✅</td><td class="check">✅</td></tr>
+        <tr><td>Dashboard — AI Insights</td><td class="cross">—</td><td class="check">✅</td><td class="check">✅</td></tr>
+        <tr><td>Dashboard — Fangstreg Import</td><td class="cross">—</td><td class="check">✅ only</td><td class="cross">—</td></tr>
+        <tr><td>Dashboard — Admin</td><td class="cross">—</td><td class="check">✅ only</td><td class="cross">—</td></tr>
+        <tr><td>Research Dashboard</td><td class="cross">—</td><td class="check">✅ only</td><td class="cross">—</td></tr>
+        <tr><td>Factory Log</td><td class="cross">—</td><td class="check">✅</td><td class="cross">—</td></tr>
+      </table>
+    </section>
+
+    <!-- ═══════════ LOGIN ═══════════ -->
+    <section class="manual-section" id="login">
+      <div class="section-tag">Getting Started</div>
+      <h2 class="section-title">Logging In</h2>
+      <div class="divider"></div>
+      <div class="flow">
+        <div class="flow-step"><div class="flow-dot">1</div><div class="flow-content"><strong>Open the platform</strong> — go to <code>ava-ocean-platform.vercel.app</code> in your browser. On mobile, you can add it to your home screen for quick access.</div></div>
+        <div class="flow-step"><div class="flow-dot">2</div><div class="flow-content"><strong>Choose your tool</strong> — from the home page, tap Captain's Log, Dashboard, or Research Dashboard.</div></div>
+        <div class="flow-step"><div class="flow-dot">3</div><div class="flow-content"><strong>Enter your credentials</strong> — use your assigned email and password. Contact Dagny if you need access.</div></div>
+        <div class="flow-step"><div class="flow-dot">4</div><div class="flow-content"><strong>Language</strong> — toggle between Norwegian (NO) and English (EN) using the buttons at the top. Your preference is remembered.</div></div>
+      </div>
+      <div class="tip-card"><strong>Tip:</strong> The platform works offline for reading data you've already loaded. If your satellite internet drops at sea, data you've entered will still save once connection returns — but always check the green status dot in the header to confirm you're connected before logging critical tows.</div>
+    </section>
+
+    <!-- ═══════════ CAPTAIN — TRIP ═══════════ -->
+    <section class="manual-section" id="captain-trip">
+      <div class="section-tag">Captain at Sea</div>
+      <h2 class="section-title">Starting a Trip</h2>
+      <div class="divider"></div>
+      <div class="flow">
+        <div class="flow-step"><div class="flow-dot">1</div><div class="flow-content"><strong>Open Captain's Log</strong> and log in with your captain credentials.</div></div>
+        <div class="flow-step"><div class="flow-dot">2</div><div class="flow-content"><strong>Select an existing trip</strong> from the dropdown if one has already been created, then tap "Fortsett denne turen →".</div></div>
+        <div class="flow-step"><div class="flow-dot">3</div><div class="flow-content"><strong>Or create a new trip</strong> — tap "+ Ny tur" and fill in: trip code (e.g. AVA-2026-001), your name, departure date, fishing site, and departure port.</div></div>
+        <div class="flow-step"><div class="flow-dot">4</div><div class="flow-content"><strong>Tap "Opprett tur"</strong> to save. The trip is now live in the database and visible on the dashboard onshore.</div></div>
+      </div>
+      <div class="warn-card"><strong>Demo/Training mode:</strong> If you're practising or training a new crew member, toggle on "Demo / treningstur" when creating the trip. This marks all data as test data that can be deleted with one click from the Admin panel. Never use this on a real fishing trip.</div>
+    </section>
+
+    <!-- ═══════════ CAPTAIN — ACTIVITY ═══════════ -->
+    <section class="manual-section" id="captain-activity">
+      <div class="section-tag">Captain at Sea</div>
+      <h2 class="section-title">Logging Activities</h2>
+      <div class="divider"></div>
+      <p style="color:var(--text2);margin-bottom:20px;">Every hour at sea should be accounted for as one of five activity types. This is what builds the time-use analysis and fuel efficiency data.</p>
+      <div class="screen-grid">
+        <div class="screen-card"><div class="screen-card-icon">🦪</div><div class="screen-card-title">Fiske / Fishing</div><div class="screen-card-desc">Harvester is in the water and actively collecting scallops.</div></div>
+        <div class="screen-card"><div class="screen-card-icon">⚓</div><div class="screen-card-title">Transitt / Steaming</div><div class="screen-card-desc">Vessel moving between sites or to/from port.</div></div>
+        <div class="screen-card"><div class="screen-card-icon">🌊</div><div class="screen-card-title">WOW</div><div class="screen-card-desc">Waiting On Weather — stopped due to sea conditions.</div></div>
+        <div class="screen-card"><div class="screen-card-icon">⚙️</div><div class="screen-card-title">Nedetid høster</div><div class="screen-card-desc">Harvester equipment downtime (mechanical, maintenance).</div></div>
+        <div class="screen-card"><div class="screen-card-icon">🏭</div><div class="screen-card-title">Nedetid fabrikk</div><div class="screen-card-desc">Factory/processing equipment downtime.</div></div>
+      </div>
+      <div class="flow" style="margin-top:20px;">
+        <div class="flow-step"><div class="flow-dot">1</div><div class="flow-content"><strong>Tap the activity type</strong> you are starting (e.g. 🦪 Fiske).</div></div>
+        <div class="flow-step"><div class="flow-dot">2</div><div class="flow-content"><strong>Tap "Start aktivitet →"</strong></div></div>
+        <div class="flow-step"><div class="flow-dot">3</div><div class="flow-content"><strong>Fill in conditions:</strong> fuel level at start (litres), wave height (m), wind speed (knots), wind direction, sea state, visibility. These fields are optional but very valuable for research — fill them in when you can.</div></div>
+        <div class="flow-step"><div class="flow-dot">4</div><div class="flow-content"><strong>GPS position:</strong> Tap "📍 Hent start-GPS" to capture your position automatically, or type coordinates manually if GPS doesn't work.</div></div>
+        <div class="flow-step"><div class="flow-dot">5</div><div class="flow-content"><strong>Tap "Start aktivitet ▶"</strong> to begin. The activity is now live.</div></div>
+        <div class="flow-step"><div class="flow-dot">6</div><div class="flow-content"><strong>When done:</strong> tap "Avslutt" in the active activity banner, enter end fuel level and GPS, then confirm.</div></div>
+      </div>
+      <div class="info-card"><strong>Only one activity at a time.</strong> You must end the current activity before starting a new one. The platform will warn you if you try to start a second activity while one is open.</div>
+    </section>
+
+    <!-- ═══════════ CAPTAIN — TOW ═══════════ -->
+    <section class="manual-section" id="captain-tow">
+      <div class="section-tag">Captain at Sea</div>
+      <h2 class="section-title">Logging a Tow (Høsting)</h2>
+      <div class="divider"></div>
+      <p style="color:var(--text2);margin-bottom:20px;">Tows are logged inside a Fishing activity. Each time the harvester completes a pass and the basket is emptied, that is one tow.</p>
+      <div class="flow">
+        <div class="flow-step"><div class="flow-dot">1</div><div class="flow-content"><strong>Start a Fishing activity</strong> (see above). You'll see the tow list screen.</div></div>
+        <div class="flow-step"><div class="flow-dot">2</div><div class="flow-content"><strong>Tap "+ Logg ny høsting"</strong> when you begin a tow.</div></div>
+        <div class="flow-step"><div class="flow-dot">3</div><div class="flow-content"><strong>Start time and GPS</strong> — the current time is pre-filled. Capture or type your start position.</div></div>
+        <div class="flow-step"><div class="flow-dot">4</div><div class="flow-content"><strong>End time and GPS</strong> — when the tow is complete, fill in the end time and position.</div></div>
+        <div class="flow-step"><div class="flow-dot">5</div><div class="flow-content"><strong>Harvester fill %</strong> — use the slider to record how full the collection basket is. This is the most important field — be as accurate as possible. 0% = empty, 100% = completely full (28,000 litres).</div></div>
+        <div class="flow-step"><div class="flow-dot">6</div><div class="flow-content"><strong>Depth (m)</strong> — record the fishing depth.</div></div>
+        <div class="flow-step"><div class="flow-dot">7</div><div class="flow-content"><strong>Tap "Lagre høsting og logg bifangst →"</strong> to save and proceed to bycatch entry.</div></div>
+      </div>
+      <div class="tip-card"><strong>GPS accuracy:</strong> GPS positions are used to calculate swept area and CPUE. Even approximate positions are better than nothing — if the GPS button doesn't work, type coordinates manually. Format: decimal degrees (e.g. 74.123456, 19.654321).</div>
+      <div class="info-card"><strong>Deleting a tow:</strong> If you made an error, tap the 🗑️ button next to the tow in the list. This also deletes any bycatch logged for that tow. You'll be asked to confirm before anything is deleted.</div>
+    </section>
+
+    <!-- ═══════════ CAPTAIN — BYCATCH ═══════════ -->
+    <section class="manual-section" id="captain-bycatch">
+      <div class="section-tag">Captain at Sea</div>
+      <h2 class="section-title">Bycatch Entry</h2>
+      <div class="divider"></div>
+      <p style="color:var(--text2);margin-bottom:20px;">After saving each tow, you'll see the bycatch screen. Record any non-target species that came up with the catch before they are returned to the sea.</p>
+      <div class="flow">
+        <div class="flow-step"><div class="flow-dot">1</div><div class="flow-content"><strong>Tap "+ Legg til art"</strong> for each bycatch species.</div></div>
+        <div class="flow-step"><div class="flow-dot">2</div><div class="flow-content"><strong>Enter the Norwegian common name</strong> (e.g. "Torsk", "Sjøstjerne") and select the category (fisk, virvelløs, krepsdyr, etc.).</div></div>
+        <div class="flow-step"><div class="flow-dot">3</div><div class="flow-content"><strong>Count by size:</strong> estimate numbers in Small, Medium, Large groups. No need to be exact — a rough count is fine.</div></div>
+        <div class="flow-step"><div class="flow-dot">4</div><div class="flow-content"><strong>"Returnert til sjøen?"</strong> — toggle on if the species was returned alive (this should almost always be on).</div></div>
+        <div class="flow-step"><div class="flow-dot">5</div><div class="flow-content"><strong>Tap "Lagre og fullfør ✓"</strong> when done, or <strong>"Ingen bifangst — hopp over"</strong> if there was nothing.</div></div>
+      </div>
+      <div class="warn-card"><strong>This data is important.</strong> Bycatch records are part of the commercial research licence requirements and feed directly into Dagny's PhD research on biodiversity. Even a rough count of "5 starfish, small" is valuable.</div>
+    </section>
+
+    <!-- ═══════════ CAPTAIN — DAILY LOG ═══════════ -->
+    <section class="manual-section" id="captain-daily">
+      <div class="section-tag">Captain at Sea</div>
+      <h2 class="section-title">Daily Catch Log</h2>
+      <div class="divider"></div>
+      <p style="color:var(--text2);margin-bottom:20px;">Once per day, log the total kg landed for that day. This is separate from the tow-by-tow fill percentage — it's the actual processed catch weight from the factory.</p>
+      <div class="flow">
+        <div class="flow-step"><div class="flow-dot">1</div><div class="flow-content"><strong>From the main screen</strong>, tap "📊 Daglig fangstlogg".</div></div>
+        <div class="flow-step"><div class="flow-dot">2</div><div class="flow-content"><strong>Today's date is pre-filled.</strong> Enter the kg landed for the day.</div></div>
+        <div class="flow-step"><div class="flow-dot">3</div><div class="flow-content"><strong>The tow count for today is shown automatically</strong> — this is calculated from the tows you've already logged.</div></div>
+        <div class="flow-step"><div class="flow-dot">4</div><div class="flow-content"><strong>Tap "Lagre daglig logg".</strong> If you log the same date twice, the second entry updates the first — no duplicates.</div></div>
+      </div>
+    </section>
+
+    <!-- ═══════════ CAPTAIN — CLOSE TRIP ═══════════ -->
+    <section class="manual-section" id="captain-close">
+      <div class="section-tag">Captain at Sea</div>
+      <h2 class="section-title">Closing a Trip</h2>
+      <div class="divider"></div>
+      <p style="color:var(--text2);margin-bottom:20px;">When the vessel returns to port, close the trip to finalise all metrics. This calculates the complete CPUE, emissions, and area swept for the voyage.</p>
+      <div class="flow">
+        <div class="flow-step"><div class="flow-dot">1</div><div class="flow-content"><strong>Make sure all activities are ended</strong> — there should be no open (orange) activities in the list.</div></div>
+        <div class="flow-step"><div class="flow-dot">2</div><div class="flow-content"><strong>Tap "🏁 Avslutt tur og legg inn fangstvekt"</strong> at the bottom of the main screen.</div></div>
+        <div class="flow-step"><div class="flow-dot">3</div><div class="flow-content"><strong>Enter the return date</strong> and <strong>total processed meat weight (kg)</strong> from the factory for the whole trip.</div></div>
+        <div class="flow-step"><div class="flow-dot">4</div><div class="flow-content"><strong>Tap "Beregn og avslutt tur ✓".</strong> The platform calculates and displays: total tows, processed catch, catch per tow, total fuel, total CO₂, emissions per kg, area swept, and CPUE.</div></div>
+      </div>
+      <div class="info-card"><strong>GPS note:</strong> If some tows are missing GPS data, you'll see a warning showing how many tows couldn't be included in the area/CPUE calculation. The catch and fuel figures are still complete.</div>
+    </section>
+
+    <!-- ═══════════ DEMO MODE ═══════════ -->
+    <section class="manual-section" id="captain-demo">
+      <div class="section-tag">Captain at Sea</div>
+      <h2 class="section-title">Demo / Training Mode</h2>
+      <div class="divider"></div>
+      <p style="color:var(--text2);margin-bottom:20px;">When training new crew or running a demo of the platform, use Demo mode to keep test data completely separate from real data.</p>
+      <div class="flow">
+        <div class="flow-step"><div class="flow-dot">1</div><div class="flow-content"><strong>When creating a new trip,</strong> scroll to the bottom of the new trip form.</div></div>
+        <div class="flow-step"><div class="flow-dot">2</div><div class="flow-content"><strong>Toggle on "Demo / treningstur"</strong> (the orange toggle). The trip will be marked with a 🧪 badge in the trip list.</div></div>
+        <div class="flow-step"><div class="flow-dot">3</div><div class="flow-content"><strong>Log data as normal</strong> — everything works identically to a real trip.</div></div>
+        <div class="flow-step"><div class="flow-dot">4</div><div class="flow-content"><strong>When done,</strong> Dagny can go to Dashboard → Admin → "Slett alle demo-turer" to wipe all test data in one click.</div></div>
+      </div>
+      <div class="warn-card"><strong>Important:</strong> Never toggle Demo mode on for a real fishing trip. Demo data gets deleted — you would lose all records for that trip.</div>
+    </section>
+
+    <!-- ═══════════ DASHBOARD — OVERVIEW ═══════════ -->
+    <section class="manual-section" id="dash-overview">
+      <div class="section-tag">Operations Dashboard</div>
+      <h2 class="section-title">Overview & Drill-Down</h2>
+      <div class="divider"></div>
+      <p style="color:var(--text2);margin-bottom:20px;">The Overview tab is the starting point — four headline numbers at the top, followed by charts, and then the interactive trip drill-down below.</p>
+      <div class="step-card">
+        <div class="step-num">Stat cards</div>
+        <div class="step-title">Total trips, total tows, average fill %, total bycatch</div>
+        <div class="step-body">These update automatically when you select a trip in the sidebar filter. "All trips" shows the full database.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">Charts</div>
+        <div class="step-title">Fill % per tow, activity breakdown, fuel/time per activity</div>
+        <div class="step-body">The fill chart shows the last 30 tows in chronological order. The doughnut shows time split across activity types. The bar chart shows total hours per activity type.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">Drill-down</div>
+        <div class="step-title">Trip → Date → Tow hierarchy</div>
+        <div class="step-body">Click any trip card to expand it. You'll see a banner with trip totals, a date-by-date table, and a map of all tows coloured by fill%. Click any date row to see the detailed tow table and 17-column daily summary for that day. The map updates to highlight only that day's tows.</div>
+      </div>
+      <div class="tip-card"><strong>Trip filter:</strong> The dropdown at the bottom of the sidebar filters all tabs simultaneously. Select a specific trip to see only that trip's data across every chart and table.</div>
+    </section>
+
+    <!-- ═══════════ DASHBOARD — CPUE ═══════════ -->
+    <section class="manual-section" id="dash-cpue">
+      <div class="section-tag">Operations Dashboard</div>
+      <h2 class="section-title">CPUE & Emissions</h2>
+      <div class="divider"></div>
+      <p style="color:var(--text2);margin-bottom:20px;">This tab shows performance metrics for closed trips. A trip must be closed (via Captain's Log) before it appears here.</p>
+      <div class="step-card">
+        <div class="step-num">Trip banners</div>
+        <div class="step-title">CPUE, area covered, catch per tow, emissions per kg</div>
+        <div class="step-body">One banner per closed trip. CPUE = catch volume (m³) per area swept (m²). Only tows with GPS data contribute to area calculations — the banner shows how many tows had GPS.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">Daily summary table</div>
+        <div class="step-title">17-column breakdown per day</div>
+        <div class="step-body">Shows harvest time, kg/hour, kg/tow, downtime percentages, WOW hours, average gram/meat, fuel consumption — one row per operating day.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">Monthly emissions table</div>
+        <div class="step-title">CO₂ per month across all trips</div>
+        <div class="step-body">Aggregates fuel consumption by month, calculates total CO₂ (using 3.114 kg CO₂/litre HFO), and shows kg CO₂ per kg landed — the key emissions intensity metric.</div>
+      </div>
+    </section>
+
+    <!-- ═══════════ FANGSTREG ═══════════ -->
+    <section class="manual-section" id="dash-fangstreg">
+      <div class="section-tag">Operations Dashboard</div>
+      <h2 class="section-title">Fangstreg Import</h2>
+      <div class="divider"></div>
+      <p style="color:var(--text2);margin-bottom:20px;">Import official catch data from the Fangstreg government reporting system. This ensures the daily kg figures in the platform match the official landing records.</p>
+      <div class="flow">
+        <div class="flow-step"><div class="flow-dot">1</div><div class="flow-content"><strong>Export from Fangstreg:</strong> Log in to Fangstreg → Rapporter → Halrapport → Eksporter CSV. Save the file.</div></div>
+        <div class="flow-step"><div class="flow-dot">2</div><div class="flow-content"><strong>Open Dashboard → Fangstreg Import tab.</strong></div></div>
+        <div class="flow-step"><div class="flow-dot">3</div><div class="flow-content"><strong>Drag and drop the CSV file</strong> onto the drop zone, or click to select it.</div></div>
+        <div class="flow-step"><div class="flow-dot">4</div><div class="flow-content"><strong>Review the preview table</strong> — rows marked "+ Ny rad" are new entries; rows marked "↺ Oppdateres" will update existing entries. Fangstreg data always wins over manually entered data on the same date.</div></div>
+        <div class="flow-step"><div class="flow-dot">5</div><div class="flow-content"><strong>Select the trip</strong> from the dropdown to link the data to the correct trip, then tap "Importer til Supabase".</div></div>
+        <div class="flow-step"><div class="flow-dot">6</div><div class="flow-content"><strong>Review the result summary</strong> showing rows inserted, updated, and any errors.</div></div>
+      </div>
+      <div class="info-card"><strong>File format:</strong> The importer expects Halrapport format — UTF-16 encoding, tab-separated, with a "Haneskjell" column for scallop kg. Other CSV formats will not parse correctly.</div>
+    </section>
+
+    <!-- ═══════════ ADMIN ═══════════ -->
+    <section class="manual-section" id="dash-admin">
+      <div class="section-tag">Operations Dashboard</div>
+      <h2 class="section-title">Admin Tools</h2>
+      <div class="divider"></div>
+      <div class="warn-card"><strong>Admin access:</strong> This tab is only visible to <code>dagny@avaocean.no</code>. All actions are permanent and cannot be undone. Always double-check before confirming any deletion.</div>
+      <div class="step-card">
+        <div class="step-num">Demo / training data</div>
+        <div class="step-title">Delete all demo trips at once</div>
+        <div class="step-body">Shows a count of all trips marked as demo. Tap "Slett alle demo-turer" to delete them all, including all linked activities, tows, bycatch, and research data. Use after training sessions.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">Delete single trip</div>
+        <div class="step-title">Remove one trip and all its data</div>
+        <div class="step-body">Select a trip from the dropdown and tap "Slett valgt tur". A confirmation dialog shows the trip name. All linked data is deleted in the correct order to avoid database errors.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">Delete single tow</div>
+        <div class="step-title">Remove one tow from a trip</div>
+        <div class="step-body">Select a trip, then select the tow from the second dropdown (shows tow number, timestamp, and fill%). Bycatch linked to that tow is also deleted.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">Delete daily log entry</div>
+        <div class="step-title">Remove one day's catch log</div>
+        <div class="step-body">Select a trip, then select the date from the second dropdown (shows kg landed). Only the daily_log record is deleted — tows for that day are unaffected.</div>
+      </div>
+    </section>
+
+    <!-- ═══════════ RESEARCH ═══════════ -->
+    <section class="manual-section" id="research-session">
+      <div class="section-tag">Research Dashboard</div>
+      <h2 class="section-title">Research Sessions</h2>
+      <div class="divider"></div>
+      <p style="color:var(--text2);margin-bottom:20px;">Research data is organised into sessions. A session represents one data collection event — either a commercial sampling session tied to a tow, or a dedicated BACI control station visit.</p>
+      <div class="step-card">
+        <div class="step-num">Commercial sampling session</div>
+        <div class="step-title">Tied to a captain's tow</div>
+        <div class="step-body">The captain's tow IS the transect. The platform auto-creates the transect record from the tow data. Select the trip and tow, set BACI designation (impact/control) and before/after, then proceed to sample entry.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">BACI control session</div>
+        <div class="step-title">Dedicated control station visit</div>
+        <div class="step-body">Not tied to a commercial tow. Enter GPS coordinates, depth, and timing manually. Set <code>baci_designation = 'control'</code>. Extrapolation factor is set to 1 (no scaling — full sample processed).</div>
+      </div>
+    </section>
+
+    <section class="manual-section" id="research-data">
+      <div class="section-tag">Research Dashboard</div>
+      <h2 class="section-title">Entering Research Data</h2>
+      <div class="divider"></div>
+      <div class="flow">
+        <div class="flow-step"><div class="flow-dot">1</div><div class="flow-content"><strong>Select or create a session</strong> — link to a trip and tow (commercial) or enter manually (BACI control).</div></div>
+        <div class="flow-step"><div class="flow-dot">2</div><div class="flow-content"><strong>Enter catch sample details</strong> — number of baskets total, baskets subsampled, fill percentage. The platform calculates subsample volume and extrapolation factor automatically.</div></div>
+        <div class="flow-step"><div class="flow-dot">3</div><div class="flow-content"><strong>Species records</strong> — for each species in the subsample, enter count and mean damage index. The extrapolated total is calculated and stored.</div></div>
+        <div class="flow-step"><div class="flow-dot">4</div><div class="flow-content"><strong>Scallop measurements</strong> — enter individual shell width (mm) and damage index (0/1/2) for each measured scallop. The platform flags undersized individuals (&lt;55mm) automatically.</div></div>
+        <div class="flow-step"><div class="flow-dot">5</div><div class="flow-content"><strong>Save the session.</strong> Shannon H' is calculated automatically from the species record counts using the extrapolated totals.</div></div>
+      </div>
+    </section>
+
+    <!-- ═══════════ TROUBLESHOOTING ═══════════ -->
+    <section class="manual-section" id="troubleshoot">
+      <div class="section-tag">Troubleshooting</div>
+      <h2 class="section-title">Common Issues</h2>
+      <div class="divider"></div>
+      <div class="step-card">
+        <div class="step-num">Problem</div>
+        <div class="step-title">Red status dot — "Feil" / "Error"</div>
+        <div class="step-body">The platform can't reach the database. Check your internet connection. If connection is fine, the Supabase server may be briefly unavailable — wait 30 seconds and refresh. Data you've entered in the current session is not lost.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">Problem</div>
+        <div class="step-title">GPS button does nothing or shows error</div>
+        <div class="step-body">Your browser may have denied location permissions. On your phone, go to browser settings and allow location for this site. Alternatively, type coordinates manually — the fields accept decimal degree format (e.g. 74.123456).</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">Problem</div>
+        <div class="step-title">Tow or activity isn't showing on dashboard</div>
+        <div class="step-body">The dashboard caches data on load. Click the "↻ Oppdater" button in the relevant tab, or refresh the page. If the record still doesn't appear, check in Supabase Table Editor that it was saved.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">Problem</div>
+        <div class="step-title">Can't start a new activity — "En aktivitet pågår allerede"</div>
+        <div class="step-body">There is an open activity that hasn't been ended. Look for the orange "Avslutt" banner at the top of the main screen and end that activity first.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">Problem</div>
+        <div class="step-title">Fangstreg import fails — "Mangler nødvendige kolonner"</div>
+        <div class="step-body">The file format is wrong. Make sure you export "Halrapport" (not another report type) from Fangstreg, and that you export as CSV (not Excel). The file must have a "Dato" and "Haneskjell" column.</div>
+      </div>
+      <div class="info-card"><strong>Need help?</strong> Contact Dagny at <code>dagny@avaocean.no</code> for access issues, data corrections, or anything not covered here.</div>
+    </section>
+
+  </main>
+</div>
+<script>
+const sections=document.querySelectorAll('.manual-section');
+const navItems=document.querySelectorAll('.nav-item');
+const observer=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){const id=e.target.id;navItems.forEach(n=>n.classList.toggle('active',n.getAttribute('href')==='#'+id));}});},{rootMargin:'-20% 0px -70% 0px'});
+sections.forEach(s=>observer.observe(s));
+</script>
+</body>
+</html>
