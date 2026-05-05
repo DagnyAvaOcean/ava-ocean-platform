@@ -944,36 +944,48 @@ async function autoCreateResearchSession(towId, towData) {
   if (!generatedTransectCode) return;
   const no = currentLang === 'no';
   try {
-    // Create research_session
-   const sessionInsert = {
+    // Step 1 — Create research_session
+    const sessionInsert = {
       trip_id: currentTrip.id,
       tow_id: towId,
       session_code: generatedTransectCode,
       session_type: selectedResearchType,
-      session_date: towData.time_start ? towData.time_start.slice(0,10) : new Date().toISOString().slice(0,10),
+      session_date: towData.time_start
+        ? towData.time_start.slice(0,10)
+        : new Date().toISOString().slice(0,10),
     };
-    if(selectedResearchType === 'baci') sessionInsert.baci_designation = 'impact';
-    const { data: session, error: sessErr } = await sb.from('research_session').insert(sessionInsert).select().single();
-    if (sessErr) throw sessErr;
+    if (selectedResearchType === 'baci') sessionInsert.baci_designation = 'impact';
 
-    // Create research_transect linked to session and tow GPS
-    const { error: transErr } = await sb.from('research_transect').insert({
+    const { data: session, error: sessErr } = await sb
+      .from('research_session')
+      .insert(sessionInsert)
+      .select('id, session_code')
+      .single();
+    if (sessErr) throw new Error('Session: ' + sessErr.message);
+    if (!session?.id) throw new Error('Session created but no ID returned');
+
+    // Step 2 — Create research_transect linked to that exact session
+    const transectInsert = {
       session_id: session.id,
       transect_code: generatedTransectCode,
       baci_designation: selectedResearchType === 'baci' ? 'impact' : null,
       before_after: selectedBaciPhase || null,
-      lat_start: towData.lat_start,
-      lon_start: towData.lon_start,
-      lat_end: towData.lat_end,
-      lon_end: towData.lon_end,
-      time_start: towData.time_start,
-      time_end: towData.time_end,
-      depth_start: towData.depth_m,
+      lat_start: towData.lat_start || null,
+      lon_start: towData.lon_start || null,
+      lat_end: towData.lat_end || null,
+      lon_end: towData.lon_end || null,
+      time_start: towData.time_start || null,
+      time_end: towData.time_end || null,
+      depth_start: towData.depth_m || null,
       transect_type: selectedResearchType,
-    });
-    if (transErr) throw transErr;
+    };
 
-    showToast(`🔬 ${generatedTransectCode} ${no ? 'opprettet' : 'created'}`, 'success');
+    const { error: transErr } = await sb
+      .from('research_transect')
+      .insert(transectInsert);
+    if (transErr) throw new Error('Transect: ' + transErr.message);
+
+    showToast(`🔬 ${session.session_code} ${no ? 'opprettet' : 'created'}`, 'success');
   } catch(e) {
     showToast(`⚠ ${no ? 'Forskningsøkt feilet: ' : 'Research session failed: '}${e.message}`, 'error');
   }
