@@ -2456,12 +2456,50 @@ async function deleteSingleTow() {
   if(!towId) { alert(no ? 'Velg en høsting først.' : 'Select a tow first.'); return; }
   const towText = document.getElementById('adminTowSelect').selectedOptions[0]?.textContent;
   const confirmed = window.confirm(
-    no ? `Slette høsting "${towText}"?\n\nBifangst for denne høstingen slettes også. Kan ikke angres.`
-       : `Delete tow "${towText}"?\n\nBycatch for this tow will also be deleted. Cannot be undone.`
+    no ? `Slette høsting "${towText}"?\n\nBifangst og eventuelle forskningsøkter slettes også. Kan ikke angres.`
+       : `Delete tow "${towText}"?\n\nBycatch and any linked research sessions will also be deleted. Cannot be undone.`
   );
   if(!confirmed) return;
   const btn = document.getElementById('btnDeleteTow');
   btn.disabled = true;
+
+  // Find linked research sessions
+  const { data: linkedSessions } = await sb
+    .from('research_session')
+    .select('id')
+    .eq('tow_id', towId);
+  const sessionIds = (linkedSessions || []).map(s => s.id);
+
+  // Delete research data in correct order
+  if (sessionIds.length > 0) {
+    // Get transect ids
+    const { data: transects } = await sb
+      .from('research_transect')
+      .select('id')
+      .in('session_id', sessionIds);
+    const transectIds = (transects || []).map(t => t.id);
+
+    if (transectIds.length > 0) {
+      // Delete catch samples and measurements
+      const { data: samples } = await sb
+        .from('research_catch_sample')
+        .select('id')
+        .in('transect_id', transectIds);
+      const sampleIds = (samples || []).map(s => s.id);
+      if (sampleIds.length > 0) {
+        await sb.from('research_scallop_measurement').delete().in('sample_id', sampleIds);
+        await sb.from('research_species_record').delete().in('sample_id', sampleIds);
+        await sb.from('research_size_sample').delete().in('sample_id', sampleIds);
+        await sb.from('research_catch_sample').delete().in('transect_id', transectIds);
+      }
+      await sb.from('research_photo_log').delete().in('session_id', sessionIds);
+      await sb.from('research_video_log').delete().in('session_id', sessionIds);
+      await sb.from('research_transect').delete().in('session_id', sessionIds);
+    }
+    await sb.from('research_session').delete().in('id', sessionIds);
+  }
+
+  // Now safe to delete bycatch and tow
   await sb.from('bycatch_report').delete().eq('tow_id', towId);
   const { error } = await sb.from('tow_log').delete().eq('id', towId);
   btn.disabled = false;
