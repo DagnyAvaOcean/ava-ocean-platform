@@ -318,8 +318,54 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;heigh
           <div class="slider-wrap"><div class="slider-val"><span id="fillVal">0</span>%</div><input type="range" id="harvesterFill" min="0" max="100" value="0" oninput="document.getElementById('fillVal').textContent=this.value"></div>
         </div>
         <div class="field" style="margin-top:16px;"><label data-no="Dybde (m)" data-en="Depth (m)">Dybde (m)</label><input type="number" id="towDepth" placeholder="25" inputmode="decimal" step="0.5"></div>
-        <div class="field"><label data-no="Notater (valgfritt)" data-en="Notes (optional)">Notater (valgfritt)</label><textarea id="towNotes" placeholder="Havbunn, forhold..."></textarea></div>
+       <div class="field"><label data-no="Notater (valgfritt)" data-en="Notes (optional)">Notater (valgfritt)</label><textarea id="towNotes" placeholder="Havbunn, forhold..."></textarea></div>
       </div>
+
+      <!-- RESEARCH TAGGING -->
+      <div style="background:rgba(136,200,255,0.05);border:1px solid rgba(136,200,255,0.15);border-radius:10px;padding:16px;margin-bottom:12px;">
+        <div class="toggle-row" style="margin-top:0;">
+          <div>
+            <div style="font-family:var(--font-head);font-weight:700;font-size:13px;color:var(--research, #88C8FF);">🔬 <span data-no="Forskningshøsting" data-en="Research haul">Forskningshøsting</span></div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;" data-no="Kobler til forskningsdatabasen" data-en="Links to research database">Kobler til forskningsdatabasen</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="towIsResearch" onchange="toggleResearchPanel()"><span class="toggle-slider"></span></label>
+        </div>
+
+        <div id="researchPanel" style="display:none;margin-top:14px;border-top:1px solid rgba(136,200,255,0.12);padding-top:14px;">
+          <div style="font-family:var(--font-head);font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;" data-no="Prøvetype" data-en="Sample Type">Prøvetype</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+            <button type="button" id="btnSampleCommercial" onclick="selectResearchType('commercial_sample')"
+              style="padding:12px 8px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:var(--font-head);font-weight:700;font-size:12px;cursor:pointer;transition:all 0.2s;">
+              🦪 <span data-no="Kommersiell prøve" data-en="Commercial sample">Kommersiell prøve</span>
+            </button>
+            <button type="button" id="btnSampleBaci" onclick="selectResearchType('baci')"
+              style="padding:12px 8px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:var(--font-head);font-weight:700;font-size:12px;cursor:pointer;transition:all 0.2s;">
+              📍 <span data-no="BACI transekt" data-en="BACI transect">BACI transekt</span>
+            </button>
+          </div>
+
+          <div id="baciPhasePanel" style="display:none;">
+            <div style="font-family:var(--font-head);font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;" data-no="BACI fase" data-en="BACI phase">BACI fase</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+              <button type="button" id="btnBaciBefore" onclick="selectBaciPhase('before')"
+                style="padding:12px 8px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:var(--font-head);font-weight:700;font-size:12px;cursor:pointer;transition:all 0.2s;">
+                ⬆ <span data-no="FØR" data-en="BEFORE">FØR</span>
+              </button>
+              <button type="button" id="btnBaciAfter" onclick="selectBaciPhase('after')"
+                style="padding:12px 8px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:var(--font-head);font-weight:700;font-size:12px;cursor:pointer;transition:all 0.2s;">
+                ⬇ <span data-no="ETTER" data-en="AFTER">ETTER</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="transectCodeDisplay" style="display:none;background:var(--ocean);border:1px solid rgba(136,200,255,0.2);border-radius:8px;padding:12px 14px;">
+            <div style="font-family:var(--font-head);font-weight:700;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;" data-no="Auto-generert kode" data-en="Auto-generated code">Auto-generert kode</div>
+            <div id="transectCodeValue" style="font-family:var(--font-head);font-weight:700;font-size:20px;color:#88C8FF;letter-spacing:2px;">—</div>
+            <div id="transectCodeNote" style="font-size:11px;color:var(--muted);margin-top:4px;"></div>
+          </div>
+        </div>
+      </div>
+
       <button class="btn btn-primary" onclick="saveTow()" data-no="Lagre høsting og logg bifangst →" data-en="Save Tow & Log Bycatch →">Lagre høsting og logg bifangst →</button>
       <button class="btn btn-secondary" onclick="cancelTowForm()" data-no="Avbryt" data-en="Cancel">Avbryt</button>
     </div>
@@ -625,12 +671,24 @@ async function saveTow(){
     harvester_fill_pct:parseInt(document.getElementById('harvesterFill').value),
     depth_m:parseFloat(document.getElementById('towDepth').value)||null,
     speed_knots:speedEl?parseFloat(speedEl.value)||null:null,
-    notes:document.getElementById('towNotes').value||null
+   notes:document.getElementById('towNotes').value||null,
+    is_research_haul:document.getElementById('towIsResearch')?.checked||false,
+    research_type:selectedResearchType||null,
+    baci_phase:selectedBaciPhase||null
   }).select().single();
-  if(error){showToast((no?'Feil: ':'Error: ')+error.message,'error');return;}
+ if(error){showToast((no?'Feil: ':'Error: ')+error.message,'error');return;}
   currentTowId=data.id;
   towsThisActivity.push(data);
   showToast(`${no?'Høsting':'Tow'} #${currentTowNum} ${no?'lagret!':'saved!'}` ,'success');
+  // Auto-create research session if tagged
+  if(document.getElementById('towIsResearch')?.checked && generatedTransectCode) {
+    await autoCreateResearchSession(data.id, data);
+  }
+  // Reset research panel
+  selectedResearchType = null; selectedBaciPhase = null; generatedTransectCode = null;
+  if(document.getElementById('towIsResearch')) document.getElementById('towIsResearch').checked = false;
+  if(document.getElementById('researchPanel')) document.getElementById('researchPanel').style.display = 'none';
+  resetResearchButtons();
   bycatchItems=[];
   document.getElementById('bycatchList').innerHTML='';
   document.getElementById('bycatchTowLabel').textContent=currentTowNum;
@@ -773,6 +831,123 @@ async function updateDailyTowCount(){
 }
   
   
+// ── RESEARCH TAGGING ──────────────────────────────
+let selectedResearchType = null;
+let selectedBaciPhase = null;
+let generatedTransectCode = null;
+
+function toggleResearchPanel() {
+  const on = document.getElementById('towIsResearch').checked;
+  document.getElementById('researchPanel').style.display = on ? 'block' : 'none';
+  if (!on) {
+    selectedResearchType = null;
+    selectedBaciPhase = null;
+    generatedTransectCode = null;
+    resetResearchButtons();
+    document.getElementById('baciPhasePanel').style.display = 'none';
+    document.getElementById('transectCodeDisplay').style.display = 'none';
+  }
+}
+
+function resetResearchButtons() {
+  ['btnSampleCommercial','btnSampleBaci','btnBaciBefore','btnBaciAfter'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) { el.style.borderColor = 'var(--border)'; el.style.color = 'var(--muted)'; el.style.background = 'var(--surface)'; }
+  });
+}
+
+function selectResearchType(type) {
+  selectedResearchType = type;
+  selectedBaciPhase = null;
+  generatedTransectCode = null;
+  resetResearchButtons();
+  const btn = document.getElementById(type === 'baci' ? 'btnSampleBaci' : 'btnSampleCommercial');
+  if(btn) { btn.style.borderColor = '#88C8FF'; btn.style.color = '#88C8FF'; btn.style.background = 'rgba(136,200,255,0.08)'; }
+  document.getElementById('baciPhasePanel').style.display = type === 'baci' ? 'block' : 'none';
+  document.getElementById('transectCodeDisplay').style.display = 'none';
+  if (type === 'commercial_sample') generateTransectCode();
+}
+
+function selectBaciPhase(phase) {
+  selectedBaciPhase = phase;
+  const btn = document.getElementById(phase === 'before' ? 'btnBaciBefore' : 'btnBaciAfter');
+  const other = document.getElementById(phase === 'before' ? 'btnBaciAfter' : 'btnBaciBefore');
+  if(btn) { btn.style.borderColor = '#88C8FF'; btn.style.color = '#88C8FF'; btn.style.background = 'rgba(136,200,255,0.08)'; }
+  if(other) { other.style.borderColor = 'var(--border)'; other.style.color = 'var(--muted)'; other.style.background = 'var(--surface)'; }
+  generateTransectCode();
+}
+
+async function generateTransectCode() {
+  if (!currentTrip) return;
+  const no = currentLang === 'no';
+
+  // Get site abbreviation
+  const siteName = currentTrip.site_registry?.site_name || '';
+  const siteMap = { 'Bjørnøya': 'BJO', 'Concordia': 'CON', 'Kveithola': 'KVE' };
+  const siteCode = siteMap[siteName] || siteName.slice(0,3).toUpperCase();
+  const yearCode = new Date(currentTrip.trip_date).getFullYear().toString().slice(2);
+
+  // Type code
+  let typeCode = '';
+  if (selectedResearchType === 'commercial_sample') typeCode = 'CB';
+  else if (selectedResearchType === 'baci' && selectedBaciPhase === 'before') typeCode = 'BB';
+  else if (selectedResearchType === 'baci' && selectedBaciPhase === 'after') typeCode = 'BA';
+  else return;
+
+  // Count existing codes with same prefix to get next number
+  const prefix = `${siteCode}-${yearCode}-${typeCode}-`;
+  const { data } = await sb.from('research_session')
+    .select('session_code')
+    .like('session_code', `${prefix}%`);
+  const nextNum = String((data?.length || 0) + 1).padStart(3, '0');
+  generatedTransectCode = `${prefix}${nextNum}`;
+
+  // Show it
+  document.getElementById('transectCodeDisplay').style.display = 'block';
+  document.getElementById('transectCodeValue').textContent = generatedTransectCode;
+  document.getElementById('transectCodeNote').textContent = no
+    ? `${siteName} · ${selectedResearchType === 'baci' ? 'BACI ' + (selectedBaciPhase === 'before' ? 'FØR' : 'ETTER') : 'Kommersiell'} · 2026`
+    : `${siteName} · ${selectedResearchType === 'baci' ? 'BACI ' + (selectedBaciPhase === 'before' ? 'BEFORE' : 'AFTER') : 'Commercial'} · 2026`;
+}
+
+async function autoCreateResearchSession(towId, towData) {
+  if (!generatedTransectCode) return;
+  const no = currentLang === 'no';
+  try {
+    // Create research_session
+    const { data: session, error: sessErr } = await sb.from('research_session').insert({
+      trip_id: currentTrip.id,
+      tow_id: towId,
+      session_code: generatedTransectCode,
+      session_type: selectedResearchType,
+      session_date: towData.time_start ? towData.time_start.slice(0,10) : new Date().toISOString().slice(0,10),
+      baci_designation: selectedResearchType === 'baci' ? 'impact' : null,
+    }).select().single();
+    if (sessErr) throw sessErr;
+
+    // Create research_transect linked to session and tow GPS
+    const { error: transErr } = await sb.from('research_transect').insert({
+      session_id: session.id,
+      transect_code: generatedTransectCode,
+      baci_designation: selectedResearchType === 'baci' ? 'impact' : null,
+      before_after: selectedBaciPhase || null,
+      lat_start: towData.lat_start,
+      lon_start: towData.lon_start,
+      lat_end: towData.lat_end,
+      lon_end: towData.lon_end,
+      time_start: towData.time_start,
+      time_end: towData.time_end,
+      depth_start: towData.depth_m,
+      transect_type: selectedResearchType,
+    });
+    if (transErr) throw transErr;
+
+    showToast(`🔬 ${generatedTransectCode} ${no ? 'opprettet' : 'created'}`, 'success');
+  } catch(e) {
+    showToast(`⚠ ${no ? 'Forskningsøkt feilet: ' : 'Research session failed: '}${e.message}`, 'error');
+  }
+}
+
 init();
 </script>
 </body>
