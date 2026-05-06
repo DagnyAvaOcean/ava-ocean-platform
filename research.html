@@ -1014,6 +1014,24 @@ async function openSession(id){
   goTo('scrSessionHub');
   showHubTab(isCommercial?'sample':'transect');
   await loadAllSessionData();
+
+  // Re-apply GPS AFTER loadAllSessionData (which may clear fields)
+  if(isAutocreated && tow){
+    if(tow.lat_start){
+      document.getElementById('tLatStart').value = tow.lat_start;
+      document.getElementById('tLonStart').value = tow.lon_start;
+      document.getElementById('gpsTransectStart').textContent = parseFloat(tow.lat_start).toFixed(6)+', '+parseFloat(tow.lon_start).toFixed(6);
+    }
+    if(tow.lat_end){
+      document.getElementById('tLatEnd').value = tow.lat_end;
+      document.getElementById('tLonEnd').value = tow.lon_end;
+      document.getElementById('gpsTransectEnd').textContent = parseFloat(tow.lat_end).toFixed(6)+', '+parseFloat(tow.lon_end).toFixed(6);
+    }
+    if(tow.depth_m) document.getElementById('depthStart').value = tow.depth_m;
+    document.getElementById('transectCode').value = data.session_code || '';
+    document.getElementById('transectCode').readOnly = true;
+    document.getElementById('transectCode').style.opacity = '0.5';
+  }
 }
 
 /* ===== Hub tabs ===== */
