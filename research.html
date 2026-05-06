@@ -935,20 +935,81 @@ async function createSession(){
 }
 
 async function openSession(id){
-  const{data}=await sb.from('research_session').select('*').eq('id',id).single();
+  const{data}=await sb.from('research_session')
+    .select('*,tow_log(tow_number,harvester_fill_pct,time_start,time_end,lat_start,lon_start,lat_end,lon_end,depth_m)')
+    .eq('id',id).single();
   if(!data)return;
   currentSession=data;
+  const isAutocreated = data.tow_id != null;
+  const tow = data.tow_log;
+
   document.getElementById('hubSessionType').textContent=getSessionLabel(data.session_type);
   document.getElementById('hubSessionCode').textContent=(data.session_code||'—')+(data.sampling_occasion>1?' · #'+data.sampling_occasion:'');
   document.getElementById('hubStationId').textContent=data.control_site_id?'CS-'+data.control_site_id:(data.station_id||'—');
- // Show/hide BACI fields
-  document.getElementById('baciFields').style.display=data.session_type==='baci'?'grid':'none';
-  // Pre-fill BACI fields from auto-created session
-  if(data.session_type==='baci' && data.baci_designation) {
-    document.getElementById('baciDesignation').value = data.baci_designation;
+
+  // Show/hide BACI fields
+  const isBaci = data.session_type==='baci';
+  document.getElementById('baciFields').style.display=isBaci?'grid':'none';
+
+  // For auto-created sessions — pre-fill and LOCK BACI fields
+  if(isBaci && isAutocreated){
+    const baciDes = document.getElementById('baciDesignation');
+    const beforeAft = document.getElementById('beforeAfter');
+    baciDes.value = data.baci_designation || 'impact';
+    beforeAft.value = data.before_after ||
+      (data.session_code && data.session_code.includes('-BB-') ? 'before' :
+       data.session_code && data.session_code.includes('-BA-') ? 'after' : 'before');
+    // Lock both dropdowns
+    baciDes.disabled = true;
+    baciDes.style.opacity = '0.5';
+    beforeAft.disabled = true;
+    beforeAft.style.opacity = '0.5';
+    // Add locked note if not already there
+    if(!document.getElementById('baciAutoNote')){
+      const note = document.createElement('div');
+      note.id = 'baciAutoNote';
+      note.style.cssText = 'font-size:11px;color:#88C8FF;font-family:var(--font-head);margin-top:6px;grid-column:1/-1;';
+      note.textContent = L('🔒 Auto-opprettet fra kapteinens høsting — låst','🔒 Auto-created from captain\'s tow — locked');
+      document.getElementById('baciFields').appendChild(note);
+    }
+  } else {
+    // Re-enable for manually created sessions
+    const baciDes = document.getElementById('baciDesignation');
+    const beforeAft = document.getElementById('beforeAfter');
+    baciDes.disabled = false;
+    baciDes.style.opacity = '1';
+    beforeAft.disabled = false;
+    beforeAft.style.opacity = '1';
+    document.getElementById('baciAutoNote')?.remove();
   }
+
+  // Pre-fill GPS on transect tab for auto-created sessions
+  if(isAutocreated && tow){
+    if(tow.lat_start){
+      document.getElementById('tLatStart').value = tow.lat_start;
+      document.getElementById('tLonStart').value = tow.lon_start;
+      document.getElementById('gpsTransectStart').textContent = `${parseFloat(tow.lat_start).toFixed(6)}, ${parseFloat(tow.lon_start).toFixed(6)}`;
+    }
+    if(tow.lat_end){
+      document.getElementById('tLatEnd').value = tow.lat_end;
+      document.getElementById('tLonEnd').value = tow.lon_end;
+      document.getElementById('gpsTransectEnd').textContent = `${parseFloat(tow.lat_end).toFixed(6)}, ${parseFloat(tow.lon_end).toFixed(6)}`;
+    }
+    if(tow.depth_m){
+      document.getElementById('depthStart').value = tow.depth_m;
+    }
+    // Auto-fill transect code from session code
+    document.getElementById('transectCode').value = data.session_code || '';
+    // Lock transect code field
+    document.getElementById('transectCode').readOnly = true;
+    document.getElementById('transectCode').style.opacity = '0.5';
+  } else {
+    document.getElementById('transectCode').readOnly = false;
+    document.getElementById('transectCode').style.opacity = '1';
+  }
+
   // Hide transect tab for commercial (tow = transect)
-  const isCommercial=data.session_type==='commercial';
+  const isCommercial = data.session_type==='commercial';
   document.getElementById('tabTransect').style.display=isCommercial?'none':'inline-block';
   goTo('scrSessionHub');
   showHubTab(isCommercial?'sample':'transect');
@@ -979,8 +1040,27 @@ async function saveTransect(){
   let lengthKm=null;
   if(latS&&lonS&&latE&&lonE) lengthKm=haversine(latS,lonS,latE,lonE);
   const row={
+    // Auto-generate transect code if not already set
+  let tCode = document.getElementById('transectCode').value.trim();
+  if(!tCode && currentSession){
+    const siteName = currentTrip?.site_registry?.site_name || '';
+    const siteMap = {'Bjørnøya':'BJO','Concordia':'CON','Kveithola':'KVE'};
+    const siteCode = siteMap[siteName] || siteName.slice(0,3).toUpperCase() || 'UNK';
+    const yearCode = new Date(currentSession.session_date||currentTrip?.trip_date||'').getFullYear().toString().slice(2);
+    const typeCode = currentSession.session_type==='baci'
+      ? (document.getElementById('beforeAfter').value==='before'?'BB':'BA')
+      : currentSession.session_type==='control'?'CT':'CB';
+    const {data:existing} = await sb.from('research_transect')
+      .select('transect_code')
+      .like('transect_code',`${siteCode}-${yearCode}-${typeCode}-%`);
+    const nextNum = String((existing?.length||0)+1).padStart(3,'0');
+    tCode = `${siteCode}-${yearCode}-${typeCode}-${nextNum}`;
+    document.getElementById('transectCode').value = tCode;
+  }
+
+  const row={
     session_id:currentSession.id,
-    transect_code:document.getElementById('transectCode').value.trim()||null,
+    transect_code:tCode||null,
     transect_type:currentSession.session_type==='baci'?'baci':'commercial',
     baci_designation:currentSession.session_type==='baci'?document.getElementById('baciDesignation').value:null,
     before_after:currentSession.session_type==='baci'?document.getElementById('beforeAfter').value:null,
