@@ -1204,16 +1204,16 @@ const HARVESTER_MAX_L=28000;
 /* ===== BACI 4-slot system ===== */
 let activeBaciSlot=null; // 'BM','BO','AM','AO'
 const BACI_SLOTS={
-  BM:{before_after:'before',cage_type:'mesh',label:'FØR — Maskenett'},
-  BO:{before_after:'before',cage_type:'open',label:'FØR — Åpen'},
-  AM:{before_after:'after',cage_type:'mesh',label:'ETTER — Maskenett'},
-  AO:{before_after:'after',cage_type:'open',label:'ETTER — Åpen'}
+  BM:{before_after:'before',cage_type:'mesh',labelNo:'FØR — Maskenett',labelEn:'BEFORE — Mesh'},
+  BO:{before_after:'before',cage_type:'open',labelNo:'FØR — Åpen',labelEn:'BEFORE — Open'},
+  AM:{before_after:'after',cage_type:'mesh',labelNo:'ETTER — Maskenett',labelEn:'AFTER — Mesh'},
+  AO:{before_after:'after',cage_type:'open',labelNo:'ETTER — Åpen',labelEn:'AFTER — Open'}
 };
 
 function selectBaciSlot(slot){
   activeBaciSlot=slot;
   const def=BACI_SLOTS[slot];
-  document.getElementById('activeSlotLabel').textContent=def.label;
+  document.getElementById('activeSlotLabel').textContent=currentLang==='no'?def.labelNo:def.labelEn;
   document.getElementById('baciBaskets').value='';
   document.getElementById('baciSlotNotes').value='';
   document.getElementById('baciSampleVol').textContent='—';
@@ -1272,9 +1272,13 @@ async function saveBaciSlot(){
 function renderBaciSlotStatus(){
   Object.keys(BACI_SLOTS).forEach(slot=>{
     const def=BACI_SLOTS[slot];
+    const label=currentLang==='no'?def.labelNo:def.labelEn;
     const existing=allSamples.find(s=>s.cage_type===def.cage_type&&s.before_after===def.before_after);
     const statusEl=document.getElementById('slot'+slot+'status');
     const slotEl=document.getElementById('slot'+slot);
+    // Update label text too
+    const labelEl=slotEl?slotEl.querySelector('div:first-child'):null;
+    if(labelEl) labelEl.textContent=label;
     if(statusEl&&existing){
       statusEl.textContent=L('✓ Lagret','✓ Saved')+' · '+existing.baskets_subsample+' '+L('kurver','baskets');
       if(slotEl) slotEl.style.borderColor='var(--accent)';
