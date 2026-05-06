@@ -1039,9 +1039,27 @@ async function saveTransect(){
   const lonE=parseFloat(document.getElementById('tLonEnd').value);
   let lengthKm=null;
   if(latS&&lonS&&latE&&lonE) lengthKm=haversine(latS,lonS,latE,lonE);
-  const row={
-    // Auto-generate transect code if not already set
+  // Auto-generate transect code if not already set
   let tCode = document.getElementById('transectCode').value.trim();
+  if(!tCode && currentSession){
+    const siteName = currentTrip?.site_registry?.site_name || '';
+    const siteMap = {'Bjørnøya':'BJO','Concordia':'CON','Kveithola':'KVE'};
+    const siteCode = siteMap[siteName] || siteName.slice(0,3).toUpperCase() || 'UNK';
+    const yearCode = new Date(currentSession.session_date||currentTrip?.trip_date||'').getFullYear().toString().slice(2);
+    const typeCode = currentSession.session_type==='baci'
+      ? (document.getElementById('beforeAfter').value==='before'?'BB':'BA')
+      : currentSession.session_type==='control'?'CT':'CB';
+    const {data:existing} = await sb.from('research_transect')
+      .select('transect_code')
+      .like('transect_code',`${siteCode}-${yearCode}-${typeCode}-%`);
+    const nextNum = String((existing?.length||0)+1).padStart(3,'0');
+    tCode = `${siteCode}-${yearCode}-${typeCode}-${nextNum}`;
+    document.getElementById('transectCode').value = tCode;
+  }
+
+  const row={
+    session_id:currentSession.id,
+    transect_code:tCode||null,
   if(!tCode && currentSession){
     const siteName = currentTrip?.site_registry?.site_name || '';
     const siteMap = {'Bjørnøya':'BJO','Concordia':'CON','Kveithola':'KVE'};
