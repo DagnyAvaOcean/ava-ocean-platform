@@ -1000,12 +1000,22 @@ async function openSession(id){
     }
     // Auto-fill transect code from session code
     document.getElementById('transectCode').value = data.session_code || '';
-    // Lock transect code field
+   // Lock transect code and GPS fields
     document.getElementById('transectCode').readOnly = true;
     document.getElementById('transectCode').style.opacity = '0.5';
+    ['tLatStart','tLonStart','tLatEnd','tLonEnd','depthStart'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){el.readOnly=true;el.style.opacity='0.5';}
+    });
+    document.querySelectorAll('.gps-btn').forEach(btn=>{btn.style.display='none';});
   } else {
     document.getElementById('transectCode').readOnly = false;
     document.getElementById('transectCode').style.opacity = '1';
+    ['tLatStart','tLonStart','tLatEnd','tLonEnd','depthStart'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){el.readOnly=false;el.style.opacity='1';}
+    });
+    document.querySelectorAll('.gps-btn').forEach(btn=>{btn.style.display='';});
   }
 
   // Hide transect tab for commercial (tow = transect)
@@ -1031,6 +1041,11 @@ async function openSession(id){
     document.getElementById('transectCode').value = data.session_code || '';
     document.getElementById('transectCode').readOnly = true;
     document.getElementById('transectCode').style.opacity = '0.5';
+    ['tLatStart','tLonStart','tLatEnd','tLonEnd','depthStart'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){el.readOnly=true;el.style.opacity='0.5';}
+    });
+    document.querySelectorAll('.gps-btn').forEach(btn=>{btn.style.display='none';});
   }
 }
 
