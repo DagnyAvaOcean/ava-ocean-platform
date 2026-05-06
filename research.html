@@ -875,19 +875,25 @@ async function onTripSelect(id){
 async function loadSessions(){
   if(!currentTrip)return;
   document.getElementById('headerTrip').textContent=currentTrip.trip_code;
-  const{data}=await sb.from('research_session').select('*').eq('trip_id',currentTrip.id).order('created_at',{ascending:false});
+  const{data}=await sb.from('research_session').select('*,tow_log(tow_number,harvester_fill_pct,time_start)').eq('trip_id',currentTrip.id).order('created_at',{ascending:false});
   const el=document.getElementById('sessionList');
   if(!data||!data.length){el.innerHTML=`<div class="info-box">${L('Ingen økter ennå.','No sessions yet.')}</div>`;return;}
-  el.innerHTML=data.map(s=>`
+el.innerHTML=data.map(s=>{
+    const isAutocreated = s.tow_id != null;
+    const towInfo = s.tow_log;
+    const towLabel = towInfo ? ` · ${L('Drag','Tow')} #${towInfo.tow_number}` : '';
+    const autoTag = isAutocreated ? `<span style="font-size:10px;background:rgba(136,200,255,0.1);color:var(--research);border:1px solid rgba(136,200,255,0.3);border-radius:10px;padding:2px 7px;font-family:var(--font-head);font-weight:700;margin-left:6px;">🔬 AUTO</span>` : '';
+    return `
     <div class="session-item" onclick="openSession('${s.id}')">
       <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
         <div>
-          <div class="si-type">${getSessionLabel(s.session_type)}</div>
-          <div class="si-meta">${s.session_code||''} · ${s.control_site_id?'CS-'+s.control_site_id:(s.station_id||'')} · ${s.session_date}${s.sampling_occasion>1?' · #'+s.sampling_occasion:''}</div>
+          <div class="si-type" style="display:flex;align-items:center;">${getSessionLabel(s.session_type)}${autoTag}</div>
+          <div class="si-meta">${s.session_code||'—'}${towLabel} · ${s.session_date}${s.baci_designation?' · '+s.baci_designation:''}</div>
         </div>
         <span class="si-badge${s.completed_at?'':' open'}">${s.completed_at?'✓':L('Åpen','Open')}</span>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 function getSessionLabel(type){
   const map={commercial:L('Kommersiell','Commercial'),baci:'BACI',control:L('Kontroll','Control')};
@@ -935,8 +941,12 @@ async function openSession(id){
   document.getElementById('hubSessionType').textContent=getSessionLabel(data.session_type);
   document.getElementById('hubSessionCode').textContent=(data.session_code||'—')+(data.sampling_occasion>1?' · #'+data.sampling_occasion:'');
   document.getElementById('hubStationId').textContent=data.control_site_id?'CS-'+data.control_site_id:(data.station_id||'—');
-  // Show/hide BACI fields
+ // Show/hide BACI fields
   document.getElementById('baciFields').style.display=data.session_type==='baci'?'grid':'none';
+  // Pre-fill BACI fields from auto-created session
+  if(data.session_type==='baci' && data.baci_designation) {
+    document.getElementById('baciDesignation').value = data.baci_designation;
+  }
   // Hide transect tab for commercial (tow = transect)
   const isCommercial=data.session_type==='commercial';
   document.getElementById('tabTransect').style.display=isCommercial?'none':'inline-block';
