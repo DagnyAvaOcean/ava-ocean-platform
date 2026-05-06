@@ -412,7 +412,58 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
       <!-- BACI/Control: needs transect first -->
       <div id="noTransectWarn" class="info-box" style="display:none;" data-no="Lagre et transekt først for å legge til prøver." data-en="Save a transect first to add samples.">Lagre et transekt først for å legge til prøver.</div>
 
-      <!-- BACI: transect picker -->
+    <!-- BACI: 4 fixed sample slots -->
+      <div id="baciSampleSlots" style="display:none;">
+        <div class="info-box" data-no="Velg en prøve for å registrere data." data-en="Select a sample to enter data.">Velg en prøve for å registrere data.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+          <div id="slotBM" onclick="selectBaciSlot('BM')" style="background:var(--surface);border:2px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all 0.2s;">
+            <div style="font-family:var(--font-head);font-weight:700;font-size:11px;color:var(--scallop);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">FØR — Maskenett</div>
+            <div style="font-size:11px;color:var(--muted);" id="slotBMstatus">Ikke startet</div>
+          </div>
+          <div id="slotBO" onclick="selectBaciSlot('BO')" style="background:var(--surface);border:2px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all 0.2s;">
+            <div style="font-family:var(--font-head);font-weight:700;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">FØR — Åpen</div>
+            <div style="font-size:11px;color:var(--muted);" id="slotBOstatus">Ikke startet</div>
+          </div>
+          <div id="slotAM" onclick="selectBaciSlot('AM')" style="background:var(--surface);border:2px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all 0.2s;">
+            <div style="font-family:var(--font-head);font-weight:700;font-size:11px;color:var(--scallop);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">ETTER — Maskenett</div>
+            <div style="font-size:11px;color:var(--muted);" id="slotAMstatus">Ikke startet</div>
+          </div>
+          <div id="slotAO" onclick="selectBaciSlot('AO')" style="background:var(--surface);border:2px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all 0.2s;">
+            <div style="font-family:var(--font-head);font-weight:700;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">ETTER — Åpen</div>
+            <div style="font-size:11px;color:var(--muted);" id="slotAOstatus">Ikke startet</div>
+          </div>
+        </div>
+        <!-- Active slot form -->
+        <div id="baciSlotForm" style="display:none;">
+          <div style="font-family:var(--font-head);font-weight:700;font-size:14px;color:var(--research);margin-bottom:12px;" id="activeSlotLabel">—</div>
+          <div class="card">
+            <div class="field">
+              <label data-no="Antall rekebur (40L hver)" data-en="Shrimp baskets (40L each)">Antall rekebur (40L hver)</label>
+              <input type="number" id="baciBaskets" min="0" step="1" placeholder="f.eks. 3" inputmode="numeric" oninput="calcBaciEF()">
+            </div>
+            <div class="grid-2" style="margin-top:8px;">
+              <div class="metric-card">
+                <div class="metric-label">Volum</div>
+                <div class="metric-val" id="baciSampleVol">—</div>
+                <div class="metric-unit">L</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Total BACI volum</div>
+                <div class="metric-val" id="baciTotalVol">—</div>
+                <div class="metric-unit">L (alle kurver)</div>
+              </div>
+            </div>
+            <div class="field" style="margin-top:12px;">
+              <label data-no="Notater" data-en="Notes">Notater</label>
+              <textarea id="baciSlotNotes" rows="2"></textarea>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="saveBaciSlot()">Lagre prøve →</button>
+          <button class="btn btn-secondary" onclick="document.getElementById('baciSlotForm').style.display='none';">Avbryt</button>
+        </div>
+      </div>
+
+      <!-- BACI: transect picker (keep hidden, used internally) -->
       <div id="baciTransectPicker" style="display:none;">
         <div class="card">
           <div class="field">
@@ -1150,6 +1201,90 @@ function renderTransectList(){
 const BASKET_VOL_L=40;
 const HARVESTER_MAX_L=28000;
 
+/* ===== BACI 4-slot system ===== */
+let activeBaciSlot=null; // 'BM','BO','AM','AO'
+const BACI_SLOTS={
+  BM:{before_after:'before',cage_type:'mesh',label:'FØR — Maskenett'},
+  BO:{before_after:'before',cage_type:'open',label:'FØR — Åpen'},
+  AM:{before_after:'after',cage_type:'mesh',label:'ETTER — Maskenett'},
+  AO:{before_after:'after',cage_type:'open',label:'ETTER — Åpen'}
+};
+
+function selectBaciSlot(slot){
+  activeBaciSlot=slot;
+  const def=BACI_SLOTS[slot];
+  document.getElementById('activeSlotLabel').textContent=def.label;
+  document.getElementById('baciBaskets').value='';
+  document.getElementById('baciSlotNotes').value='';
+  document.getElementById('baciSampleVol').textContent='—';
+  document.getElementById('baciTotalVol').textContent='—';
+  document.getElementById('baciSlotForm').style.display='block';
+  // Highlight selected slot
+  Object.keys(BACI_SLOTS).forEach(s=>{
+    const el=document.getElementById('slot'+s);
+    if(el) el.style.borderColor=s===slot?'var(--research)':'var(--border)';
+  });
+}
+
+function calcBaciEF(){
+  const baskets=parseInt(document.getElementById('baciBaskets').value)||0;
+  const vol=baskets*BASKET_VOL_L;
+  document.getElementById('baciSampleVol').textContent=vol>0?vol:'—';
+  // Total = sum of all saved samples for this session
+  const totalVol=allSamples.reduce((s,x)=>s+(x.subsample_volume_l||0),0)+vol;
+  document.getElementById('baciTotalVol').textContent=totalVol>0?totalVol:'—';
+}
+
+async function saveBaciSlot(){
+  if(!activeBaciSlot||!currentSession)return;
+  const def=BACI_SLOTS[activeBaciSlot];
+  const baskets=parseInt(document.getElementById('baciBaskets').value)||0;
+  if(!baskets){showToast(L('Legg inn antall kurver','Enter basket count'),'error');return;}
+  const vol=baskets*BASKET_VOL_L;
+  // Get transect id
+  const transectId=allTransects.length>0?allTransects[0].id:null;
+  if(!transectId){showToast(L('Lagre transekt først','Save transect first'),'error');return;}
+  // Build sample code e.g. BJO-26-BB-001-BM
+  const baseCode=currentSession.session_code||'BACI';
+  const sampleCode=baseCode+'-'+activeBaciSlot;
+  const{data,error}=await sb.from('research_catch_sample').insert({
+    transect_id:transectId,
+    session_id:currentSession.id,
+    sample_code:sampleCode,
+    cage_type:def.cage_type,
+    basket_type:'baci',
+    is_subsample:false,
+    baskets_subsample:baskets,
+    subsample_volume_l:vol,
+    before_after:def.before_after,
+    extrapolation_factor:1,
+    notes:document.getElementById('baciSlotNotes').value||null
+  }).select().single();
+  if(error){showToast('Error: '+error.message,'error');return;}
+  showToast(L('Prøve lagret!','Sample saved!'),'success');
+  allSamples.push(data);
+  updateSampleSelects();
+  renderBaciSlotStatus();
+  document.getElementById('baciSlotForm').style.display='none';
+  activeBaciSlot=null;
+}
+
+function renderBaciSlotStatus(){
+  Object.keys(BACI_SLOTS).forEach(slot=>{
+    const def=BACI_SLOTS[slot];
+    const existing=allSamples.find(s=>s.cage_type===def.cage_type&&s.before_after===def.before_after);
+    const statusEl=document.getElementById('slot'+slot+'status');
+    const slotEl=document.getElementById('slot'+slot);
+    if(statusEl&&existing){
+      statusEl.textContent=L('✓ Lagret','✓ Saved')+' · '+existing.baskets_subsample+' '+L('kurver','baskets');
+      if(slotEl) slotEl.style.borderColor='var(--accent)';
+    } else if(statusEl){
+      statusEl.textContent=L('Ikke startet','Not started');
+      if(slotEl) slotEl.style.borderColor='var(--border)';
+    }
+  });
+}
+
 /* ===== Catch samples ===== */
 let captainTows=[], selectedTow=null;
 
@@ -1173,11 +1308,21 @@ function updateSampleSelects(){
   if(baciInfo) baciInfo.style.display=(isBaci&&hasTransects)?'block':'none';
   if(isCommercial&&baciInfo) baciInfo.style.display='none';
 
- // Populate transect select for BACI — auto-select if only one
+// Populate transect select for BACI (used internally)
   const tSel=document.getElementById('sampleTransectSelect');
   if(tSel){
     tSel.innerHTML=allTransects.map(t=>`<option value="${t.id}">${t.transect_code||'T'} ${t.baci_designation?'('+t.baci_designation+')':''}</option>`).join('');
     if(allTransects.length===1) tSel.value=allTransects[0].id;
+  }
+  // Show BACI slots or hide based on session type
+  const baciSlots=document.getElementById('baciSampleSlots');
+  if(baciSlots) baciSlots.style.display=isBaci?'block':'none';
+  if(isBaci) renderBaciSlotStatus();
+  // Hide old sample form for BACI
+  if(isBaci){
+    document.getElementById('sampleForm').style.display='none';
+    document.getElementById('noTransectWarn').style.display=!hasTransects?'block':'none';
+    if(baciSlots) baciSlots.style.display=hasTransects?'block':'none';
   }
   // Auto-generate sample code from transect code
   const sampleCodeEl=document.getElementById('sampleCode');
@@ -1195,7 +1340,7 @@ function updateSampleSelects(){
   document.getElementById('speciesForm').style.display=hasSamples?'block':'none';
   document.getElementById('noSampleWarnScallop').style.display=hasSamples?'none':'block';
   document.getElementById('scallopForm').style.display=hasSamples?'block':'none';
-  const opts=allSamples.map(s=>`<option value="${s.id}">${s.sample_code||'—'} (×${s.extrapolation_factor?s.extrapolation_factor.toFixed(1):'1'})</option>`).join('');
+  const opts=allSamples.map(s=>`<option value="${s.id}">${s.sample_code||'—'} ${s.cage_type?'('+s.cage_type+', '+(s.before_after||'')+')':''}</option>`).join('');
   const spSel=document.getElementById('speciesSampleSelect');
   const scSel=document.getElementById('scallopSampleSelect');
   if(spSel)spSel.innerHTML=opts;
