@@ -1083,16 +1083,22 @@ async function saveTransect(){
   allTransects.push(data);
   renderTransectList();
   updateSampleSelects();
-  clearTransectForm();
+  const isAuto = currentSession && currentSession.tow_id != null;
+  clearTransectForm(!isAuto);
 }
-function clearTransectForm(){
-  ['transectCode','tLatStart','tLonStart','tLatEnd','tLonEnd','depthStart','depthEnd','transectNotes','substrateNotes','waterTemp','salinity'].forEach(id=>{
+function clearTransectForm(clearGPS=true){
+  const fieldsToClear = clearGPS
+    ? ['transectCode','tLatStart','tLonStart','tLatEnd','tLonEnd','depthStart','depthEnd','transectNotes','substrateNotes','waterTemp','salinity']
+    : ['depthEnd','transectNotes','substrateNotes','waterTemp','salinity'];
+  fieldsToClear.forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
   document.getElementById('substrateType').value='';
   document.getElementById('epifaunalCover').value='';
-  document.getElementById('gpsTransectStart').textContent='';
-  document.getElementById('gpsTransectEnd').textContent='';
+  if(clearGPS){
+    document.getElementById('gpsTransectStart').textContent='';
+    document.getElementById('gpsTransectEnd').textContent='';
+  }
 }
 function renderTransectList(){
   const el=document.getElementById('transectList');
