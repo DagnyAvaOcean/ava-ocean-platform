@@ -1173,9 +1173,18 @@ function updateSampleSelects(){
   if(baciInfo) baciInfo.style.display=(isBaci&&hasTransects)?'block':'none';
   if(isCommercial&&baciInfo) baciInfo.style.display='none';
 
-  // Populate transect select for BACI
+ // Populate transect select for BACI — auto-select if only one
   const tSel=document.getElementById('sampleTransectSelect');
-  if(tSel) tSel.innerHTML=allTransects.map(t=>`<option value="${t.id}">${t.transect_code||'T'} ${t.baci_designation?'('+t.baci_designation+')':''}</option>`).join('');
+  if(tSel){
+    tSel.innerHTML=allTransects.map(t=>`<option value="${t.id}">${t.transect_code||'T'} ${t.baci_designation?'('+t.baci_designation+')':''}</option>`).join('');
+    if(allTransects.length===1) tSel.value=allTransects[0].id;
+  }
+  // Auto-generate sample code from transect code
+  const sampleCodeEl=document.getElementById('sampleCode');
+  if(sampleCodeEl && !sampleCodeEl.value && allTransects.length>0){
+    const tCode=allTransects[0].transect_code||'';
+    sampleCodeEl.value=tCode ? tCode+'-S001' : '';
+  }
 
   // Load captain's tows for commercial
   if(isCommercial) loadCaptainTows();
