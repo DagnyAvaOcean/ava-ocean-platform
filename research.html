@@ -414,7 +414,7 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
 
     <!-- BACI: 4 fixed sample slots -->
       <div id="baciSampleSlots" style="display:none;">
-        <div class="info-box" data-no="Velg en prøve for å registrere data." data-en="Select a sample to enter data.">Velg en prøve for å registrere data.</div>
+        <div class="info-box" id="baciInfoBox">Velg en prøve for å registrere data.</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
           <div id="slotBM" onclick="selectBaciSlot('BM')" style="background:var(--surface);border:2px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all 0.2s;">
             <div style="font-family:var(--font-head);font-weight:700;font-size:11px;color:var(--scallop);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">FØR — Maskenett</div>
@@ -438,7 +438,7 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
           <div style="font-family:var(--font-head);font-weight:700;font-size:14px;color:var(--research);margin-bottom:12px;" id="activeSlotLabel">—</div>
           <div class="card">
             <div class="field">
-              <label data-no="Antall rekebur (40L hver)" data-en="Shrimp baskets (40L each)">Antall rekebur (40L hver)</label>
+              <label id="baciBasketLabel">Antall rekebur (40L hver)</label>
               <input type="number" id="baciBaskets" min="0" step="1" placeholder="f.eks. 3" inputmode="numeric" oninput="calcBaciEF()">
             </div>
             <div class="grid-2" style="margin-top:8px;">
@@ -910,8 +910,22 @@ function setLang(lang){
   document.querySelectorAll('.lang-btn,.header-lang-btn').forEach(b=>{
     b.classList.toggle('active',b.textContent.trim()===lang.toUpperCase());
   });
-  const lvt=document.getElementById('labelVelgTransekt');
+ const lvt=document.getElementById('labelVelgTransekt');
   if(lvt)lvt.textContent=lang==='no'?'Velg transekt':'Select transect';
+  // Update BACI slot labels and status on language change
+  if(typeof renderBaciSlotStatus==='function') renderBaciSlotStatus();
+  // Update slot form label if open
+  if(typeof activeBaciSlot!=='undefined' && activeBaciSlot && BACI_SLOTS[activeBaciSlot]){
+    const def=BACI_SLOTS[activeBaciSlot];
+    const lbl=document.getElementById('activeSlotLabel');
+    if(lbl) lbl.textContent=lang==='no'?def.labelNo:def.labelEn;
+  }
+  // Update basket label
+  const bl=document.getElementById('baciBasketLabel');
+  if(bl) bl.textContent=lang==='no'?'Antall rekebur (40L hver)':'Shrimp baskets (40L each)';
+  // Update info box
+  const ib=document.getElementById('baciInfoBox');
+  if(ib) ib.textContent=lang==='no'?'Velg en prøve for å registrere data.':'Select a sample to enter data.';
 }
 function L(no,en){return currentLang==='no'?no:en;}
 function initLang(){const s=localStorage.getItem('ava_lang')||'no';if(s!=='no')setLang(s);}
