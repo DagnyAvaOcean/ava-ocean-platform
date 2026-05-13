@@ -464,10 +464,10 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
       </div>
 
       <!-- BACI: transect picker (keep hidden, used internally) -->
-      <div id="baciTransectPicker" style="display:none;">
+     <div id="baciTransectPicker" style="display:none;">
         <div class="card">
           <div class="field">
-            <label data-no="Velg transekt" data-en="Select transect">Velg transekt</label>
+            <label id="labelVelgTransekt">Velg transekt</label>
             <select id="sampleTransectSelect"></select>
           </div>
         </div>
@@ -708,26 +708,75 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
         </div>
         <div class="info-box" data-no="Mål bredde og høyde i mm. Skadeindeks: 0=ingen, 1=overlevbar, 2=dødelig." data-en="Measure width and height in mm. Damage index: 0=none, 1=survivable, 2=lethal.">Mål bredde og høyde i mm. Skadeindeks: 0=ingen, 1=overlevbar, 2=dødelig.</div>
         <div class="card">
-          <div class="scallop-row">
-            <div class="grid-fields">
-              <div><label data-no="Bredde" data-en="Width">Bredde</label><input type="number" id="scWidth" step="0.01" placeholder="mm" tabindex="1"></div>
-              <div><label data-no="Høyde" data-en="Height">Høyde</label><input type="number" id="scHeight" step="0.01" placeholder="mm" tabindex="2"></div>
-              <div><label data-no="Vekst" data-en="Growth">Vekst</label><input type="number" id="scGrowth" step="0.1" tabindex="3"></div>
-              <div><label data-no="Skade" data-en="Damage">Skade</label>
-                <input type="number" id="scDamage" min="0" max="2" value="0" tabindex="4">
-              </div>
-              <div><label data-no="Rekr." data-en="Recr.">Rekr.</label>
-                <input type="number" id="scRecruitment" min="0" max="1" value="0" placeholder="0/1" tabindex="5">
-              </div>
+          <div class="grid-2" style="gap:10px;margin-bottom:12px;">
+            <div class="field">
+              <label data-no="Bredde (mm)" data-en="Width (mm)">Bredde (mm)</label>
+              <input type="number" id="scWidth" step="0.01" placeholder="mm" tabindex="1"
+                style="background:var(--surface);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:15px;padding:12px 14px;outline:none;width:100%;">
             </div>
-            <div style="font-size:10px;color:var(--muted);margin-top:6px;" data-no="Skade: 0=ingen, 1=ikke-dødelig, 2=dødelig · Rekr: 0=nei, 1=ja" data-en="Damage: 0=none, 1=non-lethal, 2=lethal · Recr: 0=no, 1=yes">Skade: 0=ingen, 1=ikke-dødelig, 2=dødelig · Rekr: 0=nei, 1=ja</div>
+            <div class="field">
+              <label data-no="Høyde (mm)" data-en="Height (mm)">Høyde (mm)</label>
+              <input type="number" id="scHeight" step="0.01" placeholder="mm" tabindex="2"
+                style="background:var(--surface);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-body);font-size:15px;padding:12px 14px;outline:none;width:100%;">
+            </div>
           </div>
+
+          <div class="field" style="margin-bottom:12px;">
+            <label data-no="Vekst (påvekst på skall)" data-en="Growth (fouling on shell)">Vekst (påvekst på skall)</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px;">
+              <button type="button" id="scGrowthBtn0" onclick="setScoreBtn('scGrowth','scGrowthBtn',0)"
+                style="padding:12px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:var(--font-head);font-weight:700;font-size:14px;cursor:pointer;transition:all 0.15s;">
+                0
+              </button>
+              <button type="button" id="scGrowthBtn1" onclick="setScoreBtn('scGrowth','scGrowthBtn',1)"
+                style="padding:12px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:var(--font-head);font-weight:700;font-size:14px;cursor:pointer;transition:all 0.15s;">
+                1
+              </button>
+              <button type="button" id="scGrowthBtn2" onclick="setScoreBtn('scGrowth','scGrowthBtn',2)"
+                style="padding:12px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:var(--font-head);font-weight:700;font-size:14px;cursor:pointer;transition:all 0.15s;">
+                2
+              </button>
+            </div>
+            <input type="hidden" id="scGrowth" value="0">
+          </div>
+
+          <div class="field" style="margin-bottom:12px;">
+            <label data-no="Skade" data-en="Damage">Skade</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px;">
+              <button type="button" id="scDamageBtn0" onclick="setScoreBtn('scDamage','scDamageBtn',0)"
+                style="padding:12px;border-radius:8px;border:2px solid var(--accent);background:rgba(217,255,172,0.08);color:var(--accent);font-family:var(--font-head);font-weight:700;font-size:14px;cursor:pointer;transition:all 0.15s;">
+                0
+              </button>
+              <button type="button" id="scDamageBtn1" onclick="setScoreBtn('scDamage','scDamageBtn',1)"
+                style="padding:12px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:var(--font-head);font-weight:700;font-size:14px;cursor:pointer;transition:all 0.15s;">
+                1
+              </button>
+              <button type="button" id="scDamageBtn2" onclick="setScoreBtn('scDamage','scDamageBtn',2)"
+                style="padding:12px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:var(--font-head);font-weight:700;font-size:14px;cursor:pointer;transition:all 0.15s;">
+                2
+              </button>
+            </div>
+            <input type="hidden" id="scDamage" value="0">
+          </div>
+
+          <div class="field" style="margin-bottom:14px;">
+            <label data-no="Rekruttering" data-en="Recruitment">Rekruttering</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+              <button type="button" id="scRecruitBtn0" onclick="setRecruitBtn(false)"
+                style="padding:12px;border-radius:8px;border:2px solid var(--accent);background:rgba(217,255,172,0.08);color:var(--accent);font-family:var(--font-head);font-weight:700;font-size:13px;cursor:pointer;transition:all 0.15s;">
+                <span data-no="Nei" data-en="No">Nei</span>
+              </button>
+              <button type="button" id="scRecruitBtn1" onclick="setRecruitBtn(true)"
+                style="padding:12px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--muted);font-family:var(--font-head);font-weight:700;font-size:13px;cursor:pointer;transition:all 0.15s;">
+                <span data-no="Ja" data-en="Yes">Ja</span>
+              </button>
+            </div>
+            <input type="hidden" id="scRecruitment" value="0">
+          </div>
+
+          <div style="font-size:11px;color:var(--muted);margin-bottom:12px;" data-no="Skade: 0=ingen, 1=ikke-dødelig, 2=dødelig · Vekst: 0=ingen, 1=moderat, 2=høy" data-en="Damage: 0=none, 1=non-lethal, 2=lethal · Growth: 0=none, 1=moderate, 2=high">Skade: 0=ingen, 1=ikke-dødelig, 2=dødelig · Vekst: 0=ingen, 1=moderat, 2=høy</div>
           <button class="btn btn-primary btn-sm" onclick="saveScallopMeasurement()" data-no="+ Legg til (Enter)" data-en="+ Add (Enter)">+ Legg til (Enter)</button>
         </div>
-        <div id="scallopCount" style="font-family:var(--font-head);font-weight:700;font-size:13px;color:var(--research);margin:12px 0;text-align:center;"></div>
-        <div id="scallopList"></div>
-      </div>
-    </div>
 
     <!-- TAB: Video log -->
     <div id="tabContentVideo" class="tab-content" style="display:none;">
@@ -866,6 +915,8 @@ function setLang(lang){
   document.querySelectorAll('.lang-btn,.header-lang-btn').forEach(b=>{
     b.classList.toggle('active',b.textContent.trim()===lang.toUpperCase());
   });
+  const lvt=document.getElementById('labelVelgTransekt');
+  if(lvt)lvt.textContent=lang==='no'?'Velg transekt':'Select transect';
 }
 function L(no,en){return currentLang==='no'?no:en;}
 function initLang(){const s=localStorage.getItem('ava_lang')||'no';if(s!=='no')setLang(s);}
@@ -1639,6 +1690,45 @@ async function saveCustomSpecies(){
   goTo('scrSessionHub');
 }
 
+/* ===== Score button helpers ===== */
+function setScoreBtn(hiddenId, btnPrefix, val){
+  document.getElementById(hiddenId).value = val;
+  for(let i=0;i<=2;i++){
+    const btn=document.getElementById(btnPrefix+i);
+    if(!btn) continue;
+    if(i===val){
+      const colors={scDamageBtn:['var(--accent)','var(--scallop)','var(--warn)'],scGrowthBtn:['var(--accent)','var(--scallop)','var(--warn)']};
+      const col=(colors[btnPrefix]||['var(--accent)','var(--scallop)','var(--warn)'])[i];
+      btn.style.borderColor=col;
+      btn.style.color=col;
+      btn.style.background=`rgba(136,200,255,0.08)`;
+    } else {
+      btn.style.borderColor='var(--border)';
+      btn.style.color='var(--muted)';
+      btn.style.background='var(--surface)';
+    }
+  }
+}
+
+function setRecruitBtn(val){
+  document.getElementById('scRecruitment').value=val?'1':'0';
+  const btnNo=document.getElementById('scRecruitBtn0');
+  const btnYes=document.getElementById('scRecruitBtn1');
+  if(!val){
+    btnNo.style.borderColor='var(--accent)';btnNo.style.color='var(--accent)';btnNo.style.background='rgba(217,255,172,0.08)';
+    btnYes.style.borderColor='var(--border)';btnYes.style.color='var(--muted)';btnYes.style.background='var(--surface)';
+  } else {
+    btnYes.style.borderColor='var(--research)';btnYes.style.color='var(--research)';btnYes.style.background='rgba(136,200,255,0.08)';
+    btnNo.style.borderColor='var(--border)';btnNo.style.color='var(--muted)';btnNo.style.background='var(--surface)';
+  }
+}
+
+function resetScallopButtons(){
+  setScoreBtn('scGrowth','scGrowthBtn',0);
+  setScoreBtn('scDamage','scDamageBtn',0);
+  setRecruitBtn(false);
+}
+
 /* ===== Scallop measurements ===== */
 async function loadScallopsForSample(){
   const sampleId=document.getElementById('scallopSampleSelect')?.value;
@@ -1671,8 +1761,7 @@ async function saveScallopMeasurement(){
   document.getElementById('scWidth').value='';
   document.getElementById('scHeight').value='';
   document.getElementById('scGrowth').value='';
-  document.getElementById('scDamage').value='0';
-  document.getElementById('scRecruitment').value='0';
+  resetScallopButtons();
   document.getElementById('scWidth').focus();
 }
 // Enter key saves scallop and refocuses width for next entry
