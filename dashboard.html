@@ -409,6 +409,7 @@ tr:hover td{background:rgba(217,255,172,0.02);}
     <div class="mobile-nav-item" id="mnav-factory" onclick="mobileNav('factory')"><span class="mobile-nav-icon">⚖️</span><span id="mnavFactory">Factory</span></div>
     <div class="mobile-nav-item ai-only" id="mnav-ai" onclick="mobileNav('ai')" style="display:none;"><span class="mobile-nav-icon">🤖</span><span id="mnavAi">AI Insights</span></div>
     <div class="mobile-nav-item" id="mnav-fangstreg" onclick="mobileNav('fangstreg')"><span class="mobile-nav-icon">📥</span><span id="mnavFangstreg">Fangstreg</span></div>
+    <div class="mobile-nav-item admin-only" id="mnav-admin" onclick="mobileNav('admin')"><span class="mobile-nav-icon">🗑️</span><span id="mnavAdmin">Admin</span></div>
     <div class="mobile-trip-filter">
       <select id="mobileTripSelect" onchange="onMobileTripFilter()"><option value="all">All Trips</option></select>
     </div>
@@ -1931,6 +1932,8 @@ async function showApp(user){
   const isAdmin=ADMIN_ALLOWED.includes(user?.email||'');
   const adminNav=document.getElementById('nav-admin');
   if(adminNav) adminNav.style.display=isAdmin?'flex':'none';
+  const mAdminNav=document.getElementById('mnav-admin');
+  if(mAdminNav) mAdminNav.style.display=isAdmin?'flex':'none';
 }
 async function signIn(){
   const email=document.getElementById('loginEmail').value.trim(),password=document.getElementById('loginPassword').value;
