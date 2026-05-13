@@ -436,7 +436,14 @@ tr:hover td{background:rgba(217,255,172,0.02);}
       <div class="nav-item" id="nav-fangstreg" onclick="showSection('fangstreg',this)"><span class="nav-icon">📥</span> <span id="navFangstreg">Fangstreg Import</span></div>  
       <div class="nav-item" id="nav-admin" onclick="showSection('admin',this)"><span class="nav-icon">🗑️</span> <span id="navAdmin">Admin</span></div>
     </nav>
-    <div class="trip-selector">
+   <div class="trip-selector">
+      <label id="filterYearLabel">År</label>
+      <select id="yearFilter" onchange="onYearFilter()" style="margin-bottom:10px;">
+        <option value="all">Alle år</option>
+        <option value="2023">2023 — Arctic Pearl</option>
+        <option value="2024">2024 — Arctic Pearl</option>
+        <option value="2026">2026 — Ava Ray</option>
+      </select>
       <label id="filterLabel">Filtrer etter tur</label>
       <select id="tripFilter" onchange="onTripFilter()"><option value="all">Alle turer</option></select>
     </div>
@@ -1153,7 +1160,9 @@ function setLang(lang) {
   fel('fThCont','Snitt cont/lb','Avg cont/lb'); fel('fThDamage','Snitt skade %','Avg damage %');
   fel('fThFemale','Snitt % hunn','Avg % female'); fel('fThMale','Snitt % hann','Avg % male');
   if(allFactory&&allFactory.length)renderFactory();
-  document.getElementById('filterLabel').textContent=t.filterTrip;
+ document.getElementById('filterLabel').textContent=t.filterTrip;
+  const fyl=document.getElementById('filterYearLabel');
+  if(fyl)fyl.textContent=currentLang==='no'?'År':'Year';
   document.getElementById('signoutBtn').textContent=t.signout;
   const pillText=document.getElementById('pillConstantsText');
   if(pillText)pillText.textContent=fno?'Høster 12m · Kurv 28m³ ved 100% · HFO 3,114 kg CO₂/liter':'Harvester 12m · Basket 28m³ at 100% · HFO 3.114 kg CO₂/litre';
@@ -1964,10 +1973,44 @@ async function loadAll(){
   }catch(e){setStatus('error');}
 }
 function getFiltered(){
-  if(currentTripFilter==='all')return{trips:allTrips,activities:allActivities,tows:allTows,bycatch:allBycatch};
-  return{trips:allTrips.filter(t=>t.id===currentTripFilter),activities:allActivities.filter(a=>a.trip_id===currentTripFilter),tows:allTows.filter(t=>t.trip_id===currentTripFilter),bycatch:allBycatch.filter(b=>b.trip_id===currentTripFilter)};
+  const year=document.getElementById('yearFilter')?.value||'all';
+  const yearTrips=year==='all'?allTrips:allTrips.filter(t=>t.trip_date&&t.trip_date.startsWith(year));
+  const yearTripIds=new Set(yearTrips.map(t=>t.id));
+  if(currentTripFilter==='all')return{
+    trips:yearTrips,
+    activities:allActivities.filter(a=>yearTripIds.has(a.trip_id)),
+    tows:allTows.filter(t=>yearTripIds.has(t.trip_id)),
+    bycatch:allBycatch.filter(b=>yearTripIds.has(b.trip_id))
+  };
+  return{
+    trips:allTrips.filter(t=>t.id===currentTripFilter),
+    activities:allActivities.filter(a=>a.trip_id===currentTripFilter),
+    tows:allTows.filter(t=>t.trip_id===currentTripFilter),
+    bycatch:allBycatch.filter(b=>b.trip_id===currentTripFilter)
+  };
 }
 function onTripFilter(){currentTripFilter=document.getElementById('tripFilter').value;renderAll();}
+
+function onYearFilter(){
+  const year=document.getElementById('yearFilter').value;
+  // Filter trip dropdown to only show trips from selected year
+  const sel=document.getElementById('tripFilter');
+  const t=T[currentLang];
+  sel.innerHTML=`<option value="all">${t.allTrips}</option>`;
+  allTrips.filter(t2=>{
+    if(year==='all') return true;
+    return t2.trip_date && t2.trip_date.startsWith(year);
+  }).forEach(t2=>{
+    const o=document.createElement('option');
+    o.value=t2.id;
+    o.textContent=t2.trip_code+(t2.trip_closed?' ✓':'');
+    sel.appendChild(o);
+  });
+  // Reset trip filter and re-render with year filter applied
+  currentTripFilter='all';
+  sel.value='all';
+  renderAll();
+}
 function populateTripFilter(){
   const sel=document.getElementById('tripFilter'),t=T[currentLang];
   sel.innerHTML=`<option value="all">${t.allTrips}</option>`;
