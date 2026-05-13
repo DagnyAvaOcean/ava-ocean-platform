@@ -440,9 +440,6 @@ tr:hover td{background:rgba(217,255,172,0.02);}
       <label id="filterYearLabel">År</label>
       <select id="yearFilter" onchange="onYearFilter()" style="margin-bottom:10px;">
         <option value="all">Alle år</option>
-        <option value="2023">2023 — Arctic Pearl</option>
-        <option value="2024">2024 — Arctic Pearl</option>
-        <option value="2026">2026 — Ava Ray</option>
       </select>
       <label id="filterLabel">Filtrer etter tur</label>
       <select id="tripFilter" onchange="onTripFilter()"><option value="all">Alle turer</option></select>
@@ -1969,7 +1966,7 @@ async function loadAll(){
       sb.from('daily_log').select('*,trip_registry(trip_code)').order('log_date',{ascending:true}),
     ]);
     allTrips=trips.data||[];allActivities=activities.data||[];allTows=tows.data||[];allBycatch=bycatch.data||[];allFactory=factory.data||[];allDailyLogs=dailyLogs.data||[];
-    populateTripFilter();renderAll();setStatus('connected');
+    populateTripFilter();populateYearFilter();renderAll();setStatus('connected');
   }catch(e){setStatus('error');}
 }
 function getFiltered(){
@@ -1993,7 +1990,6 @@ function onTripFilter(){currentTripFilter=document.getElementById('tripFilter').
 
 function onYearFilter(){
   const year=document.getElementById('yearFilter').value;
-  // Filter trip dropdown to only show trips from selected year
   const sel=document.getElementById('tripFilter');
   const t=T[currentLang];
   sel.innerHTML=`<option value="all">${t.allTrips}</option>`;
@@ -2006,10 +2002,30 @@ function onYearFilter(){
     o.textContent=t2.trip_code+(t2.trip_closed?' ✓':'');
     sel.appendChild(o);
   });
-  // Reset trip filter and re-render with year filter applied
   currentTripFilter='all';
   sel.value='all';
   renderAll();
+}
+
+function populateYearFilter(){
+  const sel=document.getElementById('yearFilter');
+  if(!sel) return;
+  const currentVal=sel.value;
+  // Get unique years from actual trip data
+  const years=[...new Set(allTrips
+    .filter(t=>t.trip_date)
+    .map(t=>t.trip_date.slice(0,4))
+  )].sort();
+  const no=currentLang==='no';
+  sel.innerHTML=`<option value="all">${no?'Alle år':'All years'}</option>`;
+  years.forEach(y=>{
+    const o=document.createElement('option');
+    o.value=y;
+    o.textContent=y;
+    sel.appendChild(o);
+  });
+  // Restore selection if still valid
+  if(currentVal && years.includes(currentVal)) sel.value=currentVal;
 }
 function populateTripFilter(){
   const sel=document.getElementById('tripFilter'),t=T[currentLang];
