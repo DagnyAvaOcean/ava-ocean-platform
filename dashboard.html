@@ -2565,6 +2565,98 @@ async function deleteSingleTrip() {
   }
 }
 
+async function cascadeDeleteTrips(tripIds) {
+  for(const tripId of tripIds) {
+    // Get all tows for this trip
+    const { data: tows } = await sb.from('tow_log').select('id').eq('trip_id', tripId);
+    const towIds = (tows || []).map(t => t.id);
+
+    if(towIds.length > 0) {
+      // Get research sessions linked via tow_id
+      const { data: towSessions } = await sb.from('research_session').select('id').in('tow_id', towIds);
+      const towSessionIds = (towSessions || []).map(s => s.id);
+      if(towSessionIds.length > 0) {
+        const { data: transects } = await sb.from('research_transect').select('id').in('session_id', towSessionIds);
+        const transectIds = (transects || []).map(t => t.id);
+        if(transectIds.length > 0) {
+          const { data: samples } = await sb.from('research_catch_sample').select('id').in('transect_id', transectIds);
+          const sampleIds = (samples || []).map(s => s.id);
+          if(sampleIds.length > 0) {
+            await sb.from('research_scallop_measurement').delete().in('sample_id', sampleIds);
+            await sb.from('research_species_record').delete().in('sample_id', sampleIds);
+            await sb.from('research_size_sample').delete().in('sample_id', sampleIds);
+            await sb.from('research_catch_sample').delete().in('transect_id', transectIds);
+          }
+          await sb.from('research_photo_log').delete().in('session_id', towSessionIds);
+          await sb.from('research_video_log').delete().in('session_id', towSessionIds);
+          await sb.from('research_transect').delete().in('session_id', towSessionIds);
+        }
+        await sb.from('research_session').delete().in('id', towSessionIds);
+      }
+      // Get research sessions linked via trip_id (not tow)
+      const { data: tripSessions } = await sb.from('research_session').select('id').eq('trip_id', tripId);
+      const tripSessionIds = (tripSessions || []).map(s => s.id);
+      if(tripSessionIds.length > 0) {
+        const { data: transects2 } = await sb.from('research_transect').select('id').in('session_id', tripSessionIds);
+        const transectIds2 = (transects2 || []).map(t => t.id);
+        if(transectIds2.length > 0) {
+          const { data: samples2 } = await sb.from('research_catch_sample').select('id').in('transect_id', transectIds2);
+          const sampleIds2 = (samples2 || []).map(s => s.id);
+          if(sampleIds2.length > 0) {
+            await sb.from('research_scallop_measurement').delete().in('sample_id', sampleIds2);
+            await sb.from('research_species_record').delete().in('sample_id', sampleIds2);
+            await sb.from('research_size_sample').delete().in('sample_id', sampleIds2);
+            await sb.from('research_catch_sample').delete().in('transect_id', transectIds2);
+          }
+          await sb.from('research_photo_log').delete().in('session_id', tripSessionIds);
+          await sb.from('research_video_log').delete().in('session_id', tripSessionIds);
+          await sb.from('research_transect').delete().in('session_id', tripSessionIds);
+        }
+        await sb.from('research_session').delete().in('id', tripSessionIds);
+      }
+      await sb.from('bycatch_report').delete().in('tow_id', towIds);
+      await sb.from('tow_log').delete().eq('trip_id', tripId);
+    }
+
+    await sb.from('activity_log').delete().eq('trip_id', tripId);
+    await sb.from('daily_log').delete().eq('trip_id', tripId);
+    await sb.from('factory_sample_log').delete().eq('trip_id', tripId);
+    const { error } = await sb.from('trip_registry').delete().eq('id', tripId);
+    if(error) return { error };
+  }
+  return { error: null };
+}
+
+async function deleteAllDemoTrips() {
+  const no = currentLang === 'no';
+  const demoTrips = allTrips.filter(t => t.is_demo);
+  if(!demoTrips.length) {
+    alert(no ? 'Ingen demo-turer funnet.' : 'No demo trips found.');
+    return;
+  }
+  const confirmed = window.confirm(
+    no ? `Slette ${demoTrips.length} demo-tur(er)?\n\n${demoTrips.map(t => t.trip_code).join(', ')}\n\nKan ikke angres.`
+       : `Delete ${demoTrips.length} demo trip(s)?\n\n${demoTrips.map(t => t.trip_code).join(', ')}\n\nCannot be undone.`
+  );
+  if(!confirmed) return;
+
+  const btn = document.getElementById('btnDeleteDemo');
+  btn.disabled = true;
+  btn.textContent = no ? '⏳ Sletter...' : '⏳ Deleting...';
+
+  const { error } = await cascadeDeleteTrips(demoTrips.map(t => t.id));
+  btn.disabled = false;
+  btn.innerHTML = `🗑️ <span id="btnDeleteDemoLabel">${no ? 'Slett alle demo-turer' : 'Delete all demo trips'}</span>`;
+
+  if(error) {
+    alert((no ? 'Feil: ' : 'Error: ') + error.message);
+  } else {
+    alert(no ? `✓ ${demoTrips.length} demo-tur(er) slettet.` : `✓ ${demoTrips.length} demo trip(s) deleted.`);
+    await loadAll();
+    loadAdminSection();
+  }
+}
+
 init();
 </script>
 </body>
