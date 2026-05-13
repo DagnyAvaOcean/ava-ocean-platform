@@ -407,7 +407,7 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
 
     <!-- TAB: Catch sample -->
     <div id="tabContentSample" class="tab-content" style="display:none;">
-      <div class="section-label" data-no="Fangstprøve" data-en="Catch sample">Fangstprøve</div>
+      <div class="section-label" id="labelCatchSample" data-no="Fangstprøve" data-en="Catch sample">Fangstprøve</div>
 
       <!-- BACI/Control: needs transect first -->
       <div id="noTransectWarn" class="info-box" style="display:none;" data-no="Lagre et transekt først for å legge til prøver." data-en="Save a transect first to add samples.">Lagre et transekt først for å legge til prøver.</div>
@@ -463,14 +463,9 @@ body{background:var(--deep);color:var(--text);font-family:var(--font-body);font-
         </div>
       </div>
 
-      <!-- BACI: transect picker (keep hidden, used internally) -->
-     <div id="baciTransectPicker" style="display:none;">
-        <div class="card">
-          <div class="field">
-            <label id="labelVelgTransekt">Velg transekt</label>
-            <select id="sampleTransectSelect"></select>
-          </div>
-        </div>
+      <!-- BACI: transect picker (internal use only — always hidden) -->
+      <div id="baciTransectPicker" style="display:none !important;">
+        <select id="sampleTransectSelect" style="display:none;"></select>
       </div>
 
       <!-- Commercial: pick captain's tow (= transect) -->
