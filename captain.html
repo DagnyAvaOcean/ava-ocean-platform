@@ -276,6 +276,16 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;heigh
       <div class="section-label" style="margin-top:0;" data-no="Årsak til nedetid" data-en="Reason for Downtime">Årsak til nedetid</div>
       <div class="field"><label data-no="Årsak" data-en="Reason">Årsak</label><input type="text" id="actReason" placeholder="f.eks. Motorhavari, vedlikehold..."></div>
     </div>
+   <!-- Historical date override -->
+    <div style="background:rgba(255,140,105,0.07);border:1px solid rgba(255,140,105,0.25);border-radius:10px;padding:14px;margin-bottom:12px;">
+      <div style="font-family:var(--font-head);font-weight:700;font-size:11px;letter-spacing:1px;color:var(--warn);margin-bottom:10px;" data-no="📅 HISTORISK DATO (valgfritt — la stå tomt for nåværende tid)" data-en="📅 HISTORICAL DATE (optional — leave blank for current time)">📅 HISTORISK DATO (valgfritt)</div>
+      <div class="grid-2">
+        <div class="field"><label data-no="Dato" data-en="Date">Dato</label><input type="date" id="histActDate"></div>
+        <div class="field"><label data-no="Starttid" data-en="Start time">Starttid</label><input type="time" id="histActStart"></div>
+        <div class="field"><label data-no="Sluttid" data-en="End time">Sluttid</label><input type="time" id="histActEnd"></div>
+        <div class="field"><label data-no="ELLER: Varighet (min)" data-en="OR: Duration (mins)">ELLER: Varighet (min)</label><input type="number" id="histActDur" placeholder="f.eks. 967" inputmode="numeric"></div>
+      </div>
+    </div>
     <div class="field" style="margin-top:4px;"><label data-no="Notater (valgfritt)" data-en="Notes (optional)">Notater (valgfritt)</label><textarea id="actNotes" placeholder="Observasjoner..."></textarea></div>
     <button class="btn btn-primary" onclick="saveStartActivity()" data-no="Start aktivitet ▶" data-en="Begin Activity ▶">Start aktivitet ▶</button>
     <button class="btn btn-secondary" onclick="goTo('screen-main')" data-no="Avbryt" data-en="Cancel">Avbryt</button>
@@ -564,9 +574,12 @@ function goToStartActivity(){
   document.getElementById('reasonSection').style.display=isDowntime?'block':'none';
   ['actFuelStart','actWaveHeight','actWindSpeed','actNotes','actReason'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   ['actSeaState','actWindDir','actVisibility'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  document.getElementById('gpsActStartDisplay').textContent='';
+ document.getElementById('gpsActStartDisplay').textContent='';
   document.getElementById('actLatStart').value='';
   document.getElementById('actLonStart').value='';
+  ['histActDate','histActStart','histActEnd','histActDur'].forEach(id=>{
+    const e=document.getElementById(id); if(e) e.value='';
+  });
 
   ['actLatStart','actLonStart'].forEach(id=>{
   const el=document.getElementById(id);
@@ -583,8 +596,11 @@ function goToStartActivity(){
 
 async function saveStartActivity(){
   const no=currentLang==='no';
-  const insertObj={
-    trip_id:currentTrip.id,activity_type:currentActivityType,time_start:new Date().toISOString(),
+  const histDate=document.getElementById('histActDate')?.value;
+const histStart=document.getElementById('histActStart')?.value;
+const timeStart=(histDate&&histStart)?new Date(`${histDate}T${histStart}`).toISOString():new Date().toISOString();
+const insertObj={
+    trip_id:currentTrip.id,activity_type:currentActivityType,time_start:timeStart,
     fuel_start_litres:parseFloat(document.getElementById('actFuelStart').value)||null,
     wave_height_m:parseFloat(document.getElementById('actWaveHeight').value)||null,
     wind_speed_knots:parseFloat(document.getElementById('actWindSpeed').value)||null,
@@ -757,7 +773,16 @@ function endActivityPrompt(){
   goTo('screen-end-activity');
 }
 
-async function confirmEndActivity(){const{error}=await sb.from('activity_log').update({time_end:new Date().toISOString(),fuel_end_litres:parseFloat(document.getElementById('endFuel').value)||null,lat_end:parseFloat(document.getElementById('actLatEnd').value)||null,lon_end:parseFloat(document.getElementById('actLonEnd').value)||null}).eq('id',currentActivityId);if(error){showToast((currentLang==='no'?'Feil: ':'Error: ')+error.message,'error');return;}showToast(currentLang==='no'?'Aktivitet avsluttet ✓':'Activity ended ✓','success');currentActivityId=null;currentActivityType=null;await loadActivities();goTo('screen-main');}
+async function confirmEndActivity(){
+  const histDate=document.getElementById('histActDate')?.value;
+  const histEnd=document.getElementById('histActEnd')?.value;
+  const histDur=document.getElementById('histActDur')?.value;
+  let timeEnd;
+  if(histDate&&histEnd){
+    timeEnd=new Date(`${histDate}T${histEnd}`).toISOString();
+  } else if(histDate&&histDur&&currentActivityId){
+    const{data:act}=await sb.from('activity_log').select('time_start').eq('id',currentActivityId).single();
+    timeEnd=act?.time_start?new Date(new Date(act.
 
 function haversineM(lat1,lon1,lat2,lon2){const R=6371000,r=d=>d*Math.PI/180,dLat=r(lat2-lat1),dLon=r(lon2-lon1);const a=Math.sin(dLat/2)**2+Math.cos(r(lat1))*Math.cos(r(lat2))*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
 
