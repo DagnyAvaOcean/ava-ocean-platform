@@ -782,7 +782,11 @@ async function confirmEndActivity(){
     timeEnd=new Date(`${histDate}T${histEnd}`).toISOString();
   } else if(histDate&&histDur&&currentActivityId){
     const{data:act}=await sb.from('activity_log').select('time_start').eq('id',currentActivityId).single();
-    timeEnd=act?.time_start?new Date(new Date(act.
+ timeEnd=act?.time_start?new Date(new Date(act.time_start).getTime()+parseInt(histDur)*60000).toISOString():new Date().toISOString();
+  } else {
+    timeEnd=new Date().toISOString();
+  }
+  const{error}=await sb.from('activity_log').update({time_end:timeEnd,fuel_end_litres:parseFloat(document.getElementById('endFuel').value)||null,lat_end:parseFloat(document.getElementById('actLatEnd').value)||null,lon_end:parseFloat(document.getElementById('actLonEnd').value)||null}).eq('id',currentActivityId);if(error){showToast((currentLang==='no'?'Feil: ':'Error: ')+error.message,'error');return;}showToast(currentLang==='no'?'Aktivitet avsluttet ✓':'Activity ended ✓','success');currentActivityId=null;currentActivityType=null;await loadActivities();goTo('screen-main');}
 
 function haversineM(lat1,lon1,lat2,lon2){const R=6371000,r=d=>d*Math.PI/180,dLat=r(lat2-lat1),dLon=r(lon2-lon1);const a=Math.sin(dLat/2)**2+Math.cos(r(lat1))*Math.cos(r(lat2))*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
 
