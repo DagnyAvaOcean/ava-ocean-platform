@@ -1158,8 +1158,9 @@ function setLang(lang) {
   fel('fThFemale','Snitt % hunn','Avg % female'); fel('fThMale','Snitt % hann','Avg % male');
   if(allFactory&&allFactory.length)renderFactory();
  document.getElementById('filterLabel').textContent=t.filterTrip;
-  const fyl=document.getElementById('filterYearLabel');
+ const fyl=document.getElementById('filterYearLabel');
   if(fyl)fyl.textContent=currentLang==='no'?'År':'Year';
+  populateYearFilter();
   document.getElementById('signoutBtn').textContent=t.signout;
   const pillText=document.getElementById('pillConstantsText');
   if(pillText)pillText.textContent=fno?'Høster 12m · Kurv 28m³ ved 100% · HFO 3,114 kg CO₂/liter':'Harvester 12m · Basket 28m³ at 100% · HFO 3.114 kg CO₂/litre';
